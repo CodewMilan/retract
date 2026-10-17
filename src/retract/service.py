@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from .graph import GraphStore
 from .models import (
-    ConflictError, NotFoundError, PlanInput, RememberInput, UpdateInput,
+    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, RememberInput, UpdateInput,
     identifier, text,
 )
 from .policy import decide
@@ -24,9 +24,10 @@ def generated_id(prefix: str) -> str:
 
 
 class MemoryService:
-    def __init__(self, store: GraphStore):
+    def __init__(self, store: GraphStore, interpreter=None):
         self.store = store
         self.lock = RLock()
+        self.interpreter = interpreter
 
     def project(self, project_id: str, expected: int | None = None) -> dict:
         identifier(project_id, "project_id")
@@ -104,8 +105,32 @@ class MemoryService:
             return {"plan_id": plan_id, "status": "current", "outcome": "created",
                     "project_revision": project["revision"] + 1}
 
-    def process_update(self, request: UpdateInput) -> dict:
-        fingerprint = hashlib.sha256(json.dumps(asdict(request), sort_keys=True).encode()).hexdigest()
+    def process_natural_update(self, request: NaturalUpdateInput) -> dict:
+        from .inference import GroqInterpreter
+
+        fingerprint = hashlib.sha256(json.dumps(
+            {"kind": "natural_update_v1", "request": asdict(request)}, sort_keys=True,
+        ).encode()).hexdigest()
+        with self.lock:
+            self.project(request.project_id)
+            existing = self.store.get("UpdateEvent", request.project_id, request.event_id)
+            if existing:
+                if existing["fingerprint"] != fingerprint:
+                    raise ConflictError("Event ID was already used for a different request")
+                return json.loads(existing["result_json"])
+            project = self.project(request.project_id, request.expected_revision)
+            self._source(request.project_id, request.source)
+            current = self.store.active(request.project_id, request.scope, request.subject, request.predicate)
+        # Network waits must not block recall or unrelated writes. A revision guard
+        # below refuses to apply extraction to a project changed during inference.
+        interpreter = self.interpreter if self.interpreter is not None else GroqInterpreter.from_env()
+        interpreted = interpreter.extract(request, current)
+        structured = interpreted.extraction.to_update(request, current, project["revision"])
+        return self.process_update(structured, _fingerprint=fingerprint, _interpretation=interpreted.audit())
+
+    def process_update(self, request: UpdateInput, *, _fingerprint: str | None = None,
+                       _interpretation: dict | None = None) -> dict:
+        fingerprint = _fingerprint or hashlib.sha256(json.dumps(asdict(request), sort_keys=True).encode()).hexdigest()
         with self.lock:
             # Replay lookup precedes revision checking: exact retries survive revision changes.
             self.project(request.project_id)
@@ -139,6 +164,8 @@ class MemoryService:
                       "flagged_plan_ids": sorted({path["plan_id"] for path in paths}),
                       "explanation_paths": paths, "candidate": asdict(request.candidate) if request.candidate else None,
                       "expected_revision": project["revision"], "resulting_revision": project["revision"] + 1}
+            if _interpretation is not None:
+                result["interpretation"] = _interpretation
             event = {"id": request.event_id, "project_id": request.project_id, "scope": request.scope,
                      "text": request.text, "classification": request.classification,
                      "outcome": decision.outcome, "reason": decision.reason,

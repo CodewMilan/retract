@@ -6,8 +6,9 @@ import logging
 from urllib.parse import urlsplit
 
 from .graph import DatabaseUnavailable
+from .inference import ModelRateLimited, ModelResponseError, ModelUnavailable
 from .models import (
-    ConflictError, NotFoundError, PlanInput, RememberInput, UpdateInput,
+    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, RememberInput, UpdateInput,
     ValidationError, parse,
 )
 from .service import MemoryService
@@ -26,6 +27,8 @@ def dispatch(service: MemoryService, path: str, body: dict) -> dict:
         return service.remember(parse(RememberInput, body))
     if path == "/updates":
         return service.process_update(parse(UpdateInput, body))
+    if path == "/updates/natural":
+        return service.process_natural_update(parse(NaturalUpdateInput, body))
     if path == "/plans":
         return service.record_plan(parse(PlanInput, body))
     if path == "/recall":
@@ -51,7 +54,7 @@ def make_handler(service: MemoryService):
             # Source text and request bodies are deliberately absent from logs.
             logger.info(format, *args)
 
-        def respond(self, status: int, result: dict):
+        def respond(self, status: int, result: dict, retry_after: int | None = None):
             encoded = json.dumps(result, ensure_ascii=False).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -59,6 +62,8 @@ def make_handler(service: MemoryService):
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Connection", "close")
+            if retry_after is not None:
+                self.send_header("Retry-After", str(retry_after))
             self.end_headers()
             self.wfile.write(encoded)
             self.close_connection = True
@@ -116,6 +121,12 @@ def make_handler(service: MemoryService):
                 self.respond(409, {"error": str(exc)})
             except NotFoundError as exc:
                 self.respond(404, {"error": str(exc)})
+            except ModelRateLimited as exc:
+                self.respond(429, {"error": str(exc), "retry_after_seconds": exc.retry_after}, exc.retry_after)
+            except ModelResponseError as exc:
+                self.respond(502, {"error": str(exc)})
+            except ModelUnavailable as exc:
+                self.respond(503, {"error": str(exc)})
             except DatabaseUnavailable as exc:
                 logger.exception("Database request failed")
                 self.respond(503, {"error": str(exc)})

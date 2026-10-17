@@ -1,1 +1,1 @@
-"""RETRACT's deterministic memory core. No model calls occur in this package yet."""
+"""RETRACT memory: deterministic policy with a separate, optional model adapter."""

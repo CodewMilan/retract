@@ -16,7 +16,7 @@ def call(base_url: str, path: str, body: dict) -> dict:
     request = Request(f"{base_url.rstrip('/')}/{path.lstrip('/')}",
                       data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     try:
-        with urlopen(request, timeout=15) as response:
+        with urlopen(request, timeout=60 if path.strip("/") == "updates/natural" else 15) as response:
             return json.load(response)
     except HTTPError as exc:
         result = json.load(exc)
@@ -50,7 +50,7 @@ def main():
     serve = commands.add_parser("serve")
     serve.add_argument("--port", type=int, default=int(os.getenv("RETRACT_PORT", "8100")))
     request = commands.add_parser("call", help="POST a structured JSON file to an API route")
-    request.add_argument("route", choices=["projects", "remember", "updates", "plans", "recall", "history"])
+    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "recall", "history"])
     request.add_argument("file", type=Path)
     seed = commands.add_parser("seed", help="Seed explicitly once; existing memory is never reset")
     seed.add_argument("file", type=Path, nargs="?", default=Path("fixtures/demo-seed.json"))

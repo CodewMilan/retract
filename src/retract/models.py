@@ -154,6 +154,32 @@ class UpdateInput:
 
 
 @dataclass(frozen=True)
+class NaturalUpdateInput:
+    """Natural-language replacement of one explicitly selected scoped key."""
+
+    project_id: str
+    scope: str
+    subject: str
+    predicate: str
+    event_id: str
+    text: str
+    source: SourceInput
+    confirmation: bool = False
+    expected_revision: int | None = None
+
+    def __post_init__(self):
+        for name in ("project_id", "scope", "subject", "predicate", "event_id"):
+            identifier(getattr(self, name), name)
+        text(self.text, "text", 4000)
+        if not isinstance(self.source, SourceInput):
+            raise ValidationError("source is required")
+        text(self.source.content, "source.content", 6000)
+        if type(self.confirmation) is not bool:
+            raise ValidationError("confirmation must be a JSON boolean")
+        revision(self.expected_revision)
+
+
+@dataclass(frozen=True)
 class PlanInput:
     project_id: str
     scope: str

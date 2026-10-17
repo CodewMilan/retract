@@ -186,3 +186,19 @@ class FalkorDBTests(unittest.TestCase):
         self.assertIsNone(self.store.get("Fact", "account-settings", "F5"))
         self.assertIsNone(self.store.get("Source", "account-settings", "S-U1"))
         self.assertEqual(self.service.process_update(confirmed_update())["outcome"], "applied")
+
+    def test_natural_update_persists_audit_and_replays_without_model(self):
+        from unittest.mock import patch
+        from retract.inference import GroqInterpreter
+        from tests.test_inference import Transport, envelope, natural_request
+
+        self.service.interpreter = GroqInterpreter("test-fixture", opener=Transport(envelope()))
+        result = self.service.process_natural_update(natural_request())
+        self.assertEqual(result["outcome"], "applied")
+        self.assertEqual(result["retired_fact_ids"], ["F1"])
+        history = self.service.history("account-settings", event_id="N1")
+        self.assertEqual(history["event"]["interpretation"]["prompt_version"], "retract-extract-v1")
+        fresh = MemoryService(GraphStore(self.client.select_graph(self.graph_name)))
+        with patch.dict(os.environ, {"GROQ_API_KEY": ""}):
+            self.assertEqual(fresh.process_natural_update(natural_request()), result)
+        self.assertEqual(fresh.recall("account-settings", "web-client/main")["active_facts"][0]["id"], result["accepted_fact_ids"][0])
