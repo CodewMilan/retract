@@ -163,10 +163,14 @@ def run(report_dir: Path, keep: bool = False) -> int:
         check("Docker daemon", lambda: command(["docker", "info"], capture=True))
         started_database = True  # Also clean up partial startup after errors.
         check("isolated persistent FalkorDB startup", lambda: command(compose + ["up", "-d", "--wait"]))
-        address = command(compose + ["port", "falkordb", "6379"], capture=True).strip()
-        host, port = address.rsplit(":", 1)
-        require(host == "127.0.0.1" and port.isdigit(), "Unexpected verification database address")
-        env.update(FALKORDB_HOST="127.0.0.1", FALKORDB_PORT=port,
+
+        def database_port() -> str:
+            address = command(compose + ["port", "falkordb", "6379"], capture=True).strip()
+            host, port = address.rsplit(":", 1)
+            require(host == "127.0.0.1" and port.isdigit(), "Unexpected verification database address")
+            return port
+
+        env.update(FALKORDB_HOST="127.0.0.1", FALKORDB_PORT=database_port(),
                    FALKORDB_GRAPH=f"retract-verify-{uuid4().hex}", RUN_FALKORDB_TESTS="1")
         report["compose_project"] = project_name
 
@@ -199,6 +203,8 @@ def run(report_dir: Path, keep: bool = False) -> int:
             process = None
             command(compose + ["restart", "falkordb"])
             command(compose + ["up", "-d", "--wait"])
+            # Docker may assign a new ephemeral host port when the container restarts.
+            env["FALKORDB_PORT"] = database_port()
             process, base = start_service(env, api_port, logfile)
             after = snapshot(base)  # Deliberately no project creation or seed calls.
             (report_dir / "after-restart.json").write_text(json.dumps(after, indent=2) + "\n")

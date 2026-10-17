@@ -122,6 +122,25 @@ not yet been observed.
 | Full regression after account-settings implementation | 177 Python tests: 161 passed, 16 skipped on Python 3.12 and 3.14. All 22 JavaScript checks pass. |
 | Latest offline evidence bundle | `reports/account-settings-final/phase5.json`; source/artifact hashes, regression logs, and bounded release-pattern scan retained. |
 
+## Verification on the developer machine
+
+Recorded 17 October 2026 on macOS with Docker Desktop, Python 3.14.6, Node
+24.14.1, `falkordb` client 1.8.0, `falkordb/falkordb:6.0.2`, `postgres:17-alpine`,
+`mcp` 1.30.0, and Playwright Chromium. These results supersede the "blocked"
+rows above, which came from a sandbox without Docker or network access.
+
+| Check | Observed result |
+| --- | --- |
+| Full Python suite with `RUN_FALKORDB_TESTS=1 RUN_DEMO_POSTGRES_TESTS=1` | 177 tests passed, none skipped (real FalkorDB, real PostgreSQL, official MCP SDK). |
+| Structured demo via `retract serve` | Seed, U1 correction, replay, U2 proposal, scoped recall, and history behaved as documented on the real graph. |
+| Phase 1 gate (`verify_phase1.py`) | Initially failed: the isolated database's ephemeral host port changed on container restart and the runner reused the old port. Fixed by re-reading the port after restart; the gate then passed, including restart without reseeding. Report: `reports/phase1-real/phase1.json`. |
+| Real memory evaluation | 14/14 cases, 0 wrong invalidations, 0 stale retrievals, plan precision/recall 1.0; update p50 2.8 ms, recall p50 1.6 ms (small synthetic fixture). Report: `reports/memory-real.json`. |
+| Phase 3 probe with SDK and PostgreSQL | Passed. Report: `reports/phase3-real.json`. |
+| Dashboard browser (375/768/1280) and live read-only smoke | Passed; screenshots in `reports/phase4/browser/`. |
+| Account settings browser and live PostgreSQL edit/restore | Passed; screenshots in `reports/account-settings/browser/`. |
+| Real Codex MCP recall | `codex exec` (read-only sandbox) called `recall` and reported F5 and P1. Trace: `reports/phase3/codex-recall-smoke.jsonl`, `reports/phase3/mcp-activity.jsonl`. This is a recall smoke test, not the fresh feature-generation exercise. |
+| Phase 5 live bundle | Every check passed except `live_model`, blocked because `GROQ_API_KEY` is not set. Report: `reports/phase5-real/RESULTS.md`. |
+
 
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter
 and rejects duplicate Content-Length headers. The complete database gate is

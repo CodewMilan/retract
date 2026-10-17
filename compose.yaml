@@ -1,6 +1,6 @@
 services:
   falkordb:
-    # Candidate pin; verify this image in the integration suite before release.
+    # Verified with the integration suite and Phase 1 restart gate.
     image: falkordb/falkordb:6.0.2
     ports:
       - "127.0.0.1:6380:6379"

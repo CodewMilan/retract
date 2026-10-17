@@ -4,11 +4,11 @@ Persistent project memory for coding agents. A confirmed, scoped correction
 supersedes an outdated fact, keeps its evidence and history, and flags plans
 with explicit dependencies on that fact.
 
-The backend and optional natural-language adapter are implemented with passing
-offline tests. Real FalkorDB integration, database persistence, and live model
-quality remain **unverified**. The MCP adapter, Codex configuration, and account
-API fixture and memory dashboard exist; the actual fresh coding-client feature
-run, browser checks, and dashboard database integration remain unverified. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
+Real FalkorDB integration, persistence across database and service restarts,
+PostgreSQL account storage, dashboard and settings browser checks, and a real
+Codex MCP recall have been verified locally. Live natural-language model quality
+(needs `GROQ_API_KEY`) and the fresh coding-client feature-generation run remain
+**unverified**. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
@@ -56,7 +56,7 @@ retract serve
 
 The API binds to `127.0.0.1:8100`; FalkorDB binds to `127.0.0.1:6380`. The
 database uses a named volume and AOF with `appendfsync always`. The image pin
-`falkordb/falkordb:6.0.2` is a candidate awaiting this project's integration run.
+`falkordb/falkordb:6.0.2` has passed this project's integration suite and restart gate.
 Configuration variables are listed in [.env.example](.env.example); export
 overrides before starting the service. No API key or inference account is
 needed for structured updates.
@@ -82,7 +82,7 @@ retract history account-settings --fact F1
 retract history account-settings --event U1
 ```
 
-Expected behavior, pending a real database run: F1 becomes superseded, F5 becomes
+Expected behavior, observed on a real database: F1 becomes superseded, F5 becomes
 active, P1 needs review, and F2–F4 remain unchanged. The MongoDB proposal does not
 replace PostgreSQL. Calling the confirmed-update command again returns the
 original result without repeating its effects. Reusing U1 for a different
