@@ -14,6 +14,12 @@ jobs:
       - run: python scripts/verify_phase2.py --report reports/phase2.json
       - run: docker compose -f compose.demo.yaml up -d --wait
       - run: python scripts/verify_phase3.py --sdk --postgres --report reports/phase3.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: python scripts/verify_phase4.py --browser --report reports/phase4.json
       - run: python scripts/verify_phase1.py --report-dir reports/phase1
       - uses: actions/upload-artifact@v4
         if: always()

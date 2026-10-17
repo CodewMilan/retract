@@ -97,3 +97,60 @@ class ModelStore:
                    if label == "UpdateEvent" and owner == project and node["scope"] == scope and node["outcome"] == "pending"]
         return {"active_facts": facts, "sources": self.sources(project, [node["id"] for node in facts]),
                 "affected_plans": [{"plan": plan} for plan in plans], "pending_conflicts": pending}
+
+    def list_projects(self):
+        projects = sorted([deepcopy(n) for (label, _, _), n in self.nodes.items() if label == 'Project'], key=lambda n: (n['name'], n['id']))
+        return {'projects': projects[:100], 'truncated': len(projects) > 100}
+
+    def dashboard_snapshot(self, project, scope=None):
+        def all_nodes(label):
+            return [deepcopy(n) for (kind, owner, _), n in self.nodes.items() if kind == label and owner == project]
+
+        truncated, counts = {}, {}
+
+        def panel(label, predicate, key):
+            nodes = sorted([n for n in all_nodes(label) if (scope is None or n.get('scope') == scope) and predicate(n)],
+                           key=lambda n: (n.get('recorded_at', ''), n['id']), reverse=True)
+            counts[key], truncated[key] = len(nodes), len(nodes) > 200
+            return nodes[:200]
+
+        facts = panel('Fact', lambda n: n['status'] == 'active', 'active') + panel('Fact', lambda n: n['status'] == 'superseded', 'superseded')
+        plans = panel('Plan', lambda n: n['status'] == 'needs_review', 'affected')
+        pending = panel('UpdateEvent', lambda n: n['outcome'] in ('pending', 'proposal'), 'pending')
+        recent = panel('UpdateEvent', lambda n: True, 'updates')
+        updates = list({n['id']: n for n in recent + pending}.values())
+        scopes = sorted({n['scope'] for label in ('Fact', 'Plan', 'UpdateEvent') for n in all_nodes(label)})
+        edges, paths = [], []
+
+        def edge(kind, left_label, left, right_label, right):
+            def clean(label, node_id):
+                return {k: v for k, v in self.get(label, project, node_id).items() if k not in ('fingerprint', 'result_json')}
+            edges.append({'relationship': kind, 'from': clean(left_label, left), 'to': clean(right_label, right)})
+
+        for owner, source, fact in sorted(self.supports):
+            if owner == project and any(n['id'] == fact for n in facts):
+                edge('SUPPORTS', 'Source', source, 'Fact', fact)
+        for owner, newer, older in sorted(self.replacements):
+            if owner == project and any(n['id'] == newer for n in facts):
+                edge('SUPERSEDES', 'Fact', newer, 'Fact', older)
+        for owner, plan, fact in sorted(self.dependencies):
+            if owner == project and any(n['id'] == plan for n in plans):
+                edge('DEPENDS_ON', 'Plan', plan, 'Fact', fact)
+        for event in updates:
+            result = json.loads(event['result_json'])
+            edge('BASED_ON', 'UpdateEvent', event['id'], 'Source', result['source_id'])
+            for kind, key, label in [('RETIRED', 'retired_fact_ids', 'Fact'), ('ACCEPTED', 'accepted_fact_ids', 'Fact'), ('FLAGGED', 'flagged_plan_ids', 'Plan')]:
+                for target in result[key]:
+                    edge(kind, 'UpdateEvent', event['id'], label, target)
+        for owner, event_id, plan in sorted(self.flagged):
+            if owner != project or not any(n['id'] == plan for n in plans):
+                continue
+            event = self.get('UpdateEvent', project, event_id)
+            result = json.loads(event.pop('result_json'))
+            event.pop('fingerprint')
+            for fact in result['retired_fact_ids']:
+                if (project, plan, fact) in self.dependencies:
+                    paths.append({'event': event, 'plan': self.get('Plan', project, plan), 'fact': self.get('Fact', project, fact)})
+        truncated.update(edges=len(edges) > 1000, scopes=len(scopes) > 200, explanation_paths=len(paths) > 1000)
+        return {'facts': facts, 'plans': plans, 'updates': updates, 'counts': counts, 'scopes': scopes[:200],
+                'edges': edges[:1000], 'explanation_paths': paths[:1000], 'truncated': truncated}

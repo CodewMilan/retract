@@ -1,0 +1,12 @@
+{
+  "name": "retract-dashboard-checks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/dashboard-model.test.mjs",
+    "test:browser": "node tests/dashboard.browser.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

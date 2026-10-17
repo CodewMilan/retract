@@ -61,6 +61,23 @@ class FalkorDBTests(unittest.TestCase):
         for fact, original in before.items():
             self.assertEqual(self.store.get("Fact", "account-settings", fact), original)
 
+    def test_dashboard_reads_real_graph_edges_counts_and_cross_scope_paths(self):
+        self.service.record_plan(PlanInput("account-settings", "other-scope", "Use browser auth", ["F1"], "cross-plan"))
+        self.service.process_update(confirmed_update())
+        snapshot = self.service.dashboard("account-settings", "web-client/main")
+        self.assertEqual(snapshot["counts"]["active"], 1)
+        self.assertEqual(snapshot["counts"]["superseded"], 1)
+        self.assertEqual(snapshot["counts"]["affected"], 1)
+        self.assertTrue(any(e["relationship"] == "SUPERSEDES" and e["from"]["id"] == "F5" and e["to"]["id"] == "F1" for e in snapshot["edges"]))
+        self.assertNotIn("fingerprint", json.dumps(snapshot))
+        self.assertEqual(snapshot["updates"][0]["result"]["event_id"], "U1")
+        cross = self.service.dashboard("account-settings", "other-scope")
+        self.assertEqual(cross["updates"], [])
+        self.assertEqual(cross["explanation_paths"][0]["event"]["scope"], "web-client/main")
+        self.service.create_project("empty", "Empty")
+        self.assertEqual(self.service.dashboard("empty")["facts"], [])
+        self.assertEqual(len(self.service.list_projects()["projects"]), 2)
+
     def test_proposals_ambiguity_and_untrusted_updates_preserve_accepted_facts(self):
         for index, changes in enumerate(({"classification": "proposal"}, {"classification": "ambiguous"},
                                          {"confirmation": False},

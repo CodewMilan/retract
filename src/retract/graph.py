@@ -262,14 +262,22 @@ class GraphStore:
         # this project. Expose that scope explicitly, never invent an endpoint.
         edges = self.query(
             "MATCH (a {project_id: $project})-[r]->(b {project_id: $project}) WHERE "
-            "(type(r) = 'SUPPORTS' AND b:Fact AND b.id IN $facts) OR "
-            "(type(r) = 'SUPERSEDES' AND a:Fact AND a.id IN $facts) OR "
-            "(type(r) = 'DEPENDS_ON' AND a:Plan AND a.id IN $plans) OR "
-            "(type(r) IN ['BASED_ON', 'RETIRED', 'ACCEPTED', 'FLAGGED'] AND a:UpdateEvent AND a.id IN $events) "
+            "(type(r) = 'SUPPORTS' AND 'Fact' IN labels(b) AND b.id IN $facts) OR "
+            "(type(r) = 'SUPERSEDES' AND 'Fact' IN labels(a) AND a.id IN $facts) OR "
+            "(type(r) = 'DEPENDS_ON' AND 'Plan' IN labels(a) AND a.id IN $plans) OR "
+            "(type(r) IN ['BASED_ON', 'RETIRED', 'ACCEPTED', 'FLAGGED'] AND 'UpdateEvent' IN labels(a) AND a.id IN $events) "
             "RETURN type(r), properties(a), properties(b) ORDER BY type(r), a.id, b.id LIMIT 1001",
             edge_params,
         )
         truncated["edges"] = len(edges) > 1000
+        paths = self.query(
+            "MATCH (e:UpdateEvent {project_id: $project})-[:FLAGGED]->"
+            "(p:Plan {project_id: $project}), "
+            "(e)-[:RETIRED]->(f:Fact {project_id: $project})<-[:DEPENDS_ON]-(p) "
+            "WHERE p.id IN $plans RETURN properties(e), properties(p), properties(f) "
+            "ORDER BY e.id, p.id, f.id LIMIT 1001", edge_params,
+        )
+        truncated["explanation_paths"] = len(paths) > 1000
         scopes = self.query(
             "MATCH (n {project_id: $project}) WHERE n.scope IS NOT NULL "
             "RETURN DISTINCT n.scope ORDER BY n.scope LIMIT 201", {"project": project},
@@ -283,4 +291,6 @@ class GraphStore:
         return {"facts": facts, "plans": plans, "updates": updates, "counts": counts,
                 "scopes": [row[0] for row in scopes[:200]], "truncated": truncated,
                 "edges": [{"relationship": kind, "from": endpoint(a), "to": endpoint(b)}
-                          for kind, a, b in edges[:1000]]}
+                          for kind, a, b in edges[:1000]],
+                "explanation_paths": [{"event": endpoint(e), "plan": endpoint(p), "fact": endpoint(f)}
+                                      for e, p, f in paths[:1000]]}
