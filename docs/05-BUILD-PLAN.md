@@ -1,6 +1,6 @@
 # Build plan and submission checklist
 
-Status: milestones 1–3 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks, live model evaluation, and a real coding-client feature run remain unverified. Milestones 4–5 remain pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
+Status: milestones 1–4 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks, live model evaluation, and a real coding-client feature run remain unverified. Dashboard browser/database validation remains unverified. Milestone 5 remains pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
 
 ## Phase execution rule
 
@@ -29,6 +29,11 @@ PostgreSQL, and live service-probe flags are documented in the
 and frontend feature checks remain separate required evidence. Independent
 Phase 3 implementation continued at the user's next-phase request while earlier
 environment-blocked gates stayed open.
+
+Phase 4's dashboard was implemented at the user's next-phase request while earlier
+live gates remained unresolved. Offline checks are `python scripts/verify_phase4.py`;
+browser and real-graph commands are in the [dashboard guide](09-DASHBOARD.md).
+Its actual-state exit gate remains unverified.
 
 ## Milestone 1 — Graph-backed correction flow
 

@@ -7,8 +7,8 @@ with explicit dependencies on that fact.
 The backend and optional natural-language adapter are implemented with passing
 offline tests. Real FalkorDB integration, database persistence, and live model
 quality remain **unverified**. The MCP adapter, Codex configuration, and account
-API fixture exist; the actual fresh coding-client feature run and dashboard
-remain unfinished. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
+API fixture and memory dashboard exist; the actual fresh coding-client feature
+run, browser checks, and dashboard database integration remain unverified. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
@@ -73,11 +73,13 @@ but that alone does not prove that a source or extraction is truthful.
 ## API
 
 All POST routes accept JSON objects, with a 64 KiB request limit. Source text is
-treated as data. The HTTP adapter uses the same `MemoryService` that later
-dashboard and MCP adapters will use.
+treated as data. The HTTP adapter, dashboard, and MCP adapter share the same `MemoryService`.
 
 | Route | Inputs |
 | --- | --- |
+| `GET /` | Local memory dashboard. |
+| `GET /api/projects` | Bounded project picker. |
+| `POST /dashboard` | `project_id`, optional `scope` (null for all); bounded memory snapshot and activity. |
 | `GET /health` | Checks a real database query; unavailable storage returns 503. |
 | `POST /projects` | `project_id`, `name` |
 | `POST /remember` | `project_id`, `scope`, `subject`, `predicate`, `value`, `source`; optional `fact_id`, `expected_revision` |
@@ -156,6 +158,21 @@ dependencies and databases available, review the generated launch script and
 follow the [Phase 3 instructions](docs/08-MCP-AND-CODING-CLIENT.md) to record the
 real coding run and feature checks. That run is still unverified here.
 
+## Memory dashboard
+
+Open `http://127.0.0.1:8100/` while `retract serve` is running. Select a project
+and scope to inspect current facts, superseded facts, proposals/pending updates,
+affected plans, update history, and recent API activity. Create projects,
+remember accepted facts with evidence, and record plain-language or explicit
+updates. Authority and replacement confirmation are separate controls.
+
+The neutral interface is served by Python; no Node process is needed to use it.
+Run `python scripts/verify_phase4.py` for offline checks. Browser checks require
+`npm install --ignore-scripts`, `npx playwright install chromium`, then
+`python scripts/verify_phase4.py --browser`. Browser startup is blocked in this
+session; no visual or live database pass is claimed. See the
+[dashboard guide](docs/09-DASHBOARD.md) for limits, retry behavior, and live checks.
+
 ## Verification
 
 Development is organized into five phases in the build plan: graph-backed memory,
@@ -228,8 +245,10 @@ against it. There is intentionally no automatic destructive reset command.
 Run the real FalkorDB suite and restart checks, fix any query/SDK incompatibility,
 and pin the verified client and image versions. Run the Phase 2 live evaluation
 and resolve any classifier failures. Run the configured coding-client exercise
-and inspect its real recall and feature-test evidence. The dashboard follows
-those gates as specified by [the build plan](docs/05-BUILD-PLAN.md).
+and inspect its real recall and feature-test evidence. Run the dashboard browser
+and real graph checks described in [the dashboard guide](docs/09-DASHBOARD.md).
+The next implementation phase is evaluation and submission; earlier live gates
+remain open as recorded in [the build plan](docs/05-BUILD-PLAN.md).
 
 Implementation was developed with OpenAI Codex assistance. Runtime dependency:
 the official [FalkorDB Python client](https://github.com/FalkorDB/falkordb-py).

@@ -1,6 +1,6 @@
 import {views, number, rowsFor, updateRequest, RequestDraft} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
-const state = {snapshot: null, project: '', scope: '', view: 'active', selection: null, ready: false, generation: 0, submitting: false};
+const state = {snapshot: null, project: '', scope: '', view: 'active', selection: null, ready: false, generation: 0, submitting: false, loadingProjects: false};
 const drafts = {update: new RequestDraft(), remember: new RequestDraft()};
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const el = (tag, content, cls) => {
@@ -14,7 +14,7 @@ function ready(value) {
   state.ready = value;
   $('update').disabled = !value || !state.snapshot?.facts.some(f => f.status === 'active');
   $('remember').disabled = !value;
-  $('project').disabled = state.submitting;
+  $('project').disabled = state.submitting || state.loadingProjects;
   $('scope').disabled = !value || state.submitting;
 }
 async function api(route, body) {
@@ -114,9 +114,11 @@ function render() {
 }
 async function loadSnapshot({quiet = false} = {}) {
   const generation = ++state.generation;
-  ready(false); state.selection = null;
+  ready(false); state.selection = null; state.snapshot = null; render();
+  $('context').textContent = state.project ? `${$('project').selectedOptions[0]?.textContent || state.project} / ${state.scope || 'All scopes'}` : 'Workspace memory';
   if (!state.project) { state.snapshot = null; render(); $('connection').textContent = 'No project selected'; $('snapshot-meta').textContent = 'Create a project to store memory.'; return true; }
   $('connection').textContent = 'Reading storage…'; $('records').setAttribute('aria-busy', 'true');
+  $('records').replaceChildren(el('p', 'Reading project memory…', 'empty'));
   try {
     const snapshot = await api('/dashboard', {project_id: state.project, scope: state.scope || null});
     if (generation !== state.generation) return false;
@@ -138,6 +140,8 @@ async function loadSnapshot({quiet = false} = {}) {
   } finally { if (generation === state.generation) $('records').removeAttribute('aria-busy'); }
 }
 async function loadProjects(preferred = state.project) {
+  if (state.loadingProjects) return;
+  state.loadingProjects = true; $('refresh').disabled = true;
   ready(false); $('connection').textContent = 'Loading projects…';
   try {
     const result = await api('/api/projects');
@@ -150,7 +154,11 @@ async function loadProjects(preferred = state.project) {
     $('project').value = state.project;
     await loadSnapshot();
     if (result.truncated) notice('Showing the first 100 projects. Open other projects by their ID through the API.');
-  } catch (error) { notice(error.message); $('connection').textContent = 'Service unavailable'; $('project').replaceChildren(); option($('project'), '', 'Projects unavailable'); render(); }
+  } catch (error) {
+    state.snapshot = null; state.selection = null;
+    notice(error.message); $('connection').textContent = 'Service unavailable'; $('project').replaceChildren(); option($('project'), '', 'Projects unavailable');
+    $('snapshot-meta').textContent = 'No current snapshot. Refresh to retry.'; render();
+  } finally { state.loadingProjects = false; $('refresh').disabled = false; ready(state.ready); }
 }
 function show(dialog) { $(dialog).showModal(); }
 function openUpdate(target) {
@@ -194,6 +202,7 @@ async function submit(form, errorId, action) {
 $('update-form').onsubmit = event => {
   event.preventDefault(); if (!state.ready) { $('update-error').textContent = 'Refresh context before recording an update.'; return; }
   const fact = state.snapshot.facts.find(f => f.id === $('target').value);
+  if (!fact || fact.status !== 'active') { $('update-error').textContent = 'No current target. Refresh context and select an accepted fact.'; return; }
   const draft = {mode: $('mode').value, text: $('update-text').value, title: $('update-source-title').value,
     authority: $('authority').checked, confirmation: $('confirmation').checked,
     classification: $('classification').value, value: $('replacement').value};

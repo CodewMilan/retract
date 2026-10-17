@@ -1,0 +1,129 @@
+# Phase 4: memory dashboard
+
+The local Python service now serves the dashboard at `http://127.0.0.1:8100/`.
+Start it with `retract serve` after following the root README's database setup.
+The dashboard is included as package data; it needs no Node process or frontend
+build at runtime. Node and Playwright are development test tools only.
+
+## Available workflow
+
+Select a project and optionally an exact scope. Current facts, superseded facts,
+pending updates/proposals, affected plans, update history, and request activity
+have separate views. Search filters the loaded records. Selecting a record opens
+its evidence, status, and actual stored relationships. Affected plans include
+`FLAGGED`, `RETIRED`, and `DEPENDS_ON` explanation paths, including dependencies
+or triggering updates from another scope in the same project.
+
+Create a project explicitly, then use **Remember fact** to store an accepted
+value with source evidence. No fixture is automatically inserted. **Record update**
+targets a currently accepted key and supports:
+
+- Plain language through the existing optional Groq endpoint. The service needs
+  `GROQ_API_KEY`; submitted text and the selected fact are sent to Groq. No key
+  is sent to the browser.
+- An explicit classification and proposed value through the structured endpoint,
+  without a model dependency.
+
+Authority and replacement confirmation start unchecked. A proposal, ambiguous
+update, untrusted source, or unconfirmed correction cannot replace accepted
+memory. The result panel displays the service's actual outcome, before/after
+values for applied updates, retired/accepted IDs, and flagged plans. Facts are
+refetched after a successful write. A failed refresh disables further writes.
+
+Changed drafts receive new event/source IDs. An unchanged update retry preserves
+the exact request IDs and body, allowing the existing event replay contract to
+handle a lost response. A revision conflict preserves the draft; **Refresh
+context** rereads the current decision and clears replacement confirmation.
+Review and confirm again before creating the new request. Remember-fact retries
+also preserve their IDs, but a lost successful response may require a refresh
+because that endpoint checks revisions before duplicate evidence.
+
+Pending/proposal records are immutable events. To accept a reviewed candidate,
+record a new update against the current fact; there is no destructive “approve
+old event” operation. The dashboard does not resolve an affected plan or change
+its dependencies automatically.
+
+## Read and activity contracts
+
+- `GET /api/projects` returns up to 100 projects and a truncation flag.
+- `POST /dashboard` accepts `project_id` and optional `scope` (null means all).
+  It returns project revision, observation time, facts, events, affected plans,
+  actual counts, evidence edges, explanation paths, available scopes, and request
+  activity. Reads share the service lock and never change project revision.
+- Each panel loads at most 200 records. Recent updates and pending/proposals
+  have independent limits, so older pending records are not hidden by recent
+  applied updates. Edges and explanation paths each cap at 1,000, scopes at 200.
+  Truncation is explicit in both the response and UI. Counts are database totals
+  for the selected scope; search operates on loaded records only.
+- Source nodes and relationship endpoints are restricted to the selected project.
+  Relationships may expose the exact scope of a dependency within that project.
+  Replay fingerprints and internal serialized result fields are removed.
+
+The graph reader uses the documented [`labels`, `type`, and `properties`
+functions](https://falkordb.github.io/docs-staging/cypher/functions/). Query design
+and controlled tests are not evidence that the chosen database image executes it;
+the opt-in integration test remains required.
+
+Request activity is an actual HTTP request metadata journal, capped at 200
+entries for the service and 50 displayed per project/filter. It records route,
+status, elapsed milliseconds, project/scope/event IDs, and caller label. It does
+not retain raw source text, credentials, request bodies, or exception messages.
+The MCP adapter supplies `X-Retract-Client: mcp`; the dashboard supplies
+`dashboard`. Labels are caller-supplied, not authenticated proof of a coding
+client's identity or task completion. Activity clears on service restart;
+durable update history stays in FalkorDB. Dashboard reads, static files, and
+health probes do not fill the activity journal.
+
+## Interface and serving
+
+Neutral system typography and a responsive list/inspector layout follow
+[brand.md](../brand.md). Dark mode follows system preferences. Controls have
+visible labels and focus styles; dialogs use native focus handling and Escape.
+Request errors preserve inputs, empty states have explicit wording, and motion
+is disabled under reduced-motion preferences. Source text is inserted with
+`textContent`, never interpreted as HTML. Static paths are allow-listed and sent
+with a restrictive same-origin CSP. Existing loopback Host/Origin checks apply.
+No external fonts, scripts, telemetry, or assets are requested by the dashboard.
+
+## Verification
+
+```sh
+python scripts/verify_phase4.py
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+Real Chromium interaction checks with controlled network responses:
+
+```sh
+npm install --ignore-scripts
+npx playwright install chromium
+python scripts/verify_phase4.py --browser
+```
+
+The browser suite covers 375/768/1280-pixel layouts, dark/reduced-motion settings,
+source HTML escaping, filtering, missing model configuration, proposals,
+corrections, stale retries, graph paths, storage errors, project creation, and
+remembering a fact. It captures real browser screenshots under
+`reports/phase4/browser/` when it can run. These are UI checks with controlled
+responses, not database evidence. CI is configured to run them.
+
+With an actual running and seeded service, add a read-only browser smoke check:
+
+```sh
+python scripts/verify_phase4.py --browser --live-url http://127.0.0.1:8100
+RUN_FALKORDB_TESTS=1 python -m unittest tests.test_integration -v
+```
+
+The real graph suite now includes dashboard counts, replacement edges, isolation,
+and cross-scope explanations. It is also part of the existing Phase 1 runner.
+
+Observed here: 12 Phase 4 Python checks and 7 JavaScript checks pass. The complete
+Python suite passes on Python 3.12 and 3.14: 135 passed, 16 explicitly skipped
+(13 FalkorDB, 2 PostgreSQL, 1 MCP SDK). Chromium launch failed before any UI
+scenario due to the sandbox's denied Mach-port registration; browser screenshots,
+layout, keyboard interaction, and live dashboard behavior remain unverified.
+Offline wheel building was also unavailable because the installed Python lacks
+setuptools; CI includes a wheel asset check. Reports are
+`reports/phase4-offline.json` and `reports/phase4-browser-attempt.json`.
+The phase's actual-state/browser exit gate remains open, along with earlier
+live database, model, and coding-client gates.

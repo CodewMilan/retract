@@ -38,6 +38,17 @@ the proposed behavior in the original specification.
 - Phase 3 offline checks, optional SDK/PostgreSQL checks, an actual-service probe,
   and a real MCP-to-graph integration test. See [Phase 3 notes](08-MCP-AND-CODING-CLIENT.md).
 
+- A local neutral dashboard served by the same Python process: current/history,
+  pending/proposals, affected plans, update outcomes, evidence, and actual API
+  request activity. Project creation, accepted-fact entry, structured and natural
+  updates, revision conflicts, and unchanged-event retries use the existing API.
+- Bounded read snapshots with exact totals, explicit truncation, project isolation,
+  and graph-derived cross-scope plan explanations. Static assets are packaged with
+  the service, with restricted routes and CSP. See [Phase 4 notes](09-DASHBOARD.md).
+- Phase 4 Python/JavaScript tests, opt-in Chromium interaction checks, and a real
+  dashboard graph integration test. Browser checks and wheel validation are wired
+  into CI, whose execution remains unobserved.
+
 ## Actual verification
 
 Environment: macOS, Python 3.14.6 and the installed Python 3.12. Offline tests pass
@@ -46,7 +57,7 @@ not yet been observed.
 
 | Check | Observed result |
 | --- | --- |
-| Offline unittest discovery | 123 tests passed on Python 3.12 and 3.14; 12 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
+| Offline unittest discovery | 135 tests passed on Python 3.12 and 3.14; 13 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
 | Python compileall | Passed for `src` and `tests`. |
 | CLI help | Passed. |
 | Docker Compose configuration validation | Passed. |
@@ -70,7 +81,13 @@ not yet been observed.
 | Official MCP SDK interoperability | Not run; optional package unavailable. |
 | Real coding-client MCP call | Adapter/config/task implemented; a successful call by the actual coding client has not been observed. |
 | Settings frontend feature tests | Not run; the frontend is the prepared fresh-agent task, not a claimed generated result. |
-| Dashboard | Not implemented. |
+| Phase 4 Python/API checks | 12 passed. Test-only repository model plus actual HTTP handler transport; real Cypher is separate. |
+| Phase 4 JavaScript model checks | 7 passed with Node 24.14.1. |
+| Full Python regression after Phase 4 | 151 discovered: 135 passed, 16 skipped on both Python versions. Compileall and JS syntax checks passed. |
+| Phase 4 offline runner | Exited 0; report `reports/phase4-offline.json`. |
+| Dashboard browser interactions/layout | Attempted; Chromium terminated during launch with sandbox Mach-port registration permission denied. Exited 1 before scenarios; report `reports/phase4-browser-attempt.json`. No screenshots or visual pass. |
+| Dashboard real graph/live browser | Not verified; new real-graph test explicitly skipped without its dependency/service. |
+| Wheel asset inclusion | Package-data configured; local wheel build unavailable because setuptools is missing. CI check prepared, not observed. |
 
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter
 and rejects duplicate Content-Length headers. The complete database gate is
@@ -110,10 +127,10 @@ and [upstream FOREACH/rollback tests](https://github.com/FalkorDB/FalkorDB/blob/
 The upstream tests informed the query design; they do not substitute for running
 this project's correction rollback test against the chosen image.
 
-The first three milestones are **in progress**, not complete. Their outstanding
+The first four milestones are **in progress**, not complete. Their outstanding
 gates are actual database integration/restart retention and live classification
 evaluation, plus a real coding-client recall and generated feature checks. Follow
 the commands in the [root README](../README.md), [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md),
-and [Phase 3 notes](08-MCP-AND-CODING-CLIENT.md), then append the real results here.
+[Phase 3 notes](08-MCP-AND-CODING-CLIENT.md), and [Phase 4 notes](09-DASHBOARD.md), then append the real results here.
 Do not silently replace skipped checks or controlled-response tests with claimed
-database/model passes. The dashboard remains pending.
+database/model passes. The dashboard code is implemented; its browser and actual-state exit gates remain open.
