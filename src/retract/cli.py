@@ -49,6 +49,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     serve = commands.add_parser("serve")
     serve.add_argument("--port", type=int, default=int(os.getenv("RETRACT_PORT", "8100")))
+    mcp = commands.add_parser("mcp", help="Serve the four memory tools over MCP stdio")
+    mcp.add_argument("--activity-log", type=Path, help="Append actual tool metadata to a local JSONL log")
     request = commands.add_parser("call", help="POST a structured JSON file to an API route")
     request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "recall", "history"])
     request.add_argument("file", type=Path)
@@ -65,6 +67,10 @@ def main():
     target.add_argument("--event")
     args = parser.parse_args()
     try:
+        if args.command == "mcp":
+            from .mcp import serve as serve_mcp
+            serve_mcp(args.url, args.activity_log)
+            return
         if args.command == "serve":
             from .api import make_server
             from .graph import GraphStore
