@@ -34,7 +34,8 @@ the proposed behavior in the original specification.
   actual installed CLI configuration recognition was checked.
 - A separate synthetic account API with PostgreSQL runtime storage, cookie-session,
   CSRF, ownership, and explicit demo login/seed contracts. The settings frontend
-  is the fresh-agent exercise and has not been generated.
+  is now implemented directly; the original fresh-agent exercise remains a
+  separate unverified integration gate.
 - Phase 3 offline checks, optional SDK/PostgreSQL checks, an actual-service probe,
   and a real MCP-to-graph integration test. See [Phase 3 notes](08-MCP-AND-CODING-CLIENT.md).
 
@@ -60,6 +61,15 @@ the proposed behavior in the original specification.
   graph cleanup boundaries, and blocked-result propagation. See
   [Phase 5 notes](10-EVALUATION-AND-RELEASE.md).
 
+- The account-settings frontend at `/settings`: synthetic sign-in, cookie-session
+  recovery, display-name editing, save/retry, expiry/reauthentication, owner-bound
+  drafts, and confirmed sign-out. Static assets are included in the Python package.
+- Actual frontend-client-to-HTTP-handler tests using controlled profile storage,
+  static/CSP/origin checks, and an opt-in Chromium suite with optional actual
+  PostgreSQL edit/restore. The ongoing build used code and approved notes after
+  CLI recall failed; no successful memory retrieval or fresh-client generation
+  is inferred. See [the account example](../examples/account-settings/README.md).
+
 ## Actual verification
 
 Environment: macOS, Python 3.14.6 and the installed Python 3.12. Offline tests pass
@@ -68,7 +78,7 @@ not yet been observed.
 
 | Check | Observed result |
 | --- | --- |
-| Offline unittest discovery | 156 tests passed on Python 3.12 and 3.14; 13 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
+| Offline unittest discovery | 161 tests passed on Python 3.12 and 3.14; 13 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
 | Python compileall | Passed for `src` and `tests`. |
 | CLI help | Passed. |
 | Docker Compose configuration validation | Passed. |
@@ -91,7 +101,7 @@ not yet been observed.
 | Real demo PostgreSQL storage | Not verified; optional dependency and Docker inaccessible here. |
 | Official MCP SDK interoperability | Not run; optional package unavailable. |
 | Real coding-client MCP call | Adapter/config/task implemented; a successful call by the actual coding client has not been observed. |
-| Settings frontend feature tests | Not run; the frontend is the prepared fresh-agent task, not a claimed generated result. |
+| Settings frontend HTTP/client tests | 15 Python contract/static checks and 15 JavaScript feature checks pass. JavaScript requests traverse the actual Python HTTP handler; only profile storage and cookie transport are test-controlled. |
 | Phase 4 Python/API checks | 12 passed. Test-only repository model plus actual HTTP handler transport; real Cypher is separate. |
 | Phase 4 JavaScript model checks | 7 passed with Node 24.14.1. |
 | Full Python regression after Phase 4 | 151 discovered: 135 passed, 16 skipped on both Python versions. Compileall and JS syntax checks passed. |
@@ -107,6 +117,11 @@ not yet been observed.
 | Phase 5 final offline bundle | Exited 0 with `offline_passed_live_unverified`; report: `reports/phase5-final/phase5.json`. Source/artifact hashes and test logs retained. |
 | Runtime benchmark / comparative results | Not measured. Wrong invalidations, stale retrieval, plan precision/recall, classification accuracy, runtime latency, and usage remain unknown. Controlled fixture scores are not substituted. |
 | Submission / working video | Draft and rehearsal instructions prepared; no published repository visibility, real coding-client feature evidence, or genuine working video verified. No form submitted. |
+| Account-settings browser attempt | Exited 1 during Chromium sandbox startup before any scenario. DOM, keyboard, layout, actual-browser cookies, screenshots, and live PostgreSQL behavior remain unverified. Report: `reports/account-settings-browser-attempt.json`. |
+| Continued-build memory recall | Actual CLI recall attempted for browser-api; service unavailable. No fact/source IDs retrieved, no memory changed. |
+| Full regression after account-settings implementation | 177 Python tests: 161 passed, 16 skipped on Python 3.12 and 3.14. All 22 JavaScript checks pass. |
+| Latest offline evidence bundle | `reports/account-settings-final/phase5.json`; source/artifact hashes, regression logs, and bounded release-pattern scan retained. |
+
 
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter
 and rejects duplicate Content-Length headers. The complete database gate is

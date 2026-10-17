@@ -2,8 +2,10 @@
 
 Status: the adapter, Codex configuration generator, synthetic account API, and
 offline checks are implemented. Codex CLI 0.162.1 recognizes the generated
-configuration. A real coding-client recall and generated settings frontend have
-not been observed. Database, optional SDK, and real PostgreSQL checks remain
+configuration. A real fresh coding-client recall has not been observed. The
+settings frontend is now implemented directly in the continuing build; its
+controlled HTTP/client checks pass, while real-browser and PostgreSQL checks
+remain unverified. Database, optional SDK, and real PostgreSQL checks remain
 unverified in this restricted session. This is not a completed Phase 3 exit gate.
 
 ## Memory tools
@@ -100,7 +102,8 @@ The [synthetic account API](../examples/account-settings/README.md) exposes the
 current cookie-session contract with profile ownership and CSRF checks. Its runtime
 uses PostgreSQL so memory fact F3 is not contradicted by a SQLite fallback. It has
 explicit Alice/Bob demo login, not real authentication. Only synthetic accounts
-and localhost access are supported. The frontend remains the fresh coding task.
+and localhost access are supported. The frontend is now served at `/settings`;
+its implementation and tests are documented in the example README.
 
 ```sh
 python -m pip install -e '.[demo,mcp-test]'
@@ -117,8 +120,11 @@ the demo's public tables. The offline test-only store is not a runtime fallback.
 The task requires the coding client to retrieve browser-authentication and
 account-service facts, inspect the working backend and approved notes, implement
 `/settings`, and run browser/request checks for cookie sessions, CSRF, ownership,
-and the absence of bearer construction. That frontend generation and those
-browser checks have not happened here. Existing tests verify the backend contract.
+and the absence of bearer construction. Direct implementation and HTTP/client
+tests now exist. Chromium startup is blocked here, so browser behavior remains
+unverified. A fresh-client construction run must use the pre-frontend baseline
+documented in the example README; a review on the current tree is not feature
+generation.
 
 ## Checks
 

@@ -18,7 +18,7 @@ function controls() {
   $('edit-state').textContent = changed() ? 'Unsaved changes' : 'No unsaved changes';
   for (const form of [$('login-form'), $('profile-form')]) form.setAttribute('aria-busy', String(state.busy));
 }
-function render({focus = false} = {}) {
+function render() {
   const user = client.user;
   $('loading').hidden = !state.booting;
   $('signed-out').hidden = state.booting || Boolean(user);
@@ -28,13 +28,11 @@ function render({focus = false} = {}) {
     $('email').value = user.email;
     $('signed-in-as').textContent = `Signed in as ${user.email}`;
     $('avatar').textContent = [...user.display_name.trim()][0]?.toUpperCase() || '';
-    if (focus) $('display-name').focus();
   } else if (!state.booting) {
     // The in-memory draft remains owner-bound after expiration, never visible
     // in another account's form. Successful sign-out discards it explicitly.
     $('display-name').value = ''; $('email').value = '';
     $('signed-in-as').textContent = ''; $('avatar').textContent = '';
-    if (focus) $('sign-in').focus();
   }
   controls();
 }
@@ -46,8 +44,10 @@ async function perform(label, button, action) {
   try { await action(); }
   catch (failure) {
     message();
-    error(failure.status === 401 ? 'Your session expired. Sign in again to continue. Your draft is kept for this account until you leave the page.' : failure.message);
+    error(failure.status === 401 ? 'Your session expired. Sign in again to continue. Your draft is kept for this account until you leave the page.'
+      : failure.status === 403 ? 'Your session changed or this profile is unavailable. Refresh your session before trying again.' : failure.message);
     render();
+    if (!client.user) state.focus = 'sign-in';
   } finally {
     state.busy = false;
     if (button) button.textContent = previous;

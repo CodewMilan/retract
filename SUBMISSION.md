@@ -29,8 +29,10 @@ In the synthetic example, browser authentication changes from bearer tokens to
 HTTP-only cookie sessions. The expected graph transition replaces F1 with F5
 and flags P1 while preserving CLI authentication, PostgreSQL, and profile
 ownership. The actual backend for the fresh coding exercise already exposes a
-cookie/CSRF/ownership contract. Implementing its settings frontend in a fresh
-coding session remains an unverified integration step.
+cookie/CSRF/ownership contract. Its settings frontend is now implemented, with
+passing controlled HTTP/client checks. A fresh coding-client recall/construction
+run, real browser behavior, and PostgreSQL-backed feature checks remain
+unverified integration steps.
 
 ## Why the graph is central
 

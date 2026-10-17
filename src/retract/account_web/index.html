@@ -29,7 +29,7 @@
   <section id="profile" class="panel" aria-labelledby="profile-heading" hidden>
    <div class="profile-heading"><div class="avatar" id="avatar" aria-hidden="true"></div><div><h2 id="profile-heading">Profile</h2><p id="signed-in-as" class="muted"></p></div><button id="sign-out" type="button" class="quiet">Sign out</button></div>
    <form id="profile-form">
-    <div class="field"><label for="display-name">Display name <span class="muted">(required)</span></label><input id="display-name" type="text" autocomplete="name" spellcheck="false" maxlength="160" required aria-describedby="name-hint name-error"><p id="name-hint" class="hint">Use 1–80 characters.</p><p id="name-error" class="field-error" hidden></p></div>
+    <div class="field"><label for="display-name">Display name <span class="muted">(required)</span></label><input id="display-name" type="text" autocomplete="name" spellcheck="false" maxlength="160" required aria-describedby="name-hint name-error"><p id="name-hint" class="hint">Use 1–80 characters.</p><p id="name-error" class="field-error" aria-live="polite" hidden></p></div>
     <div class="field"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" readonly aria-describedby="email-hint"><p id="email-hint" class="hint">Your email address is fixed in this demo.</p></div>
     <div class="form-actions"><span id="edit-state" class="muted">No unsaved changes</span><button id="save" type="submit" class="primary" disabled>Save changes</button></div>
    </form>

@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/dashboard-model.test.mjs",
-    "test:browser": "node tests/dashboard.browser.mjs"
+    "test": "node --test tests/dashboard-model.test.mjs tests/account-client.test.mjs",
+    "test:browser": "node tests/dashboard.browser.mjs",
+    "test:account-browser": "node tests/account-settings.browser.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

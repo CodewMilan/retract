@@ -38,7 +38,7 @@ def source_manifest(root=ROOT):
 def run_check(command, logfile, *, timeout=120):
     try:
         with logfile.open('w') as output:
-            completed = subprocess.run(command, cwd=ROOT, env={**os.environ, 'PYTHONPATH': str(ROOT / 'src')},
+            completed = subprocess.run(command, cwd=ROOT, env={**os.environ, 'PYTHONPATH': str(ROOT / 'src'), 'PYTHON': sys.executable},
                                        stdout=output, stderr=subprocess.STDOUT, timeout=timeout)
         return {'status': 'passed' if completed.returncode == 0 else 'blocked_or_failed', 'exit_code': completed.returncode,
                 'log': logfile.name}
@@ -101,7 +101,7 @@ def run(report_dir, *, live=False):
             report['installed_packages'][package] = None
     commands = {
         'python_regression': [sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-v'],
-        'javascript': ['node', '--test', 'tests/dashboard-model.test.mjs'],
+        'javascript': ['node', '--test', 'tests/dashboard-model.test.mjs', 'tests/account-client.test.mjs'],
     }
     if live:
         commands.update({
@@ -109,6 +109,7 @@ def run(report_dir, *, live=False):
             'live_model': [sys.executable, 'scripts/verify_phase2.py', '--live', '--report', str(report_dir / 'phase2.json')],
             'sdk_and_postgres': [sys.executable, 'scripts/verify_phase3.py', '--sdk', '--postgres', '--report', str(report_dir / 'phase3.json')],
             'browser': [sys.executable, 'scripts/verify_phase4.py', '--browser', '--report', str(report_dir / 'phase4.json')],
+            'account_settings_browser': [sys.executable, 'scripts/verify_account_settings.py', '--browser', '--report', str(report_dir / 'account-settings.json')],
         })
     try:
         for name, command in commands.items():

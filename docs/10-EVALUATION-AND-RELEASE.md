@@ -41,7 +41,8 @@ python scripts/verify_phase5.py --live
 
 The live option deliberately makes up to 16 Groq evaluation requests and starts
 the existing isolated Phase 1 Docker gate. It also requests official SDK/real
-PostgreSQL checks and actual Chromium UI interactions. Install browser OS
+PostgreSQL checks and actual Chromium UI interactions for the dashboard and
+account-settings feature. Install browser OS
 prerequisites as needed (`npx playwright install --with-deps chromium` in Linux
 CI). Each requested check runs even if an independent earlier check fails, so
 missing dependencies remain visible in the result. The model runner stops on a
@@ -194,3 +195,10 @@ video was fabricated. The standalone graph evaluator also exits 1 with null
 measurements. The final offline evidence bundle is in
 `reports/phase5-final/RESULTS.md`; it explicitly remains live-unverified and
 submission readiness is false.
+
+The continued build now includes the account-settings page and its controlled
+HTTP/client checks. The full JavaScript command covers both dashboard and
+account clients; `--live` additionally requests the settings browser suite.
+This implementation is separate from the still-unverified fresh coding-client
+exercise. See the [account guide](../examples/account-settings/README.md), which
+records its pre-frontend baseline and remaining real-browser/PostgreSQL gate.

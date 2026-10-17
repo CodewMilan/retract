@@ -96,3 +96,25 @@ test('concurrent submissions are refused until the pending request completes', a
   const first = account.recover(); await assert.rejects(account.login('bob'), error => error.status === 409);
   finish(Response.json({error: 'Sign in'}, {status: 401})); assert.equal(await first, null);
 });
+test('a cookie switched by another tab cannot write the old account', async () => {
+  const alice = client(); const bob = client(); await alice.login('alice'); await bob.login('bob');
+  await assert.rejects(alice.save('Wrong profile'), error => error.status === 403);
+  assert.equal((await bob.recover()).display_name, 'Bob Example');
+  assert.equal((await alice.recover()).id, 'bob');
+});
+test('a failed logout retains local identity until sign-out is confirmed', async () => {
+  let fail = true;
+  const account = new AccountClient((path, init) => path === '/demo/logout' && fail
+    ? Promise.resolve(Response.json({error: 'Unavailable'}, {status: 503})) : transport.fetch(path, init));
+  await account.login('alice'); await assert.rejects(account.logout(), error => error.status === 503);
+  assert.equal(account.user.id, 'alice'); assert.equal((await client().recover()).id, 'alice');
+  fail = false; await account.logout(); assert.equal(account.user, null);
+});
+test('timeout leaves no successful session and releases the pending-operation guard', async () => {
+  let pending = true;
+  const account = new AccountClient((path, init) => pending ? new Promise((resolve, reject) => {
+    init.signal.addEventListener('abort', () => reject(new DOMException('Timed out', 'AbortError')), {once: true});
+  }) : Promise.resolve(Response.json({error: 'Signed out'}, {status: 401})), 5);
+  await assert.rejects(account.recover(), /Could not confirm/); assert.equal(account.user, null);
+  pending = false; assert.equal(await account.recover(), null);
+});

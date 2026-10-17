@@ -22,8 +22,9 @@ jobs:
       - run: npm install --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: python scripts/verify_phase4.py --browser --report reports/phase4.json
+      - run: python scripts/verify_account_settings.py --browser --report reports/account-settings.json
       - run: python -m pip wheel --no-deps --wheel-dir dist .
-      - run: python -c "from pathlib import Path; from zipfile import ZipFile; wheel=next(Path('dist').glob('retract_memory-*.whl')); files=ZipFile(wheel).namelist(); assert all('retract/web/'+name in files for name in ['index.html', 'dashboard.css', 'dashboard.mjs', 'dashboard-model.mjs'])"
+      - run: python -c "from pathlib import Path; from zipfile import ZipFile; wheel=next(Path('dist').glob('retract_memory-*.whl')); files=ZipFile(wheel).namelist(); assert all('retract/web/'+name in files for name in ['index.html', 'dashboard.css', 'dashboard.mjs', 'dashboard-model.mjs']); assert all('retract/account_web/'+name in files for name in ['index.html', 'settings.css', 'settings.mjs', 'account-client.mjs'])"
       - run: python scripts/verify_phase1.py --report-dir reports/phase1
       - run: python scripts/verify_phase5.py --report-dir reports/phase5-ci
       - uses: actions/upload-artifact@v4

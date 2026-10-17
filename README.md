@@ -183,10 +183,18 @@ that recall occurred. The second command tests framing, routing, the account API
 contract, and config generation.
 
 The [account-settings fixture](examples/account-settings/README.md) has a separate
-PostgreSQL-backed API and a prepared fresh-agent frontend task. With its
+PostgreSQL-backed API and an implemented `/settings` frontend. With its
 dependencies and databases available, review the generated launch script and
 follow the [Phase 3 instructions](docs/08-MCP-AND-CODING-CLIENT.md) to record the
 real coding run and feature checks. That run is still unverified here.
+
+The account page supports synthetic sign-in, cookie-session recovery, profile
+editing, save/retry, and sign-out at `http://127.0.0.1:8101/settings`. Run
+`python scripts/verify_account_settings.py` for its HTTP/client checks. This page
+was built directly during continued development; the original fresh-client
+construction exercise has a documented pre-frontend baseline. See the
+[account-settings guide](examples/account-settings/README.md) for setup, browser
+checks, and that distinction.
 
 ## Memory dashboard
 
