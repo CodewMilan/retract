@@ -4,6 +4,12 @@ Status: proposed MVP design. Validate SDK compatibility and database guarantees 
 
 Implementation note, 17 October 2026: the Python service, local JSON HTTP adapter, CLI, parameterized graph repository, and optional Groq extraction adapter now exist. Direct plan-to-fact dependencies are supported in code; plan-to-plan traversal is deferred. Structured updates remain available without a model; natural updates select one scoped key and pass validated extraction into the same deterministic policy. Real database compatibility, persistence, and live model quality are still unverified. See the [implementation record](06-IMPLEMENTATION-STATUS.md) and [Phase 2 contract](07-NATURAL-LANGUAGE-UPDATES.md).
 
+Phase 3 adds a narrow standard-library MCP stdio adapter, routing all four tools
+through the same HTTP service. Codex configuration parsing is checked; official
+SDK interop and an actual coding-client call remain unverified. The synthetic
+account backend and frontend task are prepared separately. See the
+[Phase 3 contract](08-MCP-AND-CODING-CLIENT.md).
+
 ## Components
 
 | Component | Responsibility |

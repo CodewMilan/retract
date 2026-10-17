@@ -162,7 +162,7 @@ def serve(api_url: str, activity_log: Path | None = None, *, source=None, output
         else:
             try:
                 message = strict_json(raw)
-            except (ValueError, UnicodeError):
+            except (ValueError, UnicodeError, RecursionError):
                 response = error(None, -32700, "Invalid JSON")
             else:
                 response = server.handle(message)

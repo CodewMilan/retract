@@ -1,6 +1,6 @@
 # Build plan and submission checklist
 
-Status: milestones 1 and 2 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks and live model evaluation have not run. Milestones 3–5 remain pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
+Status: milestones 1–3 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks, live model evaluation, and a real coding-client feature run remain unverified. Milestones 4–5 remain pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
 
 ## Phase execution rule
 
@@ -22,6 +22,13 @@ database suite and database/service restart retention in isolated test resources
 Phase 2's offline check is `python scripts/verify_phase2.py`; live model/policy
 evaluation is `python scripts/verify_phase2.py --live` with `GROQ_API_KEY` configured.
 The live run does not replace the database checks. See the [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md).
+
+Phase 3's offline check is `python scripts/verify_phase3.py`. Optional SDK,
+PostgreSQL, and live service-probe flags are documented in the
+[Phase 3 notes](08-MCP-AND-CODING-CLIENT.md). The actual fresh coding-client task
+and frontend feature checks remain separate required evidence. Independent
+Phase 3 implementation continued at the user's next-phase request while earlier
+environment-blocked gates stayed open.
 
 ## Milestone 1 — Graph-backed correction flow
 

@@ -9,6 +9,10 @@ description = "Scoped, evidence-backed project memory for coding agents"
 requires-python = ">=3.12"
 dependencies = ["falkordb>=1.2,<2"]
 
+[project.optional-dependencies]
+demo = ["psycopg[binary]>=3.2,<4"]
+mcp-test = ["mcp>=1.26,<2"]
+
 [project.scripts]
 retract = "retract.cli:main"
 

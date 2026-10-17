@@ -202,3 +202,41 @@ class FalkorDBTests(unittest.TestCase):
         with patch.dict(os.environ, {"GROQ_API_KEY": ""}):
             self.assertEqual(fresh.process_natural_update(natural_request()), result)
         self.assertEqual(fresh.recall("account-settings", "web-client/main")["active_facts"][0]["id"], result["accepted_fact_ids"][0])
+
+    def test_real_mcp_process_uses_the_running_graph_service(self):
+        from dataclasses import asdict
+        import subprocess
+        import sys
+        from threading import Thread
+        from retract.api import make_server
+        from retract.mcp import VERSIONS
+
+        server = make_server(self.service, 0)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        root = Path(__file__).resolve().parents[1]
+        frames = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+            "protocolVersion": VERSIONS[0], "capabilities": {}, "clientInfo": {"name": "integration-probe", "version": "1"}}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+                "name": "process_update", "arguments": {**asdict(confirmed_update()), "mode": "structured"}}},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
+                "name": "recall", "arguments": {"project_id": "account-settings", "scope": "web-client/main"}}}]
+        try:
+            result = subprocess.run([sys.executable, "-m", "retract", "mcp"], cwd=root,
+                                    env={**os.environ, "PYTHONPATH": str(root / "src"), "RETRACT_URL": f"http://127.0.0.1:{server.server_port}"},
+                                    input="".join(json.dumps(frame) + "\n" for frame in frames), text=True,
+                                    capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            responses = [json.loads(line) for line in result.stdout.splitlines()]
+            self.assertEqual([response["id"] for response in responses], [1, 2, 3])
+            for response in responses[1:]:
+                self.assertFalse(response["result"]["isError"], response)
+            correction = json.loads(responses[1]["result"]["content"][0]["text"])
+            recalled = json.loads(responses[2]["result"]["content"][0]["text"])
+            self.assertEqual(correction["accepted_fact_ids"], ["F5"])
+            self.assertEqual(recalled["active_facts"][0]["id"], "F5")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    # Synthetic fixture only; separate from the authoritative memory graph.
+    image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:54330:5432"
+    environment:
+      POSTGRES_USER: retract_demo
+      POSTGRES_PASSWORD: local_demo_only
+      POSTGRES_DB: retract_demo
+    volumes:
+      - account-demo-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retract_demo -d retract_demo"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  account-demo-data:

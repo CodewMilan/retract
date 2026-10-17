@@ -6,8 +6,9 @@ with explicit dependencies on that fact.
 
 The backend and optional natural-language adapter are implemented with passing
 offline tests. Real FalkorDB integration, database persistence, and live model
-quality remain **unverified**. MCP integration and the dashboard are not yet
-implemented. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
+quality remain **unverified**. The MCP adapter, Codex configuration, and account
+API fixture exist; the actual fresh coding-client feature run and dashboard
+remain unfinished. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
@@ -133,6 +134,28 @@ mutation is one graph write guarded by the project revision. Database-level
 failure behavior remains an integration gate; offline tests do not establish
 atomicity or crash recovery.
 
+## Coding-client integration
+
+The four memory tools are available through local MCP stdio. The adapter calls
+the existing memory service; it keeps no separate memory cache.
+
+```sh
+python scripts/configure_codex.py --check
+python scripts/verify_phase3.py
+```
+
+The first command generates reviewable configuration and a fresh-session launch
+script under `reports/phase3/`. It checks the installed Codex CLI's configuration
+parser without editing user settings. It does not start a model session or claim
+that recall occurred. The second command tests framing, routing, the account API
+contract, and config generation.
+
+The [account-settings fixture](examples/account-settings/README.md) has a separate
+PostgreSQL-backed API and a prepared fresh-agent frontend task. With its
+dependencies and databases available, review the generated launch script and
+follow the [Phase 3 instructions](docs/08-MCP-AND-CODING-CLIENT.md) to record the
+real coding run and feature checks. That run is still unverified here.
+
 ## Verification
 
 Development is organized into five phases in the build plan: graph-backed memory,
@@ -204,8 +227,9 @@ against it. There is intentionally no automatic destructive reset command.
 
 Run the real FalkorDB suite and restart checks, fix any query/SDK incompatibility,
 and pin the verified client and image versions. Run the Phase 2 live evaluation
-and resolve any classifier failures. One MCP coding client and the dashboard
-follow those gates as specified by [the build plan](docs/05-BUILD-PLAN.md).
+and resolve any classifier failures. Run the configured coding-client exercise
+and inspect its real recall and feature-test evidence. The dashboard follows
+those gates as specified by [the build plan](docs/05-BUILD-PLAN.md).
 
 Implementation was developed with OpenAI Codex assistance. Runtime dependency:
 the official [FalkorDB Python client](https://github.com/FalkorDB/falkordb-py).
