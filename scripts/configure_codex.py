@@ -26,7 +26,8 @@ def toml_value(value):
 def settings(root: Path, python: Path, api_url: str, report_dir: Path) -> dict:
     LocalApi(api_url)
     return {
-        "command": str(python.resolve()),
+        # Resolving a venv's executable symlink would discard its site-packages.
+        "command": str(python.expanduser().absolute()),
         "args": ["-m", "retract", "mcp", "--activity-log", str((report_dir / "mcp-activity.jsonl").resolve())],
         "cwd": str(root.resolve()),
         "env": {"PYTHONPATH": str((root / "src").resolve()), "RETRACT_URL": api_url},

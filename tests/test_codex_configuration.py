@@ -10,7 +10,12 @@ class ConfigurationTests(unittest.TestCase):
     def test_generated_toml_is_portable_to_paths_with_spaces_and_quotes(self):
         with tempfile.TemporaryDirectory(prefix="retract config ") as directory:
             root = Path(directory) / "quoted ' project"
-            config = settings(root, Path("/usr/bin/python3"), "http://127.0.0.1:8100", root / "reports")
+            import sys
+            python = root / ".venv/bin/python"
+            python.parent.mkdir(parents=True)
+            python.symlink_to(sys.executable)
+            config = settings(root, python, "http://127.0.0.1:8100", root / "reports")
+            self.assertEqual(config["command"], str(python.absolute()))
             parsed = tomllib.loads("server = " + toml_value(config))["server"]
             self.assertEqual(parsed, config)
             self.assertEqual(parsed["env"]["RETRACT_URL"], "http://127.0.0.1:8100")

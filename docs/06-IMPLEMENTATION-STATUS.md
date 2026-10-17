@@ -63,6 +63,8 @@ not yet been observed.
 | Live natural-language classification | Not evaluated: GROQ_API_KEY is not configured. Accuracy, actual inference latency, and usage remain unknown. |
 | MCP subprocess protocol and routing | 18 tests passed, including a real child process handshake/list/ping and EOF. Controlled application tests use the test-only store. |
 | Codex configuration | Generated config recognized by installed codex-cli 0.162.1. User settings unchanged. No model/tool call inferred. |
+| Phase 3 offline runner | 30 tests passed; report: `reports/phase3-offline.json`. |
+| Phase 3 real memory probe | Attempted; returned explicit tool errors because the memory service is unavailable. Exited 1 and recorded `blocked_or_failed` in `reports/phase3-probe.json`. No successful recall inferred. |
 | Account API contract | 10 tests passed with a test-only profile store. Cookie/CSRF/ownership and rejection of bearer requests checked. |
 | Real demo PostgreSQL storage | Not verified; optional dependency and Docker inaccessible here. |
 | Official MCP SDK interoperability | Not run; optional package unavailable. |
