@@ -1,0 +1,19 @@
+services:
+  falkordb:
+    # Candidate pin; verify this image in the integration suite before release.
+    image: falkordb/falkordb:6.0.2
+    ports:
+      - "127.0.0.1:6380:6379"
+    environment:
+      REDIS_ARGS: "--dir /var/lib/falkordb/data --appendonly yes --appendfsync always"
+    volumes:
+      - retract-data:/var/lib/falkordb/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  retract-data:

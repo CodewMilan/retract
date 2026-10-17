@@ -1,0 +1,23 @@
+{
+  "project_id": "account-settings",
+  "scope": "web-client/main",
+  "event_id": "U1",
+  "text": "Approved for web-client/main: browser authentication now uses HTTP-only cookie sessions. The old bearer-token instruction for the browser is replaced. CLI authentication is unchanged.",
+  "source": {
+    "id": "S-U1",
+    "kind": "developer",
+    "title": "Approved browser authentication correction",
+    "content": "Approved for web-client/main: browser authentication now uses HTTP-only cookie sessions. The old bearer-token instruction for the browser is replaced. CLI authentication is unchanged.",
+    "authority": "developer"
+  },
+  "classification": "confirmed_change",
+  "confirmation": true,
+  "target_fact_id": "F1",
+  "replacement_fact_id": "F5",
+  "candidate": {
+    "subject": "browser-api",
+    "predicate": "authentication",
+    "value": "HTTP-only cookie sessions",
+    "excerpt": "browser authentication now uses HTTP-only cookie sessions."
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "project": {
+    "project_id": "account-settings",
+    "name": "Synthetic account settings demo"
+  },
+  "actions": [
+    {
+      "route": "remember",
+      "body": {
+        "project_id": "account-settings",
+        "scope": "web-client/main",
+        "fact_id": "F1",
+        "subject": "browser-api",
+        "predicate": "authentication",
+        "value": "bearer tokens",
+        "source": {
+          "id": "S-F1",
+          "kind": "document",
+          "title": "Approved architecture note: browser-api",
+          "content": "Browser API authentication uses bearer tokens.",
+          "authority": "approved_document"
+        }
+      }
+    },
+    {
+      "route": "remember",
+      "body": {
+        "project_id": "account-settings",
+        "scope": "cli-client/main",
+        "fact_id": "F2",
+        "subject": "cli-api",
+        "predicate": "authentication",
+        "value": "bearer tokens",
+        "source": {
+          "id": "S-F2",
+          "kind": "document",
+          "title": "Approved architecture note: cli-api",
+          "content": "CLI API authentication uses bearer tokens.",
+          "authority": "approved_document"
+        }
+      }
+    },
+    {
+      "route": "remember",
+      "body": {
+        "project_id": "account-settings",
+        "scope": "account-service/main",
+        "fact_id": "F3",
+        "subject": "account-data",
+        "predicate": "database",
+        "value": "PostgreSQL",
+        "source": {
+          "id": "S-F3",
+          "kind": "document",
+          "title": "Approved architecture note: account-data",
+          "content": "Account data uses PostgreSQL.",
+          "authority": "approved_document"
+        }
+      }
+    },
+    {
+      "route": "remember",
+      "body": {
+        "project_id": "account-settings",
+        "scope": "account-service/main",
+        "fact_id": "F4",
+        "subject": "profile",
+        "predicate": "ownership",
+        "value": "own profile only",
+        "source": {
+          "id": "S-F4",
+          "kind": "document",
+          "title": "Approved architecture note: profile",
+          "content": "Users may update only their own profile.",
+          "authority": "approved_document"
+        }
+      }
+    },
+    {
+      "route": "plans",
+      "body": {
+        "project_id": "account-settings",
+        "scope": "web-client/main",
+        "plan_id": "P1",
+        "text": "Settings-page implementation assumes the browser supplies an Authorization bearer header. Preserve profile ownership checks.",
+        "dependency_fact_ids": [
+          "F1",
+          "F4"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Used only by scripts/verify_phase1.py. Each run supplies a UUID project name,
+# so its containers and volume cannot overlap the developer's application data.
+services:
+  falkordb:
+    image: falkordb/falkordb:6.0.2
+    ports:
+      - "127.0.0.1::6379"
+    environment:
+      REDIS_ARGS: "--dir /var/lib/falkordb/data --appendonly yes --appendfsync always"
+    volumes:
+      - verification-data:/var/lib/falkordb/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  verification-data:

@@ -1,0 +1,21 @@
+{
+  "project_id": "account-settings",
+  "scope": "account-service/main",
+  "event_id": "U2",
+  "text": "Should we replace PostgreSQL with MongoDB?",
+  "source": {
+    "id": "S-U2",
+    "kind": "developer",
+    "title": "Unaccepted database proposal",
+    "content": "Should we replace PostgreSQL with MongoDB?",
+    "authority": "developer"
+  },
+  "classification": "proposal",
+  "confirmation": false,
+  "candidate": {
+    "subject": "account-data",
+    "predicate": "database",
+    "value": "MongoDB",
+    "excerpt": "Should we replace PostgreSQL with MongoDB?"
+  }
+}
