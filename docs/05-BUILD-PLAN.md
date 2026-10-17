@@ -1,6 +1,6 @@
 # Build plan and submission checklist
 
-Status: milestones 1–4 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks, live model evaluation, and a real coding-client feature run remain unverified. Dashboard browser/database validation remains unverified. Milestone 5 remains pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
+Status: milestones 1–5 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks, live model evaluation, and a real coding-client feature run remain unverified. Dashboard browser/database validation remains unverified. Evaluation tooling and submission copy are implemented; actual live measurements and working-demo/submission evidence remain pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
 
 ## Phase execution rule
 
@@ -34,6 +34,12 @@ Phase 4's dashboard was implemented at the user's next-phase request while earli
 live gates remained unresolved. Offline checks are `python scripts/verify_phase4.py`;
 browser and real-graph commands are in the [dashboard guide](09-DASHBOARD.md).
 Its actual-state exit gate remains unverified.
+
+Phase 5's evaluation/reporting tools and submission draft were implemented at the
+next-phase request. `python scripts/verify_phase5.py` runs fresh offline checks;
+`--live` requests real database/model/browser checks. See the
+[evaluation guide](10-EVALUATION-AND-RELEASE.md). Missing measurements stay unknown,
+and no real coding session, demo recording, or publication is inferred.
 
 ## Milestone 1 — Graph-backed correction flow
 
@@ -126,7 +132,7 @@ Keep correction correctness, scope isolation, source/history, graph-based impact
 
 ## Hackathon submission
 
-The published event window ends 18 October 2026 at 11:59 PM IST. Recheck the official schedule before submission.
+The published event window ends 18 October 2026 at 11:59 PM IST. The official rules were rechecked 17 October 2026; recheck before final submission.
 
 - [ ] Public source repository.
 - [ ] README explains the problem, target user, and supported workflow.

@@ -48,6 +48,17 @@ the proposed behavior in the original specification.
 - Phase 4 Python/JavaScript tests, opt-in Chromium interaction checks, and a real
   dashboard graph integration test. Browser checks and wheel validation are wired
   into CI, whose execution remains unobserved.
+- A Phase 5 structured evaluator with 14 declared synthetic cases and actual-store
+  observations for protected facts, stale recall, current values, plan precision/
+  recall, history, revisions, replay, and service/storage latency. It creates only
+  a UUID graph; failed runs preserve it, and successful runs delete only that graph.
+- A fresh evidence-bundle runner, bounded working-tree/Git-history secret-pattern
+  scanner, graph query guide, rehearsal instructions, dependency/AI/prior-art
+  notices, and reviewable submission copy. No submission or publication occurred.
+- Phase 5 evaluator/report tests include injected fact corruption, stale recall,
+  wrong accepted values, over/under-flagged plans, lost historical secrets, owned
+  graph cleanup boundaries, and blocked-result propagation. See
+  [Phase 5 notes](10-EVALUATION-AND-RELEASE.md).
 
 ## Actual verification
 
@@ -57,7 +68,7 @@ not yet been observed.
 
 | Check | Observed result |
 | --- | --- |
-| Offline unittest discovery | 135 tests passed on Python 3.12 and 3.14; 13 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
+| Offline unittest discovery | 156 tests passed on Python 3.12 and 3.14; 13 FalkorDB, 2 PostgreSQL, and 1 SDK checks explicitly skipped. |
 | Python compileall | Passed for `src` and `tests`. |
 | CLI help | Passed. |
 | Docker Compose configuration validation | Passed. |
@@ -88,6 +99,14 @@ not yet been observed.
 | Dashboard browser interactions/layout | Attempted; Chromium terminated during launch with sandbox Mach-port registration permission denied. Exited 1 before scenarios; report `reports/phase4-browser-attempt.json`. No screenshots or visual pass. |
 | Dashboard real graph/live browser | Not verified; new real-graph test explicitly skipped without its dependency/service. |
 | Wheel asset inclusion | Package-data configured; local wheel build unavailable because setuptools is missing. CI check prepared, not observed. |
+| Phase 5 evaluator/report tests | 21 passed; controlled stores and faults validate evaluator behavior, not runtime benchmark numbers. |
+| Full Python regression after Phase 5 | 172 discovered: 156 passed, 16 explicitly skipped on Python 3.12 and 3.14. Seven JavaScript checks pass. |
+| Public-file secret-pattern scan | Passed over tracked/nonignored text files and reachable Git blobs, with no findings or exclusions. This is a bounded pattern scan, not an exhaustive security audit. |
+| Phase 5 combined live attempt | Exited 1 with explicit `blocked_or_failed`; graph client missing, Groq key absent, MCP SDK missing, Chromium launch denied. Independent checks continued and source hashes stayed unchanged. Report: `reports/phase5-live-attempt/phase5.json`. |
+| Standalone real memory evaluation | Exited 1 before database use because the client is unavailable; `evaluation` is null in `reports/phase5-memory-attempt.json`. |
+| Phase 5 final offline bundle | Exited 0 with `offline_passed_live_unverified`; report: `reports/phase5-final/phase5.json`. Source/artifact hashes and test logs retained. |
+| Runtime benchmark / comparative results | Not measured. Wrong invalidations, stale retrieval, plan precision/recall, classification accuracy, runtime latency, and usage remain unknown. Controlled fixture scores are not substituted. |
+| Submission / working video | Draft and rehearsal instructions prepared; no published repository visibility, real coding-client feature evidence, or genuine working video verified. No form submitted. |
 
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter
 and rejects duplicate Content-Length headers. The complete database gate is
@@ -101,6 +120,7 @@ verify orchestration, policy, replay, revisions, and isolation; they are not
 evidence that Cypher works, that disk persistence works, or that a model can
 classify text. A repository failure injected before commit only checks retry
 behavior at the application boundary.
+
 
 ## Current implementation choices
 
@@ -127,10 +147,10 @@ and [upstream FOREACH/rollback tests](https://github.com/FalkorDB/FalkorDB/blob/
 The upstream tests informed the query design; they do not substitute for running
 this project's correction rollback test against the chosen image.
 
-The first four milestones are **in progress**, not complete. Their outstanding
+The five milestones are **in progress**, not complete. Their outstanding
 gates are actual database integration/restart retention and live classification
-evaluation, plus a real coding-client recall and generated feature checks. Follow
+evaluation, plus a real coding-client recall and generated feature checks, dashboard validation, and a genuine working demo. Follow
 the commands in the [root README](../README.md), [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md),
-[Phase 3 notes](08-MCP-AND-CODING-CLIENT.md), and [Phase 4 notes](09-DASHBOARD.md), then append the real results here.
+[Phase 3 notes](08-MCP-AND-CODING-CLIENT.md), and [Phase 4 notes](09-DASHBOARD.md), and [Phase 5 notes](10-EVALUATION-AND-RELEASE.md), then append the real results here.
 Do not silently replace skipped checks or controlled-response tests with claimed
-database/model passes. The dashboard code is implemented; its browser and actual-state exit gates remain open.
+database/model passes. Dashboard and evaluation code are implemented; their actual-state, browser, and reproducible working-demo gates remain open.

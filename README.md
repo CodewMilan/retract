@@ -12,6 +12,36 @@ run, browser checks, and dashboard database integration remain unverified. See [
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
+The Phase 5 evaluator and submission draft are also implemented. Run
+`python scripts/verify_phase5.py` for a fresh offline evidence bundle, or follow
+[the evaluation guide](docs/10-EVALUATION-AND-RELEASE.md) for real graph/model
+measurements and demo rehearsal. [SUBMISSION.md](SUBMISSION.md) is a draft;
+working-video and public-submission evidence remain pending.
+
+## Graph model
+
+FalkorDB owns accepted facts, their supporting sources, immutable update events,
+and explicit plan dependencies. A replacement retains the historical fact and
+its evidence. Each endpoint is project-scoped; fact keys additionally include
+scope, subject, and predicate.
+
+```mermaid
+flowchart LR
+    Project -->|HAS_FACT| NewFact
+    Source -->|SUPPORTS| NewFact
+    Event -->|BASED_ON| Source
+    NewFact -->|SUPERSEDES| OldFact
+    Event -->|RETIRED| OldFact
+    Event -->|ACCEPTED| NewFact
+    Event -->|FLAGGED| Plan
+    Plan -->|DEPENDS_ON| OldFact
+```
+
+The graph drives stored dependency discovery and replacement/evidence history.
+See the [actual queries and algorithm](docs/11-GRAPH-QUERIES.md), implemented in
+[graph.py](src/retract/graph.py). The runtime has no test-store fallback.
+
+
 ## Local setup
 
 Requires Python 3.12+ and Docker with a running daemon. Run from this directory:
@@ -247,10 +277,16 @@ and pin the verified client and image versions. Run the Phase 2 live evaluation
 and resolve any classifier failures. Run the configured coding-client exercise
 and inspect its real recall and feature-test evidence. Run the dashboard browser
 and real graph checks described in [the dashboard guide](docs/09-DASHBOARD.md).
-The next implementation phase is evaluation and submission; earlier live gates
-remain open as recorded in [the build plan](docs/05-BUILD-PLAN.md).
+The evaluation runner now produces fresh reports with source/artifact hashes.
+Run its live checks and the real coding-client exercise, then record the genuine
+working demo. Earlier live gates remain open as recorded in
+[the build plan](docs/05-BUILD-PLAN.md).
 
 Implementation was developed with OpenAI Codex assistance. Runtime dependency:
 the official [FalkorDB Python client](https://github.com/FalkorDB/falkordb-py).
 The correction workflow is inspired by the prior art credited in
 [the product specification](docs/01-PRODUCT.md).
+
+Direct dependency license references, prior art, synthetic-data provenance, and
+AI assistance are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The owner has not selected a project license yet.

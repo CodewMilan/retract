@@ -1,6 +1,10 @@
 # Demo and evaluation
 
-Status: proposed scenario and target outcomes, not measured results.
+Status: declared scenario and target outcomes. Phase 5 now provides executable
+structured evaluation and fresh evidence bundles; see
+[the evaluation guide](10-EVALUATION-AND-RELEASE.md). Live measurements and a
+successful working demo remain unverified; controlled test scores are not a
+runtime benchmark.
 
 ## Demo application
 

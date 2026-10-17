@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -23,6 +25,7 @@ jobs:
       - run: python -m pip wheel --no-deps --wheel-dir dist .
       - run: python -c "from pathlib import Path; from zipfile import ZipFile; wheel=next(Path('dist').glob('retract_memory-*.whl')); files=ZipFile(wheel).namelist(); assert all('retract/web/'+name in files for name in ['index.html', 'dashboard.css', 'dashboard.mjs', 'dashboard-model.mjs'])"
       - run: python scripts/verify_phase1.py --report-dir reports/phase1
+      - run: python scripts/verify_phase5.py --report-dir reports/phase5-ci
       - uses: actions/upload-artifact@v4
         if: always()
         with:

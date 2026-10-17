@@ -180,6 +180,8 @@ def run(report_dir: Path, keep: bool = False) -> int:
         check("actual durability configuration", durability)
         check("real database integration suite", lambda: command(
             [sys.executable, "-m", "unittest", "tests.test_integration", "-v"], env=env))
+        check("structured memory evaluation metrics", lambda: command(
+            [sys.executable, "scripts/evaluate_memory.py", "--report", str(report_dir / "memory-evaluation.json")], env=env))
         api_port = free_port()
         with (report_dir / "service.log").open("w") as logfile:
             process, base = start_service(env, api_port, logfile)

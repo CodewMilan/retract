@@ -1,0 +1,20 @@
+{
+  "version": "retract-memory-eval-v1",
+  "data": "Synthetic, public, declared fixtures; not a held-out benchmark.",
+  "cases": [
+    {"id": "confirmed", "changes": {}, "expected_outcome": "applied"},
+    {"id": "proposal", "fixture": "proposal.json", "changes": {}, "expected_outcome": "proposal"},
+    {"id": "ambiguous", "changes": {"classification": "ambiguous"}, "expected_outcome": "pending"},
+    {"id": "untrusted", "changes": {"authority": "untrusted"}, "expected_outcome": "pending"},
+    {"id": "unconfirmed", "changes": {"confirmation": false}, "expected_outcome": "pending"},
+    {"id": "different-scope", "changes": {"scope": "cli-client/main"}, "expected_outcome": "pending"},
+    {"id": "different-project", "changes": {"other_project": true}, "expected_outcome": "pending"},
+    {"id": "unrelated", "changes": {"classification": "unrelated"}, "expected_outcome": "ignored"},
+    {"id": "same-value", "changes": {"value": "bearer tokens"}, "expected_outcome": "no_change"},
+    {"id": "wrong-target", "changes": {"target_fact_id": "F2"}, "expected_outcome": "pending"},
+    {"id": "stale-revision", "changes": {"expected_revision": 0}, "expected_error": "conflict"},
+    {"id": "exact-replay", "changes": {}, "expected_outcome": "applied", "followup": "replay"},
+    {"id": "event-collision", "changes": {}, "expected_outcome": "applied", "followup": "collision"},
+    {"id": "retired-target", "changes": {}, "expected_outcome": "applied", "followup": "retired_target"}
+  ]
+}
