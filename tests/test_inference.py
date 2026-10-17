@@ -23,7 +23,6 @@ def natural_request():
 
 
 def extracted(**changes):
-    request = natural_request()
     return {"classification": "confirmed_change", "scope": "web-client/main",
             "candidate": {"subject": "browser-api", "predicate": "authentication", "value": "HTTP-only cookie sessions",
                           "excerpt": "browser authentication now uses HTTP-only cookie sessions."}, **changes}

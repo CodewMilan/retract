@@ -2,7 +2,7 @@
 
 Status: proposed MVP design. Validate SDK compatibility and database guarantees during implementation; examples here describe intended behavior, not tested application code.
 
-Implementation note, 17 October 2026: the initial Python service, local JSON HTTP adapter, CLI, and parameterized graph repository now exist. Direct plan-to-fact dependencies are supported in code; plan-to-plan traversal is deferred. This milestone accepts structured classifications from the local developer workflow and does not call a model. Real database compatibility and persistence are still unverified. See the [implementation record](06-IMPLEMENTATION-STATUS.md).
+Implementation note, 17 October 2026: the Python service, local JSON HTTP adapter, CLI, parameterized graph repository, and optional Groq extraction adapter now exist. Direct plan-to-fact dependencies are supported in code; plan-to-plan traversal is deferred. Structured updates remain available without a model; natural updates select one scoped key and pass validated extraction into the same deterministic policy. Real database compatibility, persistence, and live model quality are still unverified. See the [implementation record](06-IMPLEMENTATION-STATUS.md) and [Phase 2 contract](07-NATURAL-LANGUAGE-UPDATES.md).
 
 ## Components
 

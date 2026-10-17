@@ -1,6 +1,6 @@
 # Build plan and submission checklist
 
-Status: milestone 1 is in progress; later milestones remain pending. Offline backend checks pass, but its real FalkorDB and restart exit gates have not run. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
+Status: milestones 1 and 2 have implemented code and passing offline checks, but remain in progress. Real FalkorDB/restart checks and live model evaluation have not run. Milestones 3–5 remain pending. See the [implementation record](06-IMPLEMENTATION-STATUS.md). Original estimate: 24–36 focused engineering hours for a developer familiar with the stack, including integration and demo preparation. Estimates are not a promise; prioritize a working vertical slice.
 
 ## Phase execution rule
 
@@ -10,9 +10,18 @@ advancing. An unavailable dependency or skipped required check leaves the phase
 in progress; it does not count as a pass. Continue to the next phase without a
 new approval request once the current gate passes.
 
+The user subsequently requested moving to the next phase while Phase 1 was
+environment-blocked. Phase 2's adapter and offline tests were implemented on that
+authorization; the earlier unresolved gate is retained explicitly. This does
+not establish that either phase passed its full exit criteria.
+
 Phase 1's complete repeatable check is `python scripts/verify_phase1.py` from an
 activated environment with project dependencies installed. It includes the real
 database suite and database/service restart retention in isolated test resources.
+
+Phase 2's offline check is `python scripts/verify_phase2.py`; live model/policy
+evaluation is `python scripts/verify_phase2.py --live` with `GROQ_API_KEY` configured.
+The live run does not replace the database checks. See the [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md).
 
 ## Milestone 1 — Graph-backed correction flow
 

@@ -5,10 +5,10 @@ accuracy. Live evaluation checks extraction plus pure policy; it does not replac
 Phase 1's database and restart gate.
 """
 
-from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 import statistics
 import subprocess
@@ -53,6 +53,8 @@ def load_cases():
 
 
 def evaluate_cases(interpreter, cases, interval: float = 8, sleep=time.sleep) -> dict:
+    if not cases:
+        raise ValidationError("Live evaluation requires a nonempty declared case set")
     results = []
     for index, (expected, request, current) in enumerate(cases):
         if index:
@@ -115,7 +117,7 @@ def main():
     try:
         completed = subprocess.run([sys.executable, "-m", "unittest", "tests.test_inference", "tests.test_natural_updates",
                                     "tests.test_phase2_evaluation", "-v"], cwd=ROOT,
-                                   env={**__import__("os").environ, "PYTHONPATH": str(ROOT / "src")})
+                                   env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
         report["offline_tests"] = "passed" if completed.returncode == 0 else "failed"
         if completed.returncode:
             report["status"] = "failed"

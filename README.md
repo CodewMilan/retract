@@ -4,10 +4,10 @@ Persistent project memory for coding agents. A confirmed, scoped correction
 supersedes an outdated fact, keeps its evidence and history, and flags plans
 with explicit dependencies on that fact.
 
-The first backend implementation is in progress. The structured policy and
-application tests pass locally. Real FalkorDB integration, database persistence,
-model extraction, MCP integration, and the dashboard are **not yet verified or
-complete**. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
+The backend and optional natural-language adapter are implemented with passing
+offline tests. Real FalkorDB integration, database persistence, and live model
+quality remain **unverified**. MCP integration and the dashboard are not yet
+implemented. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
@@ -62,8 +62,9 @@ Startup never seeds or resets data. If a seed is interrupted, inspect the stored
 state and continue individual actions from [the fixture](fixtures/demo-seed.json)
 using `retract call`; do not delete existing memory to hide a partial run.
 
-Inputs are deliberately structured. `classification` is supplied by the local
-developer workflow in this milestone; no natural-language classifier exists yet.
+The Phase 1 demo uses deliberately structured inputs. Its `classification` is
+supplied by the local developer workflow. An optional natural-language endpoint
+now extracts that classification through Groq; see below.
 The local API trusts the developer's source-authority declaration. It is not a
 public authenticated service. A source excerpt must occur in the supplied source,
 but that alone does not prove that a source or extraction is truthful.
@@ -81,6 +82,7 @@ dashboard and MCP adapters will use.
 | `POST /remember` | `project_id`, `scope`, `subject`, `predicate`, `value`, `source`; optional `fact_id`, `expected_revision` |
 | `POST /plans` | `project_id`, `scope`, `text`, `dependency_fact_ids`; optional `plan_id`, `expected_revision` |
 | `POST /updates` | See [confirmed update](fixtures/confirmed-update.json) and [proposal](fixtures/proposal.json). Optional `expected_revision` guards stale clients. |
+| `POST /updates/natural` | Project/scope/subject/predicate, event ID, update text, source, developer confirmation; optional `expected_revision`. See [example](fixtures/natural-update.json). |
 | `POST /recall` | `project_id`, `scope`; optional `subjects` list |
 | `POST /history` | `project_id`, exactly one of `fact_id` or `event_id` |
 
@@ -104,6 +106,28 @@ stored relationships, without text similarity or inferred code dependencies.
 Fact history traverses replacement relationships up to 32 edges. Recall uses
 exact scope and optional subject filters; it does not perform semantic search.
 
+## Natural-language updates
+
+With `GROQ_API_KEY` set in the service's environment, submit natural language for
+one selected scoped key:
+
+```sh
+retract call updates/natural fixtures/natural-update.json
+```
+
+The model classifies the update and extracts an evidence-backed candidate. The
+same deterministic correction policy still requires developer confirmation and
+source authority. The key stays server-side; the selected fact, submitted text,
+and source content are sent to Groq. Other memory is excluded. Exact event replays
+use the stored result without a model call. Structured updates remain usable
+without inference configuration.
+
+Run Phase 2's offline tests with `python scripts/verify_phase2.py`. To measure the
+actual configured model on the 16 declared cases, run
+`python scripts/verify_phase2.py --live` with the key configured. No live result
+has been measured here. Details, bounds, failure behavior, and limitations are in
+[the Phase 2 notes](docs/07-NATURAL-LANGUAGE-UPDATES.md).
+
 Actual parameterized Cypher is in [graph.py](src/retract/graph.py). Each logical
 mutation is one graph write guarded by the project revision. Database-level
 failure behavior remains an integration gate; offline tests do not establish
@@ -111,10 +135,12 @@ atomicity or crash recovery.
 
 ## Verification
 
-Development proceeds in the five phases in the build plan: graph-backed memory,
+Development is organized into five phases in the build plan: graph-backed memory,
 natural-language interpretation, one real coding-client integration, the dashboard,
 then evaluation and submission. Each phase ends with its relevant tests and a
 recorded result. A blocked or skipped exit-gate check keeps that phase in progress.
+Phase 2's adapter was implemented at the user's request to continue; Phase 1's
+unresolved database gate has not been counted as a pass.
 
 Policy and application tests need only Python's standard library:
 
@@ -177,9 +203,9 @@ against it. There is intentionally no automatic destructive reset command.
 ## Next gate
 
 Run the real FalkorDB suite and restart checks, fix any query/SDK incompatibility,
-and pin the verified client and image versions. Then add the schema-validated
-model adapter, one MCP coding client, and finally the dashboard, in the order
-specified by [the build plan](docs/05-BUILD-PLAN.md).
+and pin the verified client and image versions. Run the Phase 2 live evaluation
+and resolve any classifier failures. One MCP coding client and the dashboard
+follow those gates as specified by [the build plan](docs/05-BUILD-PLAN.md).
 
 Implementation was developed with OpenAI Codex assistance. Runtime dependency:
 the official [FalkorDB Python client](https://github.com/FalkorDB/falkordb-py).

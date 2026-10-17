@@ -5,7 +5,7 @@ import unittest
 
 from scripts.verify_phase2 import evaluate_cases, load_cases
 from retract.inference import Extraction, Interpretation, ModelRateLimited, build_payload
-from retract.models import Candidate
+from retract.models import Candidate, ValidationError
 
 
 class FixtureInterpreter:
@@ -25,6 +25,10 @@ class FixtureInterpreter:
 
 
 class EvaluationTests(unittest.TestCase):
+    def test_empty_evaluation_cannot_pass(self):
+        with self.assertRaises(ValidationError):
+            evaluate_cases(FixtureInterpreter([]), [])
+
     def test_declared_dataset_is_valid_and_labels_are_never_sent_to_model(self):
         version, cases = load_cases()
         self.assertEqual(version, "retract-classification-eval-v1")

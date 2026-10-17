@@ -21,6 +21,13 @@ the proposed behavior in the original specification.
   post-restart event replay. It checks actual AOF settings and records reports.
 - CI configuration for the same complete gate with retained result artifacts.
   It has not been run here.
+- Optional Groq natural-language extraction for one selected scoped key, with
+  bounded context, strict output validation, exact evidence checks, and the same
+  deterministic policy used by structured updates.
+- Natural-request replay fingerprints, extraction audit metadata, revision checks
+  after inference, and explicit timeout/rate-limit/provider error responses.
+- A Phase 2 runner and a 16-case declared live evaluation set. Offline reports
+  do not claim model classification accuracy. See the [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md).
 
 ## Actual verification
 
@@ -30,7 +37,7 @@ not yet been observed.
 
 | Check | Observed result |
 | --- | --- |
-| Offline unittest discovery | 55 tests passed on Python 3.12 and 3.14; 10 real database tests explicitly skipped. |
+| Offline unittest discovery | 93 tests passed on Python 3.12 and 3.14; 11 real database tests explicitly skipped. |
 | Python compileall | Passed for `src` and `tests`. |
 | CLI help | Passed. |
 | Docker Compose configuration validation | Passed. |
@@ -41,7 +48,10 @@ not yet been observed.
 | Real Cypher/SDK integration | Not run; requires the preceding two checks. |
 | Persistence across service/database restart | Not run. |
 | Database failure atomicity/crash recovery | Not established. |
-| Natural-language classification | Not implemented or evaluated. |
+| Natural-language adapter/policy tests | 38 Phase 2 tests passed; provider responses are controlled fixtures. |
+| Phase 2 offline runner | Exited 0 with `offline_passed_live_unverified`; report: `reports/phase2-offline.json`. |
+| Phase 2 live runner | Exited 1 before any model call because no key is configured; report explicitly marks `blocked` and live evaluation `not_run`. |
+| Live natural-language classification | Not evaluated: GROQ_API_KEY is not configured. Accuracy, actual inference latency, and usage remain unknown. |
 | Real coding-client MCP call | Not implemented or observed. |
 | Settings application feature tests | Demo application not yet implemented. |
 | Dashboard | Not implemented. |
@@ -49,7 +59,9 @@ not yet been observed.
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter
 and rejects duplicate Content-Length headers. The complete database gate is
 prepared and has been requested from the developer's unrestricted terminal;
-there is no successful external result yet. Phase 2 remains pending.
+there is no successful external result yet. The user then requested the next
+phase, so Phase 2's independent code and offline checks were implemented while
+preserving the unresolved Phase 1 gate. No database or live-model pass is claimed.
 
 Offline application tests use a deliberately test-only repository model. They
 verify orchestration, policy, replay, revisions, and isolation; they are not
@@ -59,9 +71,11 @@ behavior at the application boundary.
 
 ## Current implementation choices
 
-The initial backend uses Python's standard-library HTTP server and CLI, with the
-official FalkorDB client as its sole runtime dependency. No framework or model
-API is required for the structured vertical slice. This is a local prototype,
+The backend uses Python's standard-library HTTP server and CLI, with the
+official FalkorDB client as its sole external runtime dependency. No framework or
+model API is required for the structured vertical slice. The optional natural
+endpoint uses Groq through standard-library HTTPS and requires a server-side
+GROQ_API_KEY. This is a local prototype,
 not a public production server. Source authority is explicitly supplied by the
 trusted local developer workflow and is not independently authenticated.
 
@@ -77,7 +91,9 @@ and [upstream FOREACH/rollback tests](https://github.com/FalkorDB/FalkorDB/blob/
 The upstream tests informed the query design; they do not substitute for running
 this project's correction rollback test against the chosen image.
 
-The first milestone is **in progress**, not complete. Its exit gate requires an
-actual database run and restart retention before model extraction or dashboard
-work advances. Follow the commands in the [root README](../README.md) and append
-the real results here. Do not silently replace skipped checks with claimed passes.
+The first two milestones are **in progress**, not complete. Their outstanding
+gates are actual database integration/restart retention and live classification
+evaluation. Follow the commands in the [root README](../README.md) and
+[Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md), then append the real results here.
+Do not silently replace skipped checks or controlled-response tests with claimed
+database/model passes. MCP integration and dashboard work remain pending.
