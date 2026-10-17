@@ -8,6 +8,7 @@ from threading import RLock
 from uuid import uuid4
 
 from .graph import GraphStore
+from .activity import ActivityJournal
 from .models import (
     ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, RememberInput, UpdateInput,
     identifier, text,
@@ -28,6 +29,25 @@ class MemoryService:
         self.store = store
         self.lock = RLock()
         self.interpreter = interpreter
+        self.activity = ActivityJournal()
+
+    def list_projects(self):
+        with self.lock:
+            return self.store.list_projects()
+
+    def dashboard(self, project_id: str, scope: str | None = None):
+        if scope is not None:
+            identifier(scope, "scope")
+        with self.lock:
+            project = self.project(project_id)
+            snapshot = self.store.dashboard_snapshot(project_id, scope)
+            # Internal replay fingerprints are not dashboard data.
+            for event in snapshot["updates"]:
+                event["result"] = json.loads(event.pop("result_json"))
+                event.pop("fingerprint", None)
+            return {**snapshot, "project": project, "observed_at": timestamp(),
+                    "activity": self.activity.read(project_id, scope),
+                    "activity_retention": "service_process"}
 
     def project(self, project_id: str, expected: int | None = None) -> dict:
         identifier(project_id, "project_id")

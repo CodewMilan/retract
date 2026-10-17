@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>RETRACT · Project memory</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <script type="module" src="/assets/dashboard.mjs"></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to memory</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="Project navigation">
+    <a class="wordmark" href="/">↶ RETRACT<span>Project memory</span></a>
+    <label for="project">Project</label><select id="project"><option value="">Loading projects…</option></select>
+    <button id="new-project" class="quiet">+ New project</button>
+    <label for="scope">Scope</label><select id="scope" disabled><option value="">All scopes</option></select>
+    <nav id="navigation" aria-label="Memory views"></nav>
+    <div class="sidebar-foot"><span id="connection" role="status">Connecting…</span><p>Local workspace · FalkorDB</p></div>
+  </aside>
+  <main id="content" tabindex="-1">
+    <header><div><p id="context" class="eyebrow">Workspace memory</p><h1 id="title">Current facts</h1><p id="description" class="muted">Accepted decisions for the selected project and scope.</p></div>
+      <div class="actions"><button id="refresh">Refresh</button><button id="remember" disabled>Remember fact</button><button id="update" class="primary" disabled>Record update</button></div>
+    </header>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="result" class="result" aria-live="polite" hidden></div>
+    <section class="workspace" aria-label="Project memory">
+      <div class="list-panel"><div class="toolbar"><label for="search">Search this view</label><input type="search" id="search" placeholder="Subject, value, or ID…"><span id="row-count" class="mono"></span></div>
+        <div id="records" aria-live="polite"><p class="empty">Loading project memory…</p></div>
+      </div>
+      <aside id="inspector" class="inspector" aria-label="Evidence inspector"><p class="eyebrow">Evidence inspector</p><h2>Select a record</h2><p class="muted">Inspect its source, status, and recorded relationships.</p></aside>
+    </section>
+    <footer id="snapshot-meta">Waiting for a storage response.</footer>
+  </main>
+</div>
+<dialog id="update-dialog" aria-labelledby="update-title">
+ <form id="update-form"><div class="dialog-head"><h2 id="update-title">Record an update</h2><button type="button" data-close aria-label="Close update dialog">×</button></div>
+ <p class="muted">A proposal or unconfirmed change stays outside accepted memory.</p>
+ <label for="target">Current fact</label><select id="target" required></select><p id="before" class="before"></p>
+ <label for="mode">Interpretation</label><select id="mode"><option value="natural">Plain language · requires configured Groq key</option><option value="structured">Explicit change · no model required</option></select>
+ <div id="structured-fields" hidden><label for="classification">Classification</label><select id="classification"><option value="confirmed_change">Confirmed change</option><option value="proposal">Proposal</option><option value="ambiguous">Ambiguous</option><option value="unrelated">Unrelated</option></select><label for="replacement">Proposed value</label><textarea id="replacement" maxlength="2000" rows="2"></textarea></div>
+ <label for="update-source-title">Source title</label><input id="update-source-title" value="Developer update" maxlength="300" required>
+ <label for="update-text">Update and source excerpt</label><textarea id="update-text" maxlength="4000" rows="4" required></textarea>
+ <label class="check"><input type="checkbox" id="authority">This is an approved developer decision</label>
+ <label class="check"><input type="checkbox" id="confirmation">Replace the selected accepted decision</label>
+ <p class="form-error" id="update-error" role="alert"></p>
+ <div class="dialog-actions"><button type="button" id="refresh-context">Refresh context</button><button class="primary" type="submit">Record update</button></div>
+ </form>
+</dialog>
+<dialog id="remember-dialog" aria-labelledby="remember-title">
+ <form id="remember-form"><div class="dialog-head"><h2 id="remember-title">Remember a fact</h2><button type="button" data-close aria-label="Close fact dialog">×</button></div>
+ <p class="muted">Store an accepted decision with its original evidence.</p>
+ <label for="fact-scope">Scope</label><input id="fact-scope" maxlength="160" required placeholder="web-client/main">
+ <div class="field-pair"><div><label for="subject">Subject</label><input id="subject" maxlength="160" required placeholder="auth"></div><div><label for="predicate">Predicate</label><input id="predicate" maxlength="160" required placeholder="method"></div></div>
+ <label for="fact-value">Accepted value</label><textarea id="fact-value" maxlength="2000" rows="2" required></textarea>
+ <label for="fact-source-title">Source title</label><input id="fact-source-title" maxlength="300" value="Developer decision" required>
+ <label for="fact-evidence">Source evidence</label><textarea id="fact-evidence" maxlength="16000" rows="4" required></textarea>
+ <label class="check"><input type="checkbox" id="fact-authority" required>This is an approved developer decision</label>
+ <p class="form-error" id="remember-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit">Remember fact</button></div>
+ </form>
+</dialog>
+<dialog id="project-dialog" aria-labelledby="project-title">
+ <form id="project-form"><div class="dialog-head"><h2 id="project-title">Create project</h2><button type="button" data-close aria-label="Close project dialog">×</button></div>
+ <label for="project-id">Project ID</label><input id="project-id" maxlength="160" required placeholder="account-settings"><p class="hint">Letters, numbers, dots, slashes, underscores, and hyphens. Start with a letter or number.</p>
+ <label for="project-name">Project name</label><input id="project-name" maxlength="300" required placeholder="Account settings">
+ <p class="form-error" id="project-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit">Create project</button></div>
+ </form>
+</dialog>
+</body></html>

@@ -3,6 +3,8 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
+from importlib.resources import files
+from time import monotonic
 from urllib.parse import urlsplit
 
 from .graph import DatabaseUnavailable
@@ -19,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 def dispatch(service: MemoryService, path: str, body: dict) -> dict:
+    if path == "/dashboard":
+        if "project_id" not in body or set(body) - {"project_id", "scope"}:
+            raise ValidationError("Supply project_id and optional scope")
+        return service.dashboard(**body)
     if path == "/projects":
         if set(body) != {"project_id", "name"}:
             raise ValidationError("Supply project_id and name")
@@ -55,6 +61,7 @@ def make_handler(service: MemoryService):
             logger.info(format, *args)
 
         def respond(self, status: int, result: dict, retry_after: int | None = None):
+            self.response_status = status
             encoded = json.dumps(result, ensure_ascii=False).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -82,10 +89,31 @@ def make_handler(service: MemoryService):
             if not self.valid_origin():
                 self.respond(403, {"error": "Local origin required"})
                 return
-            if self.path != "/health":
-                self.respond(404, {"error": "Unknown API route"})
-                return
             try:
+                assets = {"/": ("index.html", "text/html"),
+                          "/assets/dashboard.css": ("dashboard.css", "text/css"),
+                          "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
+                          "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript")}
+                if self.path in assets:
+                    name, mime = assets[self.path]
+                    encoded = files("retract").joinpath("web", name).read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", mime + "; charset=utf-8")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    self.close_connection = True
+                    return
+                if self.path == "/api/projects":
+                    self.respond(200, service.list_projects())
+                    return
+                if self.path != "/health":
+                    self.respond(404, {"error": "Unknown API route"})
+                    return
                 with service.lock:
                     service.store.query("RETURN 1", {})
                 self.respond(200, {"status": "ok", "storage": "falkordb"})
@@ -93,6 +121,9 @@ def make_handler(service: MemoryService):
                 self.respond(503, {"error": str(exc)})
 
         def do_POST(self):
+            started = monotonic()
+            body = {}
+            self.response_status = 500
             try:
                 if not self.valid_origin():
                     self.respond(403, {"error": "Local origin required"})
@@ -135,6 +166,12 @@ def make_handler(service: MemoryService):
             except Exception:
                 logger.exception("Unexpected request failure")
                 self.respond(500, {"error": "Internal service error"})
+            finally:
+                if self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/recall", "/history"}:
+                    client = self.headers.get("X-Retract-Client", "api")
+                    service.activity.record(self.path, body if isinstance(body, dict) else {},
+                                            self.response_status, client if client in {"mcp", "dashboard"} else "api",
+                                            (monotonic() - started) * 1000)
 
     return Handler
 

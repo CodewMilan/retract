@@ -129,7 +129,7 @@ class LocalApi:
         encoded = json.dumps(body).encode()
         if len(encoded) > 65536:
             raise ValidationError("Tool request exceeds the memory API body limit")
-        request = Request(self.base + route, data=encoded, headers={"Content-Type": "application/json"})
+        request = Request(self.base + route, data=encoded, headers={"Content-Type": "application/json", "X-Retract-Client": "mcp"})
         try:
             with self.open(request, timeout=60 if route == "/updates/natural" else 15) as response:
                 return self.read_json(response)

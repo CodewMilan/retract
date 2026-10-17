@@ -230,3 +230,57 @@ class GraphStore:
         return {"facts": facts, "sources": self.sources(project, ids),
                 "replacement_links": [{"new_fact_id": a, "old_fact_id": b} for a, b in links],
                 "events": [json.loads(row[0]) for row in events]}
+
+    def list_projects(self):
+        rows = self.query("MATCH (p:Project) RETURN properties(p) ORDER BY p.name, p.id LIMIT 101", {})
+        return {"projects": [dict(row[0]) for row in rows[:100]], "truncated": len(rows) > 100}
+
+    def dashboard_snapshot(self, project, scope=None):
+        """Bound every panel independently; preserve real graph edges and totals."""
+        params = {"project": project, "scope": scope}
+        truncated = {}
+        counts = {}
+
+        def panel(label, condition, name):
+            clause = f"MATCH (n:{label} {{project_id: $project}}) WHERE "
+            clause += "($scope IS NULL OR n.scope = $scope) AND " + condition
+            counts[name] = self.query(clause + " RETURN count(n)", params)[0][0]
+            rows = self.query(clause + " RETURN properties(n) ORDER BY n.recorded_at DESC, n.id LIMIT 201", params)
+            truncated[name] = len(rows) > 200
+            return [dict(row[0]) for row in rows[:200]]
+
+        active = panel("Fact", "n.status = 'active'", "active")
+        historical = panel("Fact", "n.status = 'superseded'", "superseded")
+        plans = panel("Plan", "n.status = 'needs_review'", "affected")
+        pending = panel("UpdateEvent", "n.outcome IN ['pending', 'proposal']", "pending")
+        recent = panel("UpdateEvent", "true", "updates")
+        updates = list({event["id"]: event for event in recent + pending}.values())
+        facts = active + historical
+        edge_params = {"project": project, "facts": [n["id"] for n in facts],
+                       "plans": [n["id"] for n in plans], "events": [n["id"] for n in updates]}
+        # Edges touching displayed facts/plans/events may reach another scope in
+        # this project. Expose that scope explicitly, never invent an endpoint.
+        edges = self.query(
+            "MATCH (a {project_id: $project})-[r]->(b {project_id: $project}) WHERE "
+            "(type(r) = 'SUPPORTS' AND b:Fact AND b.id IN $facts) OR "
+            "(type(r) = 'SUPERSEDES' AND a:Fact AND a.id IN $facts) OR "
+            "(type(r) = 'DEPENDS_ON' AND a:Plan AND a.id IN $plans) OR "
+            "(type(r) IN ['BASED_ON', 'RETIRED', 'ACCEPTED', 'FLAGGED'] AND a:UpdateEvent AND a.id IN $events) "
+            "RETURN type(r), properties(a), properties(b) ORDER BY type(r), a.id, b.id LIMIT 1001",
+            edge_params,
+        )
+        truncated["edges"] = len(edges) > 1000
+        scopes = self.query(
+            "MATCH (n {project_id: $project}) WHERE n.scope IS NOT NULL "
+            "RETURN DISTINCT n.scope ORDER BY n.scope LIMIT 201", {"project": project},
+        )
+        truncated["scopes"] = len(scopes) > 200
+        # Event nodes in edges would expose replay internals and duplicate bodies.
+        def endpoint(node):
+            return {key: value for key, value in dict(node).items()
+                    if key not in ("fingerprint", "result_json")}
+
+        return {"facts": facts, "plans": plans, "updates": updates, "counts": counts,
+                "scopes": [row[0] for row in scopes[:200]], "truncated": truncated,
+                "edges": [{"relationship": kind, "from": endpoint(a), "to": endpoint(b)}
+                          for kind, a, b in edges[:1000]]}
