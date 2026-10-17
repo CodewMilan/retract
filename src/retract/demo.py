@@ -8,6 +8,7 @@ is bound to localhost and must never be used for real accounts.
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from importlib.resources import files
 import os
 import secrets
 import sys
@@ -146,6 +147,23 @@ def make_demo_handler(app):
                     valid = False
                 if not valid:
                     raise DemoError(403, "Local demo origin required")
+                assets = {"/settings": ("index.html", "text/html"),
+                          "/assets/account/settings.css": ("settings.css", "text/css"),
+                          "/assets/account/settings.mjs": ("settings.mjs", "text/javascript"),
+                          "/assets/account/account-client.mjs": ("account-client.mjs", "text/javascript")}
+                if self.command == "GET" and self.path in assets:
+                    name, mime = assets[self.path]
+                    encoded = files("retract").joinpath("account_web", name).read_bytes()
+                    self.send_response(200)
+                    for name, value in (("Content-Type", mime + "; charset=utf-8"), ("Content-Length", str(len(encoded))),
+                                        ("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff"),
+                                        ("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"),
+                                        ("Connection", "close")):
+                        self.send_header(name, value)
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    self.close_connection = True
+                    return
                 body = {}
                 if self.command in ("POST", "PATCH"):
                     if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
@@ -190,7 +208,7 @@ def main():
             return
         store.health()
         server = ThreadingHTTPServer(("127.0.0.1", args.port), make_demo_handler(DemoApp(store)))
-        print(f"Synthetic account API on http://127.0.0.1:{server.server_port}; settings UI is the fresh-agent exercise", flush=True)
+        print(f"Synthetic account settings on http://127.0.0.1:{server.server_port}/settings", flush=True)
         try:
             server.serve_forever()
         finally:

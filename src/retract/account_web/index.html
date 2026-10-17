@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="color-scheme" content="light dark"><title>Account settings · RETRACT demo</title>
+ <link rel="stylesheet" href="/assets/account/settings.css">
+ <script type="module" src="/assets/account/settings.mjs"></script>
+</head>
+<body>
+ <a class="skip" href="#content">Skip to account settings</a>
+ <header class="site-header"><a href="/settings" class="wordmark">↶ RETRACT</a><span class="demo-label">Synthetic account demo</span></header>
+ <main id="content" tabindex="-1">
+  <div class="page-heading"><p class="eyebrow">Your account</p><h1>Account settings</h1><p class="muted">Keep your profile up to date.</p></div>
+  <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+  <div id="error" class="error" role="alert" hidden></div>
+  <section id="loading" class="panel loading" aria-label="Loading account" aria-busy="true">
+   <p class="muted">Checking your session…</p><div class="skeleton short" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div>
+  </section>
+  <section id="signed-out" class="panel" aria-labelledby="login-heading" hidden>
+   <h2 id="login-heading">Sign in to the demo</h2><p class="muted">Choose a synthetic account to edit its profile.</p>
+   <form id="login-form">
+    <fieldset><legend>Demo account</legend><div class="account-options">
+     <label class="account-option"><input type="radio" name="user_id" value="alice" checked><span><strong>Alice Example</strong><small>alice@example.test</small></span></label>
+     <label class="account-option"><input type="radio" name="user_id" value="bob"><span><strong>Bob Example</strong><small>bob@example.test</small></span></label>
+    </div></fieldset>
+    <button type="submit" class="primary" id="sign-in">Sign in</button>
+   </form>
+  </section>
+  <section id="profile" class="panel" aria-labelledby="profile-heading" hidden>
+   <div class="profile-heading"><div class="avatar" id="avatar" aria-hidden="true"></div><div><h2 id="profile-heading">Profile</h2><p id="signed-in-as" class="muted"></p></div><button id="sign-out" type="button" class="quiet">Sign out</button></div>
+   <form id="profile-form">
+    <div class="field"><label for="display-name">Display name <span class="muted">(required)</span></label><input id="display-name" type="text" autocomplete="name" spellcheck="false" maxlength="160" required aria-describedby="name-hint name-error"><p id="name-hint" class="hint">Use 1–80 characters.</p><p id="name-error" class="field-error" hidden></p></div>
+    <div class="field"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" readonly aria-describedby="email-hint"><p id="email-hint" class="hint">Your email address is fixed in this demo.</p></div>
+    <div class="form-actions"><span id="edit-state" class="muted">No unsaved changes</span><button id="save" type="submit" class="primary" disabled>Save changes</button></div>
+   </form>
+  </section>
+  <button id="retry" type="button" hidden>Refresh session</button>
+  <footer><p>This local demo uses the supplied Alice and Bob accounts. It does not accept real accounts or passwords.</p></footer>
+  <noscript><p class="error">Enable JavaScript to sign in and edit this demo profile.</p></noscript>
+ </main>
+</body></html>
