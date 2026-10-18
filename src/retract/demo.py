@@ -213,7 +213,7 @@ def make_demo_handler(app):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Synthetic account API for the RETRACT coding exercise")
+    parser = argparse.ArgumentParser(description="Synthetic account API for the Retract coding exercise")
     parser.add_argument("--seed", action="store_true", help="Explicitly create and seed synthetic PostgreSQL profiles, then exit")
     parser.add_argument("--port", type=int, default=8101)
     args = parser.parse_args()

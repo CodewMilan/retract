@@ -43,7 +43,7 @@ def writer_lock():
         try:
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            raise RuntimeError("Another RETRACT service owns this graph on this machine") from None
+            raise RuntimeError("Another Retract service owns this graph on this machine") from None
         try:
             yield
         finally:
@@ -66,7 +66,7 @@ def load_env_file(path: Path = Path(".env")) -> None:
 
 def main():
     load_env_file()
-    parser = argparse.ArgumentParser(description="RETRACT local project memory")
+    parser = argparse.ArgumentParser(description="Retract local project memory")
     parser.add_argument("--url", default=os.getenv("RETRACT_URL", "http://127.0.0.1:8100"))
     commands = parser.add_subparsers(dest="command", required=True)
     serve = commands.add_parser("serve")
@@ -112,7 +112,7 @@ def main():
                     elif mode != "local":
                         raise ValueError("RETRACT_MODE must be local or hosted")
                     server = make_server(MemoryService(store), args.port, hosted=hosted)
-                    print(f"RETRACT {mode} listening on port {server.server_port}", flush=True)
+                    print(f"Retract {mode} listening on port {server.server_port}", flush=True)
                     server.serve_forever()
                 finally:
                     if server:
