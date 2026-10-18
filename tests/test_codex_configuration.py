@@ -34,3 +34,18 @@ class ConfigurationTests(unittest.TestCase):
             self.assertIn("codex exec --json", script)
             self.assertIn("AGENT_TASK.md", script)
             self.assertNotIn("dangerously-bypass", script)
+            self.assertNotIn("tools", config["mcp_servers"]["retract"])
+            self.assertNotIn("developer confirms", script.lower())
+
+    def test_only_explicit_developer_confirmation_preapproves_revise_plan(self):
+        import sys
+        with tempfile.TemporaryDirectory() as directory:
+            result = prepare(Path(directory), python=Path(sys.executable), api_url="http://127.0.0.1:8100",
+                             confirm_revision=True)
+            server = tomllib.loads(Path(result["configuration"]).read_text())["mcp_servers"]["retract"]
+            self.assertEqual(server["tools"], {"revise_plan": {"approval_mode": "approve"}})
+            self.assertTrue(result["developer_confirmed_revision"])
+            self.assertIn("developer confirms in advance", Path(result["launch_script"]).read_text())
+            with self.assertRaises(ValueError):
+                prepare(Path(directory), python=Path(sys.executable), api_url="http://127.0.0.1:8100",
+                        workspace=Path(directory))

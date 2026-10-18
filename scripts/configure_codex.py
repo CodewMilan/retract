@@ -23,8 +23,11 @@ def toml_value(value):
     return json.dumps(value, ensure_ascii=False)
 
 
-def settings(root: Path, python: Path, api_url: str, report_dir: Path) -> dict:
+def settings(root: Path, python: Path, api_url: str, report_dir: Path, confirm_revision: bool = False) -> dict:
     LocalApi(api_url)
+    # Non-interactive `codex exec` rejects tools that need approval; only the
+    # developer's explicit flag pre-approves the one confirmed plan revision.
+    approvals = {"tools": {"revise_plan": {"approval_mode": "approve"}}} if confirm_revision else {}
     return {
         # Resolving a venv's executable symlink would discard its site-packages.
         "command": str(python.expanduser().absolute()),
@@ -33,6 +36,7 @@ def settings(root: Path, python: Path, api_url: str, report_dir: Path) -> dict:
         "env": {"PYTHONPATH": str((root / "src").resolve()), "RETRACT_URL": api_url},
         "startup_timeout_sec": 10, "tool_timeout_sec": 90, "required": True,
         "enabled_tools": ["remember", "process_update", "recall", "history", "record_plan", "revise_plan", "handoff", "claim_handoff"],
+        **approvals,
     }
 
 
@@ -51,7 +55,7 @@ def prepare(report_dir: Path, *, python: Path, api_url: str, check: bool = False
     report_dir.mkdir(parents=True, exist_ok=True)
     if not (workspace / "examples/account-settings/AGENT_TASK.md").is_file():
         raise ValueError("Workspace must be a Retract checkout containing examples/account-settings/AGENT_TASK.md")
-    config = settings(ROOT, python, api_url, report_dir)
+    config = settings(ROOT, python, api_url, report_dir, confirm_revision)
     snippet = "[mcp_servers.retract]\n" + "\n".join(f"{key} = {toml_value(value)}" for key, value in config.items()) + "\n"
     (report_dir / "codex.retract.toml").write_text(snippet)
     override = "mcp_servers.retract=" + toml_value(config)

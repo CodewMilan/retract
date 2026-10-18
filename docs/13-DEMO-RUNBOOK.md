@@ -76,7 +76,10 @@ sh reports/demo-codex/start-codex-retract.sh
 ```
 
 `--developer-confirms-revision` writes the developer's approval into the
-prompt; without it Codex must not call `revise_plan`. The session trace is in
+prompt and sets `tools.revise_plan.approval_mode = "approve"` for this MCP
+server only. Non-interactive `codex exec` otherwise rejects `revise_plan`
+("requires approval, but approval policy is never"), which the rehearsal hit
+before this setting existed. Without the flag, no tool is pre-approved. The session trace is in
 `reports/demo-codex/codex-session.jsonl` and the real MCP calls are in
 `reports/demo-codex/mcp-activity.jsonl`.
 
