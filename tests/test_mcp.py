@@ -126,7 +126,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stderr)
         responses = [json.loads(line) for line in process.stdout.splitlines()]
         self.assertEqual([row["id"] for row in responses], [1, 2, 3])
-        self.assertEqual(len(responses[1]["result"]["tools"]), 6)
+        self.assertEqual(len(responses[1]["result"]["tools"]), 8)
         self.assertEqual(process.stderr, "")
 
     def test_activity_records_actual_ids_without_source_text(self):

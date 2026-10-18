@@ -37,6 +37,25 @@ passing controlled HTTP/client checks. A fresh coding-client recall/construction
 run, real browser behavior, and PostgreSQL-backed feature checks remain
 unverified integration steps.
 
+## Coordination between agents
+
+The `handoff` and `claim_handoff` MCP tools let one agent leave scoped work for
+another. A `Handoff` node `CONCERNS` a plan and `CITES` the facts the sender
+relied on; `recall` lists open handoffs. On claim, the service follows
+`SUPERSEDES` and `REVISES` paths and warns the receiver when a cited fact was
+replaced or the plan was revised after the handoff was written. Only one agent
+can claim a handoff.
+
+`python scripts/stress_concurrency.py` exercises one service process over HTTP
+against a disposable FalkorDB graph. Measured result
+([report](reports/concurrency/result.json)): 400 concurrent requests across two
+projects (200 writes, 200 reads) with zero failures, zero lost writes, and zero
+cross-project leaks; 24 writers racing on one stale revision produced 1 accept
+and 23 conflicts; 24 agents claiming one handoff produced exactly 1 winner.
+Writes are serialized within the process and guarded by the project revision;
+this is a correctness result under contention, not a horizontal-scaling claim.
+Hosted mode stores each signed-in account in a separate graph.
+
 ## Why the graph is central
 
 `SUPPORTS` records evidence, `SUPERSEDES` preserves replacement history, and
