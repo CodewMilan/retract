@@ -3,6 +3,12 @@ import EcosystemMap from "./EcosystemMap.jsx";
 import HeroEtchTrail from "./HeroEtchTrail.jsx";
 import { AutoIncrementValue, SplitWords } from "./motion.jsx";
 import { MOTION_OK, gsap, useGSAP } from "./gsap.js";
+import { DocsPage, parseDocsHash } from "./docs.jsx";
+import falkordbLogo from "./assets/falkordb.png";
+import codexLogo from "./assets/codex.png";
+import groqLogo from "./assets/groq.png";
+import postgresLogo from "./assets/postgresql.png";
+import playwrightLogo from "./assets/playwright.png";
 
 const DASHBOARD = "http://127.0.0.1:8100";
 const SETTINGS = "http://127.0.0.1:8101/settings";
@@ -33,8 +39,8 @@ const MENUS = [
         span: 1,
         rows: 2,
         items: [
-          ["MCP server", "Give any coding agent memory tools", "#setup"],
-          ["CLI", "remember, recall, and serve from a terminal", "#setup"],
+          ["MCP server", "Give any coding agent memory tools", "#docs/mcp"],
+          ["CLI", "remember, recall, and serve from a terminal", "#docs/overview/local-setup"],
         ],
       },
     ],
@@ -72,16 +78,22 @@ const MENUS = [
         span: 1,
         rows: 3,
         items: [
-          ["Docs", "Architecture, schema, and status", "#setup"],
-          ["Verification", "179 tests and a live end-to-end run", "#stats"],
-          ["Changelog", "What landed in each phase", "#setup"],
+          ["Docs", "Architecture, schema, and status", "#docs"],
+          ["Verification", "179 tests and a live end-to-end run", "#docs/status"],
+          ["Changelog", "What landed in each phase", "#docs/status"],
         ],
       },
     ],
   },
 ];
 
-const LOGOS = ["FalkorDB", "Codex", "MCP", "Groq", "PostgreSQL", "Playwright"];
+const LOGOS = [
+  { name: "FalkorDB", src: falkordbLogo, href: "#docs/architecture", wordmark: true },
+  { name: "Codex", src: codexLogo, href: "#docs/mcp" },
+  { name: "Groq", src: groqLogo, href: "#docs/natural", wordmark: true },
+  { name: "PostgreSQL", src: postgresLogo, href: "#docs/infrastructure" },
+  { name: "Playwright", src: playwrightLogo, href: "#docs/dashboard" },
+];
 
 const FEATURES = [
   {
@@ -134,10 +146,10 @@ const STATS = [
 ];
 
 const FOOTER = [
-  ["Memory", [["Remember", "#features"], ["Recall", "#features"], ["Supersede", "#features"], ["Impact", "#ecosystem-map"], ["History", "#ecosystem-map"], ["Evidence", "#spotlight"]]],
-  ["Workflow", [["Coding agents", "#cards"], ["Code review", "#cards"], ["Migrations", "#cards"], ["Onboarding", "#cards"]]],
-  ["Developers", [["Docs", "#setup"], ["MCP server", "#setup"], ["CLI", "#setup"], ["Verification", "#stats"]]],
-  ["Demo", [["Dashboard", DASHBOARD], ["Settings", SETTINGS], ["Run locally", "#setup"]]],
+  ["Memory", [["Remember", "#docs/product"], ["Recall", "#docs/architecture/retrieval"], ["Supersede", "#docs/architecture/update-pipeline"], ["Impact", "#docs/queries"], ["History", "#docs/queries/current-context-history-and-evidence"], ["Evidence", "#docs/architecture"]]],
+  ["Workflow", [["Coding agents", "#docs/mcp"], ["Code review", "#docs/product"], ["Migrations", "#docs/demo"], ["Onboarding", "#docs/product"]]],
+  ["Developers", [["Docs", "#docs"], ["MCP server", "#docs/mcp"], ["CLI", "#docs/overview/local-setup"], ["Verification", "#docs/status"]]],
+  ["Demo", [["Dashboard", DASHBOARD], ["Settings", SETTINGS], ["Run locally", "#docs/overview/local-setup"]]],
 ];
 
 function Chevron() {
@@ -157,12 +169,7 @@ function CopyIcon() {
 }
 
 function Wordmark() {
-  return (
-    <span className="nav__branding__wordmark">
-      <span className="brand-mark" aria-hidden="true">R</span>
-      <span className="brand-name">RETRACT</span>
-    </span>
-  );
+  return <span className="brand-name">Retract</span>;
 }
 
 function Nav() {
@@ -273,7 +280,7 @@ function Nav() {
               );
             })}
             <li className="nav__item">
-              <a className="nav__item__button btn btn--nav-primary" href="#setup" onClick={() => setOpen(false)}>Docs</a>
+              <a className="nav__item__button btn btn--nav-primary" href="#docs" onClick={() => setOpen(false)}>Docs</a>
             </li>
           </ul>
         </nav>
@@ -285,7 +292,7 @@ function Nav() {
             <a className="btn btn--secondary" href={SETTINGS}>Settings</a>
           </li>
           <li className="nav__item nav__item--cta">
-            <a className="btn btn--chevron" href="#setup">
+            <a className="btn btn--chevron" href="#docs/overview/local-setup">
               <span className="btn__text">Run locally</span>
               <span className="btn__icon"><Chevron /></span>
             </a>
@@ -430,7 +437,7 @@ function FeatureStack() {
               See what <span className="u-accent">memory can do</span> for your agents.
             </h2>
             <div className="textLockUp__subhead type-subhead-2">
-              <p>From the first decision to the next correction, RETRACT keeps agents working from facts that still hold.</p>
+              <p>From the first decision to the next correction, Retract keeps agents working from facts that still hold.</p>
             </div>
           </div>
         </div>
@@ -555,10 +562,27 @@ function StatsArt() {
 }
 
 export default function App() {
+  const [hash, setHash] = useState(() => window.location.hash);
+  const docs = parseDocsHash(hash);
+
+  useEffect(() => {
+    const sync = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  useEffect(() => {
+    if (docs) return undefined;
+    const id = hash.replace(/^#/, "");
+    if (!id) return undefined;
+    const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
+    return () => cancelAnimationFrame(frame);
+  }, [docs, hash]);
+
   return (
     <>
       <Nav />
-      <main id="main" className="wrapper">
+      {docs ? <DocsPage slug={docs.slug} anchor={docs.anchor} /> : <main id="main" className="wrapper">
         <section className="hero" id="top">
           <div className="hero__media">
             <HeroEtchTrail />
@@ -570,7 +594,7 @@ export default function App() {
                   <span className="u-accent">Give your agents a memory they can correct.</span>
                 </h1>
                 <div className="textLockUp__subhead type-subhead-2">
-                  <p>RETRACT keeps project decisions scoped, evidenced, and current for every agent session</p>
+                  <p>Retract keeps project decisions scoped, evidenced, and current for every agent session</p>
                 </div>
                 <div className="textLockUp__cta">
                   <div className="btn-row">
@@ -588,14 +612,16 @@ export default function App() {
 
         <section className="logoCloud section" aria-label="Local stack">
           <p className="logoCloud__eyebrow type-eyebrow-plain">The local stack this demo actually runs on</p>
-          <div className="logoCloud__grid">
-            {LOGOS.map((name) => (
-              <div className="logoCloud__item" key={name}>
-                <div className="logoCloud__logo"><span>{name}</span></div>
-                <a className="btn btn--compact logoCloud__link" href="#setup"><span className="btn__text">See the setup</span></a>
-              </div>
+          <ul className="logoCloud__row">
+            {LOGOS.map((logo) => (
+              <li key={logo.name}>
+                <a className="logoCloud__item" href={logo.href}>
+                  <img className={logo.wordmark ? "is-wordmark" : undefined} src={logo.src} alt="" />
+                  <span className={logo.wordmark ? "is-visually-hidden" : "logoCloud__name"}>{logo.name}</span>
+                </a>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
         <FeatureStack />
@@ -762,17 +788,12 @@ export default function App() {
             </dl>
           </div>
         </section>
-      </main>
+      </main>}
 
       <footer className="site-footer section">
         <div className="site-footer__grid grid">
           <div className="site-footer__left">
-            <a className="site-footer__branding" href="#top">
-              <svg viewBox="0 0 296 379" aria-hidden="true">
-                <path d="M0 0h168c72 0 116 42 116 104 0 46-25 80-66 95l78 180h-82L144 210H78v169H0zm78 70v72h84c26 0 42-14 42-36s-16-36-42-36z" fill="currentColor" />
-              </svg>
-              <span className="is-visually-hidden">RETRACT</span>
-            </a>
+            <a className="site-footer__branding brand-name" href="#top">Retract</a>
           </div>
           <nav className="site-footer__right footer-nav" aria-label="Footer">
             {FOOTER.map(([title, links]) => (

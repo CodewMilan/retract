@@ -38,6 +38,7 @@
   --color-text-link-hover: var(--color-primary-browserbase-red);
   --color-secondary-body: var(--color-warm-gray-600);
 
+  --ff-brand: "General Sans", "Inter Tight", system-ui, Arial, sans-serif;
   --ff-heading: "Inter Tight", "Inter", system-ui, Arial, sans-serif;
   --ff-text: "Inter", system-ui, Arial, sans-serif;
   --ff-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
