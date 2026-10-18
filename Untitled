@@ -1,0 +1,10 @@
+# Export these in your shell; the service does not load .env files automatically.
+FALKORDB_HOST=127.0.0.1
+FALKORDB_PORT=6380
+FALKORDB_GRAPH=retract
+RETRACT_PORT=8100
+# Optional, server-side only. Required for /updates/natural and live Phase 2 evaluation.
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-20b
+# Optional separate synthetic account fixture. These are public demo credentials.
+DEMO_DATABASE_URL=postgresql://retract_demo:local_demo_only@127.0.0.1:54330/retract_demo

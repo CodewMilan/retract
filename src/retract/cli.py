@@ -43,7 +43,22 @@ def writer_lock():
             fcntl.flock(handle, fcntl.LOCK_UN)
 
 
+def load_env_file(path: Path = Path(".env")) -> None:
+    """Read simple KEY=value lines; variables already exported take precedence."""
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key, value = key.strip(), value.strip().strip("'\"")
+        if key and value:
+            os.environ.setdefault(key, value)
+
+
 def main():
+    load_env_file()
     parser = argparse.ArgumentParser(description="RETRACT local project memory")
     parser.add_argument("--url", default=os.getenv("RETRACT_URL", "http://127.0.0.1:8100"))
     commands = parser.add_subparsers(dest="command", required=True)

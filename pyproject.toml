@@ -7,7 +7,7 @@ name = "retract-memory"
 version = "0.1.0"
 description = "Scoped, evidence-backed project memory for coding agents"
 requires-python = ">=3.12"
-dependencies = ["falkordb>=1.2,<2"]
+dependencies = ["falkordb>=1.2,<2", "certifi>=2024.2"]
 
 [project.optional-dependencies]
 demo = ["psycopg[binary]>=3.2,<4"]
