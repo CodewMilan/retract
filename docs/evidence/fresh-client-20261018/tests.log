@@ -1,0 +1,95 @@
+COMMAND: /bin/zsh -lc 'PYTHONPATH=src /Users/milan/graph/.venv/bin/python -m unittest tests.test_demo -v'
+EXIT: 0
+test_expired_session_and_logout_stop_access (tests.test_demo.DemoTests.test_expired_session_and_logout_stop_access) ... ok
+test_http_cookie_session_and_update_round_trip (tests.test_demo.DemoTests.test_http_cookie_session_and_update_round_trip) ... ok
+test_http_origin_and_json_contract_are_enforced (tests.test_demo.DemoTests.test_http_origin_and_json_contract_are_enforced) ... ok
+test_missing_cookie_and_legacy_bearer_requests_are_rejected (tests.test_demo.DemoTests.test_missing_cookie_and_legacy_bearer_requests_are_rejected) ... ok
+test_only_display_name_is_mutable_and_validated (tests.test_demo.DemoTests.test_only_display_name_is_mutable_and_validated) ... ok
+test_ownership_is_enforced_for_reads_and_writes (tests.test_demo.DemoTests.test_ownership_is_enforced_for_reads_and_writes) ... ok
+test_profile_update_requires_cookie_and_preserves_other_user (tests.test_demo.DemoTests.test_profile_update_requires_cookie_and_preserves_other_user) ... ok
+test_store_failure_does_not_report_a_successful_update (tests.test_demo.DemoTests.test_store_failure_does_not_report_a_successful_update) ... ok
+test_synthetic_login_sets_http_only_strict_cookie_and_csrf (tests.test_demo.DemoTests.test_synthetic_login_sets_http_only_strict_cookie_and_csrf) ... ok
+test_write_requires_valid_csrf_token (tests.test_demo.DemoTests.test_write_requires_valid_csrf_token) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.001s
+
+OK
+
+
+COMMAND: /bin/zsh -lc 'npm run test:settings'
+EXIT: 1
+
+> test:settings
+> node tests/account-settings.browser.mjs
+
+Fixture: http://127.0.0.1:50658; disposable schema: settings_test_5534105a3ab24c3789630f34b228265f
+Fixture cleanup: {"dropped_schema": "settings_test_5534105a3ab24c3789630f34b228265f"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+browserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /Users/milan/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/m6/_kzwlc8131n_d1g8p064cd1w0000gn/T/playwright_chromiumdev_profile-tMElZZ --remote-debugging-pipe --no-startup-window
+<launched> pid=24937
+[pid=24937][err] [1018/165025.048235:ERROR:base/power_monitor/thermal_state_observer_mac.mm:140] ThermalStateObserverMac unable to register to power notifications. Result: 9
+[pid=24937][err] [1018/165025.065969:ERROR:net/dns/dns_config_service_posix.cc:138] DNS config watch failed to start.
+[pid=24937][err] [1018/165025.074007:FATAL:base/apple/mach_port_rendezvous_mac.cc:159] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.24937: Permission denied (1100)
+Call log:
+[2m  - <launching> /Users/milan/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/m6/_kzwlc8131n_d1g8p064cd1w0000gn/T/playwright_chromiumdev_profile-tMElZZ --remote-debugging-pipe --no-startup-window[22m
+[2m  - <launched> pid=24937[22m
+[2m  - [pid=24937][err] [1018/165025.048235:ERROR:base/power_monitor/thermal_state_observer_mac.mm:140] ThermalStateObserverMac unable to register to power notifications. Result: 9[22m
+[2m  - [pid=24937][err] [1018/165025.065969:ERROR:net/dns/dns_config_service_posix.cc:138] DNS config watch failed to start.[22m
+[2m  - [pid=24937][err] [1018/165025.074007:FATAL:base/apple/mach_port_rendezvous_mac.cc:159] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.24937: Permission denied (1100)[22m
+[2m  - [pid=24937] <gracefully close start>[22m
+[2m  - [pid=24937] <kill>[22m
+[2m  - [pid=24937] <will force kill>[22m
+[2m  - [pid=24937] exception while trying to kill process: Error: kill EPERM[22m
+[2m  - [pid=24937] <process did exit: exitCode=null, signal=SIGTRAP>[22m
+[2m  - [pid=24937] starting temporary directories cleanup[22m
+[2m  - [pid=24937] finished temporary directories cleanup[22m
+[2m  - [pid=24937] <gracefully close end>[22m
+
+    at /private/tmp/retract-fresh-client-20261018/tests/account-settings.browser.mjs:23:28 {
+  log: [
+    '  - <launching> /Users/milan/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/m6/_kzwlc8131n_d1g8p064cd1w0000gn/T/playwright_chromiumdev_profile-tMElZZ --remote-debugging-pipe --no-startup-window',
+    '  - <launched> pid=24937',
+    '  - [pid=24937][err] [1018/165025.048235:ERROR:base/power_monitor/thermal_state_observer_mac.mm:140] ThermalStateObserverMac unable to register to power notifications. Result: 9',
+    '  - [pid=24937][err] [1018/165025.065969:ERROR:net/dns/dns_config_service_posix.cc:138] DNS config watch failed to start.',
+    '  - [pid=24937][err] [1018/165025.074007:FATAL:base/apple/mach_port_rendezvous_mac.cc:159] Check failed: kr == KERN_SUCCESS. bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer.24937: Permission denied (1100)',
+    '  - [pid=24937] <gracefully close start>',
+    '  - [pid=24937] <kill>',
+    '  - [pid=24937] <will force kill>',
+    '  - [pid=24937] exception while trying to kill process: Error: kill EPERM',
+    '  - [pid=24937] <process did exit: exitCode=null, signal=SIGTRAP>',
+    '  - [pid=24937] starting temporary directories cleanup',
+    '  - [pid=24937] finished temporary directories cleanup',
+    '  - [pid=24937] <gracefully close end>'
+  ]
+}
+
+Node.js v24.14.1
+
+
+COMMAND: /bin/zsh -lc 'npm run test:settings'
+EXIT: 0
+
+> test:settings
+> node tests/account-settings.browser.mjs
+
+Fixture: http://127.0.0.1:50670; disposable schema: settings_test_987db718e78d48528eda48c876a248af
+PASS static routes, origin protections, loading and signed-out state
+PASS cookie/CSRF save over real HTTP, keyboard submit and session recovery
+PASS cross-user reads/writes and missing CSRF rejected; Bob unchanged in PostgreSQL
+PASS client validation, real 400 save rejection, simulated 503 and offline retry
+PASS pending save disables controls and duplicate submits
+PASS failed logout retains session; successful logout clears cookie and blocks reload
+PASS session recovery failure/retry, login failure/retry, ended session on save
+PASS layout 375px, light, no horizontal overflow
+PASS layout 768px, dark, no horizontal overflow
+PASS layout 1280px, light, no horizontal overflow
+10 browser scenarios passed; no uncaught page errors.
+Fixture cleanup: {"dropped_schema": "settings_test_987db718e78d48528eda48c876a248af"}
+

@@ -1,0 +1,21 @@
+{
+  "baseline": "3452a9538f19907c4cb00e4248f2af00cc354639",
+  "thread_id": "01a14eba-ec99-7840-be40-88b0d0f69d67",
+  "client_exit_code": 0,
+  "successful_mcp_calls": 3,
+  "contract_tests_passed": 10,
+  "browser_scenarios_passed": 10,
+  "memory_snapshots_identical": true,
+  "files": {
+    "client-final.md": "bcfa3c877dcebdd8dcf4f524df83e2796f3924676d5e0d6d21b2d502163c1f67",
+    "codex-session.jsonl": "6e0294fd6ddd8f2cb2bb157f0203b914bd6558df1d99c6f76db0884076a46482",
+    "feature.patch": "3e8340dd55e9ba2314765ed3e282ed8f91c03f9d47f55c0ff5b5f9596a437360",
+    "implementation-report.md": "6cac19986f731cf578a52e19fe753e4cc9d8fc18efb2aa5a9dd86871c0ff6345",
+    "mcp-activity.jsonl": "62c1e8df3472e041e4218037a6a14e6107e9c520e45da2a56a46f651045fcb65",
+    "memory-after.json": "df776c548dbb31aaef58e28cced2040c31eb18ba8289105d5d5e4ffd225f395f",
+    "memory-before.json": "df776c548dbb31aaef58e28cced2040c31eb18ba8289105d5d5e4ffd225f395f",
+    "run-manifest.json": "6b2197af09712da6a62de7efd78502f609c57085e4bf67901ff460fcbfd5a94b",
+    "start-codex-retract.sh": "7c94a5556d6d2abce9caf6cc7292e800b87bf185b9577062810c304cd3834490",
+    "tests.log": "4d2036c9d81c2bdedd28e55388ef6a7ed86ae27aa21c9430a2212e683848500e"
+  }
+}

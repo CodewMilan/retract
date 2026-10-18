@@ -1,5 +1,13 @@
 # Phase 3 — MCP adapter and coding-client exercise
 
+**18 October update:** the fresh coding-client construction exercise passed in
+an isolated pre-frontend checkout, with actual recall/history, a visible P1 plan
+revision, generated code, 10 contract tests, and 10 real Chromium/PostgreSQL
+scenarios. See the [run record and preserved evidence](12-FRESH-CLIENT-RUN.md).
+The older restricted-session observations below are retained as historical
+notes; their unverified statuses are superseded by that run and the
+[developer-machine verification](06-IMPLEMENTATION-STATUS.md).
+
 Status: the adapter, Codex configuration generator, synthetic account API, and
 offline checks are implemented. Codex CLI 0.162.1 recognizes the generated
 configuration. A real fresh coding-client recall has not been observed. The

@@ -7,8 +7,10 @@ with explicit dependencies on that fact.
 Real FalkorDB integration, persistence across database and service restarts,
 PostgreSQL account storage, dashboard and settings browser checks, and a real
 Codex MCP recall have been verified locally, as has live Groq classification on
-the 16-case synthetic set. The fresh coding-client feature-generation run remains
-**unverified**. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
+the 16-case synthetic set. A fresh coding-client feature-generation run also
+passed: real recall, visible plan revision, generated code, 10 contract tests,
+and 10 Chromium scenarios. See the [recorded run and evidence](docs/12-FRESH-CLIENT-RUN.md)
+and [verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
 
@@ -188,7 +190,8 @@ The [account-settings fixture](examples/account-settings/README.md) has a separa
 PostgreSQL-backed API and an implemented `/settings` frontend. With its
 dependencies and databases available, review the generated launch script and
 follow the [Phase 3 instructions](docs/08-MCP-AND-CODING-CLIENT.md) to record the
-real coding run and feature checks. That run is still unverified here.
+real coding run and feature checks. The [18 October construction run](docs/12-FRESH-CLIENT-RUN.md)
+passed in an isolated pre-frontend checkout.
 
 The account page supports synthetic sign-in, cookie-session recovery, profile
 editing, save/retry, and sign-out at `http://127.0.0.1:8101/settings`. Run
@@ -282,15 +285,12 @@ against it. There is intentionally no automatic destructive reset command.
 
 ## Next gate
 
-Run the real FalkorDB suite and restart checks, fix any query/SDK incompatibility,
-and pin the verified client and image versions. Run the Phase 2 live evaluation
-and resolve any classifier failures. Run the configured coding-client exercise
-and inspect its real recall and feature-test evidence. Run the dashboard browser
-and real graph checks described in [the dashboard guide](docs/09-DASHBOARD.md).
-The evaluation runner now produces fresh reports with source/artifact hashes.
-Run its live checks and the real coding-client exercise, then record the genuine
-working demo. Earlier live gates remain open as recorded in
-[the build plan](docs/05-BUILD-PLAN.md).
+Record the working demo showing the dashboard, correction, fresh-client recall,
+plan revision, code diff, and tests. Prepare the public repository and submission
+materials. Local database/restart, model, browser, and fresh-client results are
+recorded in [the verification record](docs/06-IMPLEMENTATION-STATUS.md); rerun
+relevant checks when their implementation changes. Earlier planning documents
+retain historical milestones and are not the current verification status.
 
 Implementation was developed with OpenAI Codex assistance. Runtime dependency:
 the official [FalkorDB Python client](https://github.com/FalkorDB/falkordb-py).

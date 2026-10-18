@@ -121,7 +121,12 @@ recall returned “Local service unavailable”; no fact/source IDs were retriev
 No memory was reseeded, corrected, or fabricated to complete the feature.
 This is not evidence of a successful fresh coding-client MCP recall.
 
-For the original implementation exercise, use an isolated checkout at the
+The [18 October fresh-client construction run](../../docs/12-FRESH-CLIENT-RUN.md)
+passed separately with real memory retrieval, a visible plan revision, and
+tested generated code. The unsuccessful direct-build attempt above is retained
+as historical evidence.
+
+For another original implementation exercise, use an isolated checkout at the
 pre-frontend baseline `3452a9538f19907c4cb00e4248f2af00cc354639`. Run the configuration
 generator from that checkout, with the installed runtime interpreter, so the
 fresh client sees the original task without this completed frontend. Do not

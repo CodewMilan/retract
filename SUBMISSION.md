@@ -1,7 +1,10 @@
 # RETRACT — submission draft
 
-Status: prepared copy, not submitted. Runtime/database, live model, browser,
-real coding-client feature, and working-video evidence remain unverified.
+Status: prepared copy, not submitted. Local runtime/database, live model,
+browser, and [fresh coding-client feature](docs/12-FRESH-CLIENT-RUN.md) checks
+have passed. Working-video, publication, and final submission review remain
+pending. Older checklist entries below must be reconciled with the verification
+record before submission.
 
 **Track:** Agent Memory and Coordination.
 

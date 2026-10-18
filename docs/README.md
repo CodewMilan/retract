@@ -2,7 +2,7 @@
 
 Working name: RETRACT. Planning baseline: 16 October 2026.
 
-Status: backend, interpretation, MCP adapter, demo API, dashboard, and evaluation code exist with passing offline tests. Real database/persistence, live classification, and the fresh coding-client feature run remain unverified. No benchmark or production deployment is claimed. See the [implementation record](06-IMPLEMENTATION-STATUS.md), [Phase 2 notes](07-NATURAL-LANGUAGE-UPDATES.md), [Phase 3 notes](08-MCP-AND-CODING-CLIENT.md), [dashboard guide](09-DASHBOARD.md), [evaluation guide](10-EVALUATION-AND-RELEASE.md), and [local setup instructions](../README.md).
+Status, 18 October 2026: local database/persistence, live classification, MCP, dashboard, and browser checks have passed. The [fresh coding-client construction run](12-FRESH-CLIENT-RUN.md) also passed with real retrieval, visible plan revision, generated code, and tests. Video and publication remain pending. No benchmark or production deployment is claimed. See the [implementation record](06-IMPLEMENTATION-STATUS.md) and [local setup instructions](../README.md). Read [realproduct.md](realproduct.md) first for the current product direction; earlier planning documents retain historical milestones.
 
 ## What we are building
 

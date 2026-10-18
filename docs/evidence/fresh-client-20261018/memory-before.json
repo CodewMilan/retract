@@ -1,0 +1,300 @@
+{
+  "web": {
+    "active_facts": [
+      {
+        "id": "F5",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:21.795721+00:00",
+        "scope": "web-client/main",
+        "subject": "browser-api",
+        "predicate": "authentication",
+        "value": "HTTP-only cookie sessions",
+        "status": "active"
+      }
+    ],
+    "sources": [
+      {
+        "source": {
+          "id": "S-U1",
+          "project_id": "account-settings",
+          "kind": "developer",
+          "title": "Approved browser authentication correction",
+          "content": "Approved for web-client/main: browser authentication now uses HTTP-only cookie sessions. The old bearer-token instruction for the browser is replaced. CLI authentication is unchanged.",
+          "authority": "developer",
+          "recorded_at": "2026-10-17T17:31:21.793834+00:00"
+        },
+        "fact_id": "F5"
+      }
+    ],
+    "affected_plans": [
+      {
+        "plan": {
+          "id": "P1",
+          "project_id": "account-settings",
+          "scope": "web-client/main",
+          "status": "needs_review",
+          "text": "Settings-page implementation assumes the browser supplies an Authorization bearer header. Preserve profile ownership checks."
+        },
+        "explanation_paths": [
+          {
+            "event_id": "U1",
+            "plan_id": "P1",
+            "fact_id": "F1",
+            "relationship": "DEPENDS_ON"
+          }
+        ]
+      }
+    ],
+    "pending_conflicts": [],
+    "project_revision": 7
+  },
+  "cli": {
+    "active_facts": [
+      {
+        "id": "F2",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:16.868382+00:00",
+        "scope": "cli-client/main",
+        "subject": "cli-api",
+        "predicate": "authentication",
+        "value": "bearer tokens",
+        "status": "active"
+      }
+    ],
+    "sources": [
+      {
+        "source": {
+          "id": "S-F2",
+          "project_id": "account-settings",
+          "kind": "document",
+          "title": "Approved architecture note: cli-api",
+          "content": "CLI API authentication uses bearer tokens.",
+          "authority": "approved_document",
+          "recorded_at": "2026-10-17T17:31:16.866667+00:00"
+        },
+        "fact_id": "F2"
+      }
+    ],
+    "affected_plans": [],
+    "pending_conflicts": [],
+    "project_revision": 7
+  },
+  "account": {
+    "active_facts": [
+      {
+        "id": "F3",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:16.873647+00:00",
+        "scope": "account-service/main",
+        "subject": "account-data",
+        "predicate": "database",
+        "value": "PostgreSQL",
+        "status": "active"
+      },
+      {
+        "id": "F4",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:16.877654+00:00",
+        "scope": "account-service/main",
+        "subject": "profile",
+        "predicate": "ownership",
+        "value": "own profile only",
+        "status": "active"
+      }
+    ],
+    "sources": [
+      {
+        "source": {
+          "id": "S-F3",
+          "project_id": "account-settings",
+          "kind": "document",
+          "title": "Approved architecture note: account-data",
+          "content": "Account data uses PostgreSQL.",
+          "authority": "approved_document",
+          "recorded_at": "2026-10-17T17:31:16.872080+00:00"
+        },
+        "fact_id": "F3"
+      },
+      {
+        "source": {
+          "id": "S-F4",
+          "project_id": "account-settings",
+          "kind": "document",
+          "title": "Approved architecture note: profile",
+          "content": "Users may update only their own profile.",
+          "authority": "approved_document",
+          "recorded_at": "2026-10-17T17:31:16.876652+00:00"
+        },
+        "fact_id": "F4"
+      }
+    ],
+    "affected_plans": [],
+    "pending_conflicts": [],
+    "project_revision": 7
+  },
+  "history": {
+    "facts": [
+      {
+        "id": "F1",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:16.860064+00:00",
+        "scope": "web-client/main",
+        "subject": "browser-api",
+        "predicate": "authentication",
+        "value": "bearer tokens",
+        "status": "superseded",
+        "superseded_at": "2026-10-17T17:31:21.797084+00:00"
+      },
+      {
+        "id": "F5",
+        "project_id": "account-settings",
+        "recorded_at": "2026-10-17T17:31:21.795721+00:00",
+        "scope": "web-client/main",
+        "subject": "browser-api",
+        "predicate": "authentication",
+        "value": "HTTP-only cookie sessions",
+        "status": "active"
+      }
+    ],
+    "sources": [
+      {
+        "source": {
+          "id": "S-F1",
+          "project_id": "account-settings",
+          "kind": "document",
+          "title": "Approved architecture note: browser-api",
+          "content": "Browser API authentication uses bearer tokens.",
+          "authority": "approved_document",
+          "recorded_at": "2026-10-17T17:31:16.858332+00:00"
+        },
+        "fact_id": "F1"
+      },
+      {
+        "source": {
+          "id": "S-U1",
+          "project_id": "account-settings",
+          "kind": "developer",
+          "title": "Approved browser authentication correction",
+          "content": "Approved for web-client/main: browser authentication now uses HTTP-only cookie sessions. The old bearer-token instruction for the browser is replaced. CLI authentication is unchanged.",
+          "authority": "developer",
+          "recorded_at": "2026-10-17T17:31:21.793834+00:00"
+        },
+        "fact_id": "F5"
+      }
+    ],
+    "replacement_links": [
+      {
+        "new_fact_id": "F5",
+        "old_fact_id": "F1"
+      }
+    ],
+    "events": [
+      {
+        "accepted_fact_ids": [
+          "F5"
+        ],
+        "candidate": {
+          "excerpt": "browser authentication now uses HTTP-only cookie sessions.",
+          "predicate": "authentication",
+          "subject": "browser-api",
+          "value": "HTTP-only cookie sessions"
+        },
+        "classification": "confirmed_change",
+        "event_id": "U1",
+        "expected_revision": 5,
+        "explanation_paths": [
+          {
+            "fact_id": "F1",
+            "plan_id": "P1",
+            "relationship": "DEPENDS_ON"
+          }
+        ],
+        "flagged_plan_ids": [
+          "P1"
+        ],
+        "outcome": "applied",
+        "reason": "Confirmed authoritative replacement of the declared scoped fact",
+        "resulting_revision": 6,
+        "retired_fact_ids": [
+          "F1"
+        ],
+        "source_id": "S-U1"
+      }
+    ],
+    "project_revision": 7
+  },
+  "correction": {
+    "event": {
+      "accepted_fact_ids": [
+        "F5"
+      ],
+      "candidate": {
+        "excerpt": "browser authentication now uses HTTP-only cookie sessions.",
+        "predicate": "authentication",
+        "subject": "browser-api",
+        "value": "HTTP-only cookie sessions"
+      },
+      "classification": "confirmed_change",
+      "event_id": "U1",
+      "expected_revision": 5,
+      "explanation_paths": [
+        {
+          "fact_id": "F1",
+          "plan_id": "P1",
+          "relationship": "DEPENDS_ON"
+        }
+      ],
+      "flagged_plan_ids": [
+        "P1"
+      ],
+      "outcome": "applied",
+      "reason": "Confirmed authoritative replacement of the declared scoped fact",
+      "resulting_revision": 6,
+      "retired_fact_ids": [
+        "F1"
+      ],
+      "source_id": "S-U1"
+    },
+    "source": {
+      "id": "S-U1",
+      "project_id": "account-settings",
+      "kind": "developer",
+      "title": "Approved browser authentication correction",
+      "content": "Approved for web-client/main: browser authentication now uses HTTP-only cookie sessions. The old bearer-token instruction for the browser is replaced. CLI authentication is unchanged.",
+      "authority": "developer",
+      "recorded_at": "2026-10-17T17:31:21.793834+00:00"
+    },
+    "project_revision": 7
+  },
+  "proposal": {
+    "event": {
+      "accepted_fact_ids": [],
+      "candidate": {
+        "excerpt": "Should we replace PostgreSQL with MongoDB?",
+        "predicate": "database",
+        "subject": "account-data",
+        "value": "MongoDB"
+      },
+      "classification": "proposal",
+      "event_id": "U2",
+      "expected_revision": 6,
+      "explanation_paths": [],
+      "flagged_plan_ids": [],
+      "outcome": "proposal",
+      "reason": "A proposal does not change accepted memory",
+      "resulting_revision": 7,
+      "retired_fact_ids": [],
+      "source_id": "S-U2"
+    },
+    "source": {
+      "id": "S-U2",
+      "project_id": "account-settings",
+      "kind": "developer",
+      "title": "Unaccepted database proposal",
+      "content": "Should we replace PostgreSQL with MongoDB?",
+      "authority": "developer",
+      "recorded_at": "2026-10-17T17:31:21.923897+00:00"
+    },
+    "project_revision": 7
+  }
+}

@@ -1,0 +1,701 @@
+diff --git a/examples/account-settings/README.md b/examples/account-settings/README.md
+index 2aa0f60..7bb6814 100644
+--- a/examples/account-settings/README.md
++++ b/examples/account-settings/README.md
+@@ -1,7 +1,7 @@
+ # Account-settings coding exercise
+ 
+-This is a small synthetic backend for the RETRACT demo. The settings frontend is
+-the task for a fresh coding session and is deliberately not implemented here.
++This is a small synthetic application for the RETRACT demo. The settings frontend
++is served at `/settings` by the same process as the account API.
+ The running fixture stores Alice and Bob's profiles in PostgreSQL. The login
+ endpoint selects those synthetic users without a password; keep it local and use
+ only the supplied fake accounts.
+@@ -21,6 +21,30 @@ database uses its own named volume, separate from FalkorDB. Override the local
+ connection with `DEMO_DATABASE_URL` if necessary. The default credentials in
+ Compose are deliberately public synthetic demo credentials.
+ 
++Open `http://127.0.0.1:8101/settings` to choose Alice or Bob, edit a display name,
++save, and sign out. Reloading recovers the current session. The frontend uses
++same-origin cookie requests and keeps the returned CSRF token only in memory.
++Run from this source checkout (or an editable installation); these example
++assets are not bundled into the Python wheel.
++
++## Feature checks
++
++From this exercise checkout:
++
++```sh
++PYTHONPATH=src /Users/milan/graph/.venv/bin/python -m unittest tests.test_demo -v
++npm run test:settings
++```
++
++The browser check uses the linked Playwright installation and Chromium. It starts
++its own server on a free loopback port and creates a randomly named PostgreSQL
++schema using the synthetic Compose credentials. It drops that schema on normal
++completion or test failure. Set `DEMO_TEST_DATABASE_URL` to override the test
++database. It does not use the running demo service or the memory graph.
++Screenshots are saved under `reports/account-settings/` (ignored by Git).
++See [the implementation report](IMPLEMENTATION_REPORT.md) for actual evidence,
++results, and limitations from this construction run.
++
+ ## Existing API contract
+ 
+ | Request | Behavior |
+@@ -71,5 +95,7 @@ session-only MCP configuration override. It preserves the user's settings and
+ records visible Codex events in `reports/phase3/codex-session.jsonl`, plus tool
+ metadata in `reports/phase3/mcp-activity.jsonl`. It uses the client's configured
+ model and account. Inspect those genuine records, the generated changes, and
+-feature tests before claiming success. This fresh coding run has not happened
+-in the current session; no generated frontend or model reasoning is fabricated.
++feature tests before claiming success. These launch instructions alone are not
++evidence that a coding run occurred. The implementation report records the direct
++tool calls and feature checks performed for this checkout; it does not claim that
++the separate launch script or programmatic probe was run.
+diff --git a/package.json b/package.json
+index 186762d..bac8410 100644
+--- a/package.json
++++ b/package.json
+@@ -4,7 +4,8 @@
+   "type": "module",
+   "scripts": {
+     "test": "node --test tests/dashboard-model.test.mjs",
+-    "test:browser": "node tests/dashboard.browser.mjs"
++    "test:browser": "node tests/dashboard.browser.mjs",
++    "test:settings": "node tests/account-settings.browser.mjs"
+   },
+   "devDependencies": {
+     "playwright": "1.63.0"
+diff --git a/src/retract/demo.py b/src/retract/demo.py
+index 833ac38..9e1a009 100644
+--- a/src/retract/demo.py
++++ b/src/retract/demo.py
+@@ -9,6 +9,7 @@ from http.cookies import CookieError, SimpleCookie
+ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+ import json
+ import os
++from pathlib import Path
+ import secrets
+ import sys
+ from threading import RLock
+@@ -17,6 +18,12 @@ from urllib.parse import urlsplit
+ 
+ 
+ COOKIE = "retract_demo_session"
++SETTINGS_ROOT = Path(__file__).resolve().parents[2] / "examples" / "account-settings"
++SETTINGS_ASSETS = {
++    "/settings": ("index.html", "text/html; charset=utf-8"),
++    "/settings/settings.css": ("settings.css", "text/css; charset=utf-8"),
++    "/settings/settings.js": ("settings.js", "text/javascript; charset=utf-8"),
++}
+ 
+ 
+ class DemoError(RuntimeError):
+@@ -146,6 +153,22 @@ def make_demo_handler(app):
+                     valid = False
+                 if not valid:
+                     raise DemoError(403, "Local demo origin required")
++                asset = SETTINGS_ASSETS.get(urlsplit(self.path).path)
++                if self.command == "GET" and asset:
++                    filename, content_type = asset
++                    encoded = (SETTINGS_ROOT / filename).read_bytes()
++                    self.send_response(200)
++                    for name, value in (
++                        ("Content-Type", content_type), ("Content-Length", str(len(encoded))),
++                        ("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff"),
++                        ("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"),
++                        ("Connection", "close"),
++                    ):
++                        self.send_header(name, value)
++                    self.end_headers()
++                    self.wfile.write(encoded)
++                    self.close_connection = True
++                    return
+                 body = {}
+                 if self.command in ("POST", "PATCH"):
+                     if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+@@ -190,7 +213,7 @@ def main():
+             return
+         store.health()
+         server = ThreadingHTTPServer(("127.0.0.1", args.port), make_demo_handler(DemoApp(store)))
+-        print(f"Synthetic account API on http://127.0.0.1:{server.server_port}; settings UI is the fresh-agent exercise", flush=True)
++        print(f"Synthetic account settings on http://127.0.0.1:{server.server_port}/settings", flush=True)
+         try:
+             server.serve_forever()
+         finally:
+diff --git a/examples/account-settings/IMPLEMENTATION_REPORT.md b/examples/account-settings/IMPLEMENTATION_REPORT.md
+new file mode 100644
+index 0000000..509348f
+--- /dev/null
++++ b/examples/account-settings/IMPLEMENTATION_REPORT.md
+@@ -0,0 +1,121 @@
++# Account settings construction — 2026-10-18
++
++Implemented `/settings` in this isolated source checkout. No other checkout or
++later Git revision was inspected for a solution. No subagents were spawned,
++memory writes issued, or existing live service modified. The initial untracked
++`node_modules` link was retained.
++
++## Retrieved evidence and revised plan
++
++Actual read-only RETRACT MCP calls, before implementation planning:
++
++1. `mcp__retract__recall({"project_id":"account-settings","scope":"web-client/main","subjects":["browser-api"]})`
++   returned active **F5**, source **S-U1**, affected plan **P1** (`needs_review`),
++   and explanation path **U1 → P1 → F1 (DEPENDS_ON)**.
++2. `mcp__retract__recall({"project_id":"account-settings","scope":"account-service/main","subjects":["profile","account-data"]})`
++   returned **F3 / S-F3** (PostgreSQL) and **F4 / S-F4** (own profile only).
++3. `mcp__retract__history({"project_id":"account-settings","event_id":"U1"})`
++   confirmed applied event **U1**, source **S-U1**, retirement of **F1**, acceptance
++   of **F5**, and flagging of **P1**. U1 changed revision 5 to 6; all three reads
++   reported current project revision **7**. Both recalls had no pending conflicts
++   in their requested scopes. These were direct connected MCP calls, not a
++   programmatic MCP probe or a claim about the separate launcher logs.
++
++P1's retrieved text assumed an Authorization bearer header while retaining
++ownership checks. The revised implementation plan, explained visibly before
++coding, replaces that assumption with F5's HTTP-only cookie sessions: recover
++`/api/session`, use the returned user ID and CSRF token, submit same-origin
++requests, and let the browser manage the cookie. Keep F3 PostgreSQL storage and
++F4 ownership enforcement. This revision exists in the implementation and this
++report only; P1 was not written back to graph memory.
++
++Repository evidence inspected independently:
++
++- [Task](AGENT_TASK.md) and [API README](README.md).
++- [Backend](../../src/retract/demo.py): `DemoApp.session` rejects bearer headers;
++  `dispatch` requires CSRF and enforces ownership; `PostgresProfiles` stores data.
++- [Existing tests](../../tests/test_demo.py): cookie, bearer rejection, CSRF,
++  ownership, validation, expiry, logout, origin, and storage failure contracts.
++- [Current approved correction](notes/002-current-auth.md): agrees with F5/F3/F4.
++- [Historical note](notes/001-original-auth.md): explicitly superseded F1.
++- [Compose](../../compose.demo.yaml): synthetic PostgreSQL connection details.
++
++No current memory/repository conflict was found. Memory identified the stale P1
++dependency, but the backend and approved note independently reveal the correct
++contract; success cannot be uniquely attributed to memory. The note mentions U2;
++no separate U2 history call was made.
++
++## Files changed
++
++- `examples/account-settings/index.html`, `settings.css`, `settings.js`: accessible
++  forms, synthetic account selection, session recovery/retry, save, sign-out,
++  loading/saved/error states, responsive neutral light/dark styling. No bearer
++  token storage, cookie reads, or Authorization construction in application JS.
++- `src/retract/demo.py`: three explicit GET routes for the page, CSS, and JS,
++  after existing Host/Origin validation; content types, no-store, nosniff, CSP;
++  startup URL updated. API and PostgreSQL storage logic unchanged.
++- `tests/account-settings.browser.mjs`: browser feature scenarios and network
++  assertions against the real server, with explicitly controlled failure cases.
++- `tests/account_settings_server.py`: free-port fixture using a disposable
++  PostgreSQL schema, seeded only in that schema and dropped afterward.
++- `package.json`: `test:settings` command.
++- `examples/account-settings/README.md` and this report: usage and evidence.
++
++## Exact results
++
++`PYTHONPATH=src /Users/milan/graph/.venv/bin/python -m unittest tests.test_demo -v`
++exited **0**: **10 tests ran in 0.001s; OK**. Existing tests were not weakened or
++modified.
++
++First `npm run test:settings` exited **1**, before any browser scenario ran:
++Chromium launch failed under the macOS sandbox with
++`bootstrap_check_in ... MachPortRendezvousServer ... Permission denied (1100)`.
++The server had started at `http://127.0.0.1:50658`; schema
++`settings_test_5534105a3ab24c3789630f34b228265f` was dropped in cleanup.
++
++The identical command was retried with `require_escalated` to permit Chromium to
++launch. It exited **0**, with **10 browser scenarios passed** and **no uncaught
++page errors**:
++
++1. Static routes, content types/security headers, Host/Origin protection, loading,
++   signed-out state, initial keyboard focus.
++2. Alice sign-in, real HTTP-only Strict cookie on PATCH, exact CSRF header, no
++   Authorization header, exact own-profile URL/body, Enter submission, empty web
++   storage, and session/name recovery after reload.
++3. Cross-user GET/PATCH rejected with 403, missing-CSRF write rejected with 403,
++   Bob's original PostgreSQL profile unchanged in a separate authenticated context.
++4. Client whitespace validation; real backend 400 from an intentionally corrupted
++   request; simulated 503; browser offline failure; preserved draft and retry.
++5. Delayed save, disabled controls, duplicate submit suppression, literal text.
++6. Simulated logout failure, successful logout CSRF/no-bearer request, cookie
++   deletion, signed-out reload.
++7. Simulated session/login failures and retries; real invalidated session on save;
++   Bob re-login and save to `/api/profiles/bob`.
++8. 375px light layout, no horizontal overflow.
++9. 768px dark layout, no horizontal overflow.
++10. 1280px light layout, no horizontal overflow.
++
++Successful fixture: `http://127.0.0.1:50670`, schema
++`settings_test_987db718e78d48528eda48c876a248af`. Cleanup explicitly reported that
++schema dropped and the fixture exited 0. The fixture used the required interpreter
++with `PYTHONPATH=src`. Both servers stopped; no service remains running.
++
++`git diff --check` exited **0** with no output. Screenshots exist at
++`reports/account-settings/settings-{375,768,1280}.png`; mobile/light and
++tablet/dark were visually inspected. Code changes remain uncommitted in this
++checkout; no reset or cleanup discarded the implementation.
++
++## Limits
++
++- Browser coverage is Chromium only; no Firefox, WebKit, real mobile device,
++  screen-reader, or full accessibility audit was run.
++- 503 scenarios used Playwright response interception; PostgreSQL was not stopped
++  to simulate a real outage. Successful reads/writes and ownership checks used
++  real PostgreSQL. Existing Python tests also cover an injected store exception.
++- The browser invalidation test uses real logout, not waiting an hour. The
++  existing contract test covers clock-driven expiry.
++- Assets resolve from this source checkout; wheel packaging of example assets
++  is outside this exercise. No public deployment or real-account auth was tested.
++- Unrelated graph/dashboard suites and the standalone MCP probe were not run.
++- Reports/screenshots are Git-ignored; this report and test sources preserve the
++  reproducible procedure and exact observed outcomes in the reviewable diff.
+diff --git a/examples/account-settings/index.html b/examples/account-settings/index.html
+new file mode 100644
+index 0000000..01dda7b
+--- /dev/null
++++ b/examples/account-settings/index.html
+@@ -0,0 +1,41 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>Account settings · RETRACT demo</title>
++  <link rel="stylesheet" href="/settings/settings.css">
++  <script type="module" src="/settings/settings.js"></script>
++</head>
++<body>
++  <main>
++    <header><p class="eyebrow">RETRACT / LOCAL DEMO</p><h1>Account settings</h1>
++      <p>Manage the name shown on your profile.</p></header>
++    <section class="panel" aria-label="Your account" id="account" aria-busy="true">
++      <p id="status" role="status">Loading your session…</p>
++      <p id="error" role="alert" hidden></p>
++      <button id="retry" type="button" hidden>Retry session</button>
++      <form id="login" hidden>
++        <h2>Sign in to the demo</h2>
++        <p>Choose a synthetic account. No password is needed.</p>
++        <label for="user">Demo account</label>
++        <select id="user" name="user"><option value="alice">Alice Example</option><option value="bob">Bob Example</option></select>
++        <button type="submit">Sign in</button>
++      </form>
++      <form id="profile" hidden>
++        <h2>Your profile</h2>
++        <label for="email">Email</label>
++        <input id="email" type="email" autocomplete="email" readonly aria-describedby="email-hint">
++        <p class="hint" id="email-hint">Email is fixed for this demo account.</p>
++        <label for="name">Display name (required)</label>
++        <input id="name" name="display_name" type="text" autocomplete="name" spellcheck="false" required aria-describedby="name-hint name-error">
++        <p class="hint" id="name-hint">Use 1–80 characters, excluding surrounding spaces.</p>
++        <p id="name-error" class="field-error" hidden></p>
++        <div class="actions"><button type="submit">Save changes</button><button id="logout" class="secondary" type="button">Sign out</button></div>
++      </form>
++    </section>
++    <footer>Synthetic accounts only · Local development fixture</footer>
++    <noscript>Enable JavaScript to sign in and edit your profile.</noscript>
++  </main>
++</body>
++</html>
+diff --git a/examples/account-settings/settings.css b/examples/account-settings/settings.css
+new file mode 100644
+index 0000000..0e6c6a1
+--- /dev/null
++++ b/examples/account-settings/settings.css
+@@ -0,0 +1,35 @@
++:root {
++  color-scheme: light dark;
++  --background: #f6f6f6; --surface: #fff; --text: #202020; --muted: #606060;
++  --border: #808080; --primary: #202020; --on-primary: #fff; --error: #a11616;
++  --space: 8px; --radius: 8px;
++  font: 16px/1.5 system-ui, sans-serif; color: var(--text); background: var(--background);
++}
++@media (prefers-color-scheme: dark) {
++  :root { --background: #151515; --surface: #202020; --text: #f3f3f3; --muted: #bcbcbc; --border: #929292; --primary: #f3f3f3; --on-primary: #202020; --error: #ffaaaa; }
++}
++* { box-sizing: border-box; }
++[hidden] { display: none !important; }
++body { margin: 0; }
++main { max-width: 640px; margin: calc(6 * var(--space)) auto; padding: 0 calc(3 * var(--space)); }
++header { margin-bottom: calc(4 * var(--space)); }
++h1 { font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; margin: var(--space) 0; }
++h2 { font-size: 1.2rem; margin: calc(3 * var(--space)) 0; }
++p { margin: var(--space) 0 calc(2 * var(--space)); }
++header p, footer, .hint, form > p { color: var(--muted); }
++.eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; }
++.panel { background: var(--surface); padding: calc(3 * var(--space)); border: 1px solid var(--border); border-radius: var(--radius); min-height: 240px; }
++label { display: block; font-weight: 600; margin: calc(2 * var(--space)) 0 var(--space); }
++input, select, button { font: inherit; border: 1px solid var(--border); border-radius: var(--radius); min-height: 44px; padding: var(--space) calc(2 * var(--space)); }
++input, select { width: 100%; background: var(--surface); color: var(--text); }
++input[readonly] { color: var(--muted); background: var(--background); }
++button { cursor: pointer; background: var(--primary); color: var(--on-primary); font-weight: 600; }
++button.secondary { background: var(--surface); color: var(--text); }
++button:disabled { opacity: .6; cursor: wait; }
++:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
++.actions { display: flex; flex-wrap: wrap; gap: calc(2 * var(--space)); margin-top: calc(3 * var(--space)); }
++#login button { margin-top: calc(3 * var(--space)); }
++.hint, footer { font-size: .875rem; }
++#error, .field-error { color: var(--error); }
++#status { font-weight: 600; }
++footer { margin-top: calc(3 * var(--space)); }
+diff --git a/examples/account-settings/settings.js b/examples/account-settings/settings.js
+new file mode 100644
+index 0000000..31ef104
+--- /dev/null
++++ b/examples/account-settings/settings.js
+@@ -0,0 +1,112 @@
++const $ = id => document.getElementById(id);
++let session = null;
++let busy = false;
++
++function status(message) { $('status').textContent = message; }
++function error(message = '') {
++  $('error').textContent = message;
++  $('error').hidden = !message;
++}
++function setBusy(value) {
++  busy = value;
++  $('account').setAttribute('aria-busy', String(value));
++  document.querySelectorAll('button, select, #name').forEach(control => { control.disabled = value; });
++}
++function clearValidation() {
++  $('name').removeAttribute('aria-invalid');
++  $('name-error').hidden = true;
++}
++function signedOut(message = 'You’re signed out.') {
++  session = null;
++  $('profile').hidden = true;
++  $('profile').reset();
++  clearValidation();
++  $('login').hidden = false;
++  status(message);
++}
++function signedIn(data) {
++  if (!data.user || !data.csrf_token) throw new Error('Your profile could not be loaded. Retry your session.');
++  session = data;
++  $('login').hidden = true;
++  $('profile').hidden = false;
++  $('email').value = data.user.email;
++  $('name').value = data.user.display_name;
++  clearValidation();
++  status('Your profile is ready.');
++}
++async function request(path, method = 'GET', body) {
++  const headers = {};
++  if (body !== undefined) headers['Content-Type'] = 'application/json';
++  if (method !== 'GET' && session) headers['X-CSRF-Token'] = session.csrf_token;
++  let response;
++  try {
++    response = await fetch(path, {method, credentials: 'same-origin', headers,
++      body: body === undefined ? undefined : JSON.stringify(body)});
++  } catch {
++    throw new Error('Could not reach the demo. Check your connection and try again.');
++  }
++  const data = await response.json();
++  if (!response.ok) {
++    const failure = new Error(data.error || 'Request failed. Try again.');
++    failure.status = response.status;
++    throw failure;
++  }
++  return data;
++}
++async function recover() {
++  if (busy) return;
++  setBusy(true); error(); $('retry').hidden = true;
++  status('Loading your session…');
++  try { signedIn(await request('/api/session')); }
++  catch (failure) {
++    if (failure.status === 401) signedOut();
++    else { status('Session unavailable.'); error(failure.message); $('retry').hidden = false; }
++  } finally { setBusy(false); }
++}
++$('retry').addEventListener('click', recover);
++$('login').addEventListener('submit', async event => {
++  event.preventDefault();
++  if (busy) return;
++  setBusy(true); error(); status('Signing in…');
++  let success = false;
++  try {
++    signedIn(await request('/demo/login', 'POST', {user_id: $('user').value}));
++    success = true;
++  } catch (failure) { status('Sign-in failed.'); error(failure.message); }
++  finally { setBusy(false); if (success) $('name').focus(); }
++});
++$('name').addEventListener('input', () => { clearValidation(); error(); status('Unsaved changes.'); });
++$('profile').addEventListener('submit', async event => {
++  event.preventDefault();
++  if (busy || !session) return;
++  const displayName = $('name').value.trim();
++  if ([...displayName].length < 1 || [...displayName].length > 80) {
++    $('name-error').textContent = 'Enter a display name with 1–80 characters.';
++    $('name-error').hidden = false;
++    $('name').setAttribute('aria-invalid', 'true');
++    $('name').focus();
++    status('Changes have not been saved.');
++    return;
++  }
++  setBusy(true); error(); status('Saving changes…');
++  try {
++    const result = await request(`/api/profiles/${encodeURIComponent(session.user.id)}`, 'PATCH', {display_name: displayName});
++    session.user = result.user;
++    $('name').value = result.user.display_name;
++    status('Changes saved.');
++  } catch (failure) {
++    if (failure.status === 401) signedOut('Your session ended. Sign in again.');
++    else status('Changes have not been saved.');
++    error(failure.message);
++  } finally { setBusy(false); if (!session) $('user').focus(); }
++});
++$('logout').addEventListener('click', async () => {
++  if (busy || !session) return;
++  setBusy(true); error(); status('Signing out…');
++  try { await request('/demo/logout', 'POST', {}); signedOut(); }
++  catch (failure) {
++    if (failure.status === 401) signedOut();
++    else { status('Sign-out failed. Try again.'); error(failure.message); }
++  } finally { setBusy(false); if (!session) $('user').focus(); }
++});
++recover();
+diff --git a/tests/account-settings.browser.mjs b/tests/account-settings.browser.mjs
+new file mode 100644
+index 0000000..82d0a79
+--- /dev/null
++++ b/tests/account-settings.browser.mjs
+@@ -0,0 +1,190 @@
++/** Real HTTP server + disposable PostgreSQL schema. Only failure/delay cases intercept responses. */
++import assert from 'node:assert/strict';
++import {spawn} from 'node:child_process';
++import {once} from 'node:events';
++import {createInterface} from 'node:readline';
++import {mkdir} from 'node:fs/promises';
++import {chromium} from 'playwright';
++
++const fixture = spawn('/Users/milan/graph/.venv/bin/python', ['tests/account_settings_server.py'], {
++  env: {...process.env, PYTHONPATH: 'src'}, stdio: ['pipe', 'pipe', 'inherit'],
++});
++const exit = once(fixture, 'exit');
++const lines = createInterface({input: fixture.stdout});
++const ready = once(lines, 'line').then(([line]) => JSON.parse(line));
++let browser;
++let passed = 0;
++const check = async (name, run) => { await run(); passed++; console.log(`PASS ${name}`); };
++try {
++  const info = await Promise.race([ready, exit.then(([code]) => { throw new Error(`Fixture exited before ready: ${code}`); })]);
++  const base = info.url;
++  console.log(`Fixture: ${base}; disposable schema: ${info.schema}`);
++  lines.on('line', line => console.log(`Fixture cleanup: ${line}`));
++  browser = await chromium.launch({headless: true});
++  const context = await browser.newContext();
++  const page = await context.newPage();
++  page.setDefaultTimeout(10000);
++  const errors = [];
++  page.on('pageerror', e => errors.push(e.message));
++  const waitStatus = text => page.locator('#status').filter({hasText: text}).waitFor();
++  const login = async (user = 'alice') => {
++    await page.getByLabel('Demo account').selectOption(user);
++    await page.getByRole('button', {name: 'Sign in', exact: true}).click();
++    await waitStatus('Your profile is ready.');
++  };
++  const session = () => page.evaluate(() => fetch('/api/session').then(r => r.json()));
++  const api = (path, method, token, body) => page.evaluate(async ({path, method, token, body}) => {
++    const response = await fetch(path, {method, headers: {'Content-Type': 'application/json', ...(token ? {'X-CSRF-Token': token} : {})}, body: body === undefined ? undefined : JSON.stringify(body)});
++    return {status: response.status, data: await response.json()};
++  }, {path, method, token, body});
++  await check('static routes, origin protections, loading and signed-out state', async () => {
++    const health = await context.request.get(`${base}/health`);
++    assert.deepEqual(await health.json(), {status: 'ok', storage: 'postgresql'});
++    for (const [path, type] of [['/settings', 'text/html'], ['/settings/settings.js', 'text/javascript'], ['/settings/settings.css', 'text/css']]) {
++      const r = await context.request.get(base + path);
++      assert.equal(r.status(), 200); assert.ok(r.headers()['content-type'].startsWith(type));
++      assert.equal(r.headers()['x-content-type-options'], 'nosniff');
++      assert.ok(r.headers()['content-security-policy'].includes("script-src 'self'"));
++      assert.equal((await context.request.get(base + path, {headers: {Origin: 'https://example.com'}})).status(), 403);
++      assert.equal((await context.request.get(base + path, {headers: {Host: 'example.com'}})).status(), 403);
++    }
++    assert.notEqual((await context.request.get(`${base}/settings/AGENT_TASK.md`)).status(), 200);
++    let release;
++    const gate = new Promise(resolve => { release = resolve; });
++    await page.route('**/api/session', async route => { await gate; await route.continue(); }, {times: 1});
++    await page.goto(`${base}/settings`);
++    await waitStatus('Loading your session');
++    assert.equal(await page.locator('#profile').isVisible(), false);
++    release(); await waitStatus('You’re signed out.');
++    assert.equal(await page.getByLabel('Demo account').isVisible(), true);
++    await page.keyboard.press('Tab');
++    assert.equal(await page.getByLabel('Demo account').evaluate(el => el === document.activeElement), true);
++  });
++  await check('cookie/CSRF save over real HTTP, keyboard submit and session recovery', async () => {
++    await login();
++    const before = await session();
++    const cookie = (await context.cookies()).find(c => c.name === 'retract_demo_session');
++    assert.equal(cookie.httpOnly, true); assert.equal(cookie.sameSite, 'Strict');
++    assert.equal(await page.evaluate(() => document.cookie.includes('retract_demo_session')), false);
++    const requested = page.waitForRequest(r => r.method() === 'PATCH');
++    await page.getByLabel('Display name').fill('  Alice Browser  ');
++    await page.getByLabel('Display name').press('Enter');
++    const request = await requested;
++    const headers = await request.allHeaders();
++    assert.equal(new URL(request.url()).pathname, '/api/profiles/alice');
++    assert.equal(headers.authorization, undefined);
++    assert.ok(headers.cookie.includes(`retract_demo_session=${cookie.value}`));
++    assert.equal(headers['x-csrf-token'], before.csrf_token);
++    assert.deepEqual(request.postDataJSON(), {display_name: 'Alice Browser'});
++    await waitStatus('Changes saved.');
++    assert.deepEqual(await page.evaluate(() => [localStorage.length, sessionStorage.length]), [0, 0]);
++    await page.reload(); await waitStatus('Your profile is ready.');
++    assert.equal(await page.getByLabel('Display name').inputValue(), 'Alice Browser');
++    assert.equal((await session()).csrf_token, before.csrf_token);
++  });
++  await check('cross-user reads/writes and missing CSRF rejected; Bob unchanged in PostgreSQL', async () => {
++    const {csrf_token} = await session();
++    assert.equal((await api('/api/profiles/bob', 'GET')).status, 403);
++    assert.equal((await api('/api/profiles/bob', 'PATCH', csrf_token, {display_name: 'Intruder'})).status, 403);
++    assert.equal((await api('/api/profiles/alice', 'PATCH', null, {display_name: 'No CSRF'})).status, 403);
++    const bob = await browser.newContext();
++    await bob.request.post(`${base}/demo/login`, {data: {user_id: 'bob'}});
++    const response = await bob.request.get(`${base}/api/profiles/bob`);
++    assert.equal((await response.json()).user.display_name, 'Bob Example');
++    await bob.close();
++  });
++  await check('client validation, real 400 save rejection, simulated 503 and offline retry', async () => {
++    await page.getByLabel('Display name').fill('   ');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    assert.equal(await page.getByLabel('Display name').getAttribute('aria-invalid'), 'true');
++    // Corrupt one request to exercise the real server's validation failure in the UI.
++    await page.route('**/api/profiles/alice', route => route.continue({postData: JSON.stringify({display_name: ''})}), {times: 1});
++    await page.getByLabel('Display name').fill('Keep this draft');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await page.getByRole('alert').filter({hasText: 'Supply a display_name'}).waitFor();
++    assert.equal(await page.getByLabel('Display name').inputValue(), 'Keep this draft');
++    assert.equal((await session()).user.display_name, 'Alice Browser');
++    await page.route('**/api/profiles/alice', route => route.fulfill({status: 503, contentType: 'application/json', body: JSON.stringify({error: 'Storage unavailable. Try again.'})}), {times: 1});
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await page.getByRole('alert').filter({hasText: 'Storage unavailable'}).waitFor();
++    assert.equal(await page.locator('#status').innerText(), 'Changes have not been saved.');
++    await context.setOffline(true);
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await page.getByRole('alert').filter({hasText: 'Could not reach'}).waitFor();
++    await context.setOffline(false);
++    assert.equal(await page.getByLabel('Display name').inputValue(), 'Keep this draft');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await waitStatus('Changes saved.');
++  });
++  await check('pending save disables controls and duplicate submits', async () => {
++    let release;
++    const gate = new Promise(resolve => { release = resolve; });
++    let count = 0;
++    await page.route('**/api/profiles/alice', async route => { count++; await gate; await route.continue(); });
++    await page.getByLabel('Display name').fill('<b>Plain text</b>');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await waitStatus('Saving changes');
++    assert.equal(await page.getByRole('button', {name: 'Sign out'}).isDisabled(), true);
++    await page.locator('#profile').evaluate(el => el.dispatchEvent(new Event('submit', {cancelable: true})));
++    release(); await waitStatus('Changes saved.');
++    assert.equal(count, 1);
++    assert.equal(await page.getByLabel('Display name').inputValue(), '<b>Plain text</b>');
++    assert.equal(await page.locator('#profile b').count(), 0);
++    await page.unroute('**/api/profiles/alice');
++  });
++  await check('failed logout retains session; successful logout clears cookie and blocks reload', async () => {
++    await page.route('**/demo/logout', route => route.fulfill({status: 503, contentType: 'application/json', body: '{"error":"Retry sign-out"}'}), {times: 1});
++    await page.getByRole('button', {name: 'Sign out'}).click();
++    await waitStatus('Sign-out failed');
++    assert.equal(await page.locator('#profile').isVisible(), true);
++    const {csrf_token} = await session();
++    const pending = page.waitForRequest('**/demo/logout');
++    await page.getByRole('button', {name: 'Sign out'}).click();
++    const headers = await (await pending).allHeaders();
++    assert.equal(headers['x-csrf-token'], csrf_token);
++    assert.equal(headers.authorization, undefined);
++    await waitStatus('You’re signed out.');
++    assert.equal((await context.cookies()).some(c => c.name === 'retract_demo_session'), false);
++    await page.reload(); await waitStatus('You’re signed out.');
++  });
++  await check('session recovery failure/retry, login failure/retry, ended session on save', async () => {
++    await page.route('**/api/session', route => route.fulfill({status: 503, contentType: 'application/json', body: '{"error":"Session storage unavailable"}'}), {times: 1});
++    await page.reload(); await waitStatus('Session unavailable.');
++    await page.getByRole('button', {name: 'Retry session'}).click();
++    await waitStatus('You’re signed out.');
++    await page.route('**/demo/login', route => route.fulfill({status: 503, contentType: 'application/json', body: '{"error":"Login storage unavailable"}'}), {times: 1});
++    await page.getByRole('button', {name: 'Sign in', exact: true}).click();
++    await waitStatus('Sign-in failed.');
++    await login('bob');
++    const {csrf_token} = await session();
++    assert.equal((await api('/demo/logout', 'POST', csrf_token, {})).status, 200);
++    await page.getByLabel('Display name').fill('Expired write');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    await waitStatus('Your session ended.');
++    assert.equal(await page.locator('#profile').isVisible(), false);
++    await login('bob');
++    assert.equal(await page.getByLabel('Display name').inputValue(), 'Bob Example');
++    const pending = page.waitForRequest(r => r.method() === 'PATCH');
++    await page.getByLabel('Display name').fill('Bob Browser');
++    await page.getByRole('button', {name: 'Save changes'}).click();
++    assert.equal(new URL((await pending).url()).pathname, '/api/profiles/bob');
++    await waitStatus('Changes saved.');
++  });
++  await mkdir('reports/account-settings', {recursive: true});
++  for (const width of [375, 768, 1280]) {
++    await check(`layout ${width}px, ${width === 768 ? 'dark' : 'light'}, no horizontal overflow`, async () => {
++      await page.setViewportSize({width, height: 900});
++      await page.emulateMedia({colorScheme: width === 768 ? 'dark' : 'light', reducedMotion: 'reduce'});
++      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
++      await page.screenshot({path: `reports/account-settings/settings-${width}.png`, fullPage: true});
++    });
++  }
++  assert.deepEqual(errors, []);
++  console.log(`${passed} browser scenarios passed; no uncaught page errors.`);
++} finally {
++  if (browser) await browser.close();
++  fixture.stdin.end();
++  const [code] = await exit;
++  assert.equal(code, 0, 'Fixture must exit cleanly and drop its schema');
++  lines.close();
++}
+diff --git a/tests/account_settings_server.py b/tests/account_settings_server.py
+new file mode 100644
+index 0000000..d7458a9
+--- /dev/null
++++ b/tests/account_settings_server.py
+@@ -0,0 +1,40 @@
++"""Disposable PostgreSQL browser fixture; never touches the public schema."""
++
++import json
++import os
++import sys
++from threading import Thread
++from uuid import uuid4
++from http.server import ThreadingHTTPServer
++
++import psycopg
++from psycopg import sql
++from psycopg.conninfo import make_conninfo
++
++from retract.demo import DemoApp, PostgresProfiles, make_demo_handler
++
++
++def main():
++    url = os.getenv("DEMO_TEST_DATABASE_URL", "postgresql://retract_demo:local_demo_only@127.0.0.1:54330/retract_demo")
++    schema = "settings_test_" + uuid4().hex
++    with psycopg.connect(url, autocommit=True) as admin:
++        admin.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
++        server = None
++        try:
++            store = PostgresProfiles(make_conninfo(url, options=f"-c search_path={schema}"))
++            store.seed()
++            server = ThreadingHTTPServer(("127.0.0.1", 0), make_demo_handler(DemoApp(store)))
++            thread = Thread(target=server.serve_forever, daemon=True)
++            thread.start()
++            print(json.dumps({"url": f"http://127.0.0.1:{server.server_port}", "schema": schema}), flush=True)
++            sys.stdin.read()
++        finally:
++            if server is not None:
++                server.shutdown()
++                server.server_close()
++            admin.execute(sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema)))
++            print(json.dumps({"dropped_schema": schema}), flush=True)
++
++
++if __name__ == "__main__":
++    main()

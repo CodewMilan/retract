@@ -1,7 +1,22 @@
 # Implementation and verification record
 
-Recorded 17 October 2026. This file reports actual observations separately from
+Updated 18 October 2026. This file reports actual observations separately from
 the proposed behavior in the original specification.
+
+## Latest: fresh coding-client construction verified
+
+On 18 October, a fresh ephemeral Codex CLI 0.162.1 session at pre-frontend
+commit `3452a9538f19907c4cb00e4248f2af00cc354639` completed two real recalls and
+U1 history retrieval, visibly revised P1 using F5/S-U1, implemented `/settings`,
+and passed 10 existing contract tests plus 10 Chromium scenarios against real
+HTTP/PostgreSQL. The initial sandbox-blocked Chromium attempt is retained;
+the approved retry passed. Memory snapshots remained identical at revision 7.
+
+The [run record](12-FRESH-CLIENT-RUN.md) links raw client/MCP traces, the generated
+patch, test output, and snapshots. This closes the fresh-client feature gate;
+video, publication, and final submission review remain pending. Historical
+unverified statements below are superseded by this result and the developer-machine
+verification section, not evidence of new failures.
 
 ## Implemented code
 

@@ -1,0 +1,13 @@
+{
+  "baseline": "3452a9538f19907c4cb00e4248f2af00cc354639",
+  "checkout": "/private/tmp/retract-fresh-client-20261018",
+  "memory_url": "http://127.0.0.1:8100",
+  "memory_mutations_authorized": false,
+  "client": "codex-cli 0.162.1",
+  "sandbox": "workspace-write",
+  "approval_review": "approve-for-me",
+  "preflight_fact": "F5",
+  "preflight_source": "S-U1",
+  "preflight_plan": "P1",
+  "preflight_revision": 7
+}
