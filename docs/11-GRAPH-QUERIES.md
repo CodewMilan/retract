@@ -51,6 +51,7 @@ rollback behavior is checked by the opt-in integration suite, not assumed.
 ```cypher
 MATCH (p:Plan {project_id: $project})-[:DEPENDS_ON]->
       (f:Fact {project_id: $project, id: $fact})
+WHERE p.status <> 'superseded'
 RETURN p.id, f.id ORDER BY p.id
 ```
 
@@ -86,6 +87,46 @@ An event lookup returns that event's result and source directly.
 evidence edges, available scopes, and the plan explanation paths above. Its
 read-only queries execute while the service lock is held. Request activity is
 process metadata and is separate from the authoritative graph state.
+
+## Handoffs between agents
+
+`create_handoff` is one guarded write. It matches the project at the expected
+revision and the plan if it is not superseded, collects the cited facts that are
+still active, and refuses (zero rows) unless every cited ID matched. It then
+creates the handoff and its links:
+
+```mermaid
+flowchart LR
+    Sender[Agent] -->|HANDED_OFF| Handoff
+    Handoff -->|CONCERNS| Plan
+    Handoff -->|CITES| Fact
+    Handoff -->|ASSIGNED_TO| Receiver[Agent]
+    Claimer[Agent] -->|CLAIMED| Handoff
+```
+
+`claim_handoff` matches `h.status = 'open'` inside the same guarded write, so
+concurrent claims have a single winner. On recall, claim, and the dashboard, the
+service compares what the sender relied on with the current graph using two
+bounded traversals:
+
+```cypher
+// Current version of a handed-off plan
+MATCH path=(latest:Plan {project_id: $project})-[:REVISES*0..32]->
+      (:Plan {project_id: $project, id: $plan})
+WHERE latest.status <> 'superseded' AND all(n IN nodes(path) WHERE n.project_id = $project)
+RETURN latest.id, latest.status ORDER BY length(path) DESC LIMIT 1
+
+// Active replacement of a cited fact
+MATCH path=(latest:Fact {project_id: $project, status: 'active'})-[:SUPERSEDES*0..32]->
+      (:Fact {project_id: $project, id: $fact})
+WHERE all(n IN nodes(path) WHERE n.project_id = $project)
+RETURN latest.id ORDER BY length(path) DESC LIMIT 1
+```
+
+A changed result becomes a receiver warning such as "Fact F1 was superseded;
+current: F5". `recall` also uses the second traversal to report each affected
+plan's dependencies, which the reviewer agent (`src/retract/agent.py`) uses to
+decide what to draft and hand off.
 
 ## Parameters and limits
 

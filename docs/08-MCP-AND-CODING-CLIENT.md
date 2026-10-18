@@ -38,6 +38,14 @@ MCP tool errors, never fabricated context.
 | `process_update`, `mode: natural` | `/updates/natural` | Select a scoped key and run Phase 2 extraction; Groq configuration stays in the backend. |
 | `recall` | `/recall` | Current facts, sources, affected plans, pending conflicts, and revision. |
 | `history` | `/history` | Exactly one fact or event target, with evidence and replacement history. |
+| `record_plan` | `/plans` | Save a plan with explicit dependencies on active facts. |
+| `revise_plan` | `/plans/revise` | Explicitly confirmed replacement plan; the previous version is preserved. |
+| `handoff` | `/handoffs` | Leave work on a current plan for another agent, citing the active facts relied on. |
+| `claim_handoff` | `/handoffs/claim` | Take over an open handoff; single winner; reports superseded facts or revised plans since the handoff. |
+
+`recall` also returns open handoffs for the scope. The reviewer agent
+(`retract agent review`) uses these tools to hand drafted plan revisions to the
+coding client.
 
 Tool schemas describe effects and mark recall/history read-only. Metadata and
 server instructions ask the agent to retrieve context before planning, inspect

@@ -79,7 +79,7 @@ const MENUS = [
         rows: 3,
         items: [
           ["Docs", "Architecture, schema, and status", "#docs"],
-          ["Verification", "179 tests and a live end-to-end run", "#docs/status"],
+          ["Verification", "214 tests and a live end-to-end run", "#docs/status"],
           ["Changelog", "What landed in each phase", "#docs/status"],
         ],
       },
@@ -139,8 +139,8 @@ const STEPS = [
 ];
 
 const STATS = [
-  ["Python tests", 179, "u-accent-bg--primary-pink"],
-  ["JS checks", 22, "u-accent-bg--pale-gray"],
+  ["Python tests", 214, "u-accent-bg--primary-pink"],
+  ["JS checks", 23, "u-accent-bg--pale-gray"],
   ["Live updates classified", 16, "u-accent-bg--pale-yellow"],
   ["Mocked calls", null, "u-accent-bg--pale-blue"],
 ];
@@ -789,7 +789,7 @@ export default function App() {
                 <p className="textLockUp__eyebrow u-accent-shape--magenta type-eyebrow-1"><span>automated checks on every change</span></p>
                 <p className="stats-featured__value">
                   <span className="text-fit__content">
-                    <AutoIncrementValue value={201} />
+                    <AutoIncrementValue value={237} />
                     <span>+ checks passing</span>
                   </span>
                 </p>

@@ -203,7 +203,9 @@ atomicity or crash recovery.
 
 ## Coding-client integration
 
-The four memory tools are available through local MCP stdio. The adapter calls
+The eight memory tools (`remember`, `process_update`, `recall`, `history`,
+`record_plan`, `revise_plan`, `handoff`, `claim_handoff`) are available through
+local MCP stdio. The adapter calls
 the existing memory service; it keeps no separate memory cache.
 
 ```sh
