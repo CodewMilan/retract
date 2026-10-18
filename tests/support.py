@@ -92,6 +92,11 @@ class ModelStore:
                        if label == "Handoff" and owner == project and n["scope"] == scope and n["status"] == "open"],
                       key=lambda n: (n["recorded_at"], n["id"]))
 
+    def plan_handoffs(self, project, plan_id):
+        return sorted([deepcopy(n) for (label, owner, _), n in self.nodes.items()
+                       if label == "Handoff" and owner == project and n["plan_id"] == plan_id],
+                      key=lambda n: (n["recorded_at"], n["id"]))
+
     def handoff_fact_ids(self, project, handoff_id):
         return sorted(fact for owner, handoff, fact in getattr(self, "cites", set())
                       if owner == project and handoff == handoff_id)
@@ -140,8 +145,38 @@ class ModelStore:
                  if label == "Plan" and owner == project and node["scope"] == scope and node["status"] == "needs_review"]
         pending = [json.loads(node["result_json"]) for (label, owner, _), node in self.nodes.items()
                    if label == "UpdateEvent" and owner == project and node["scope"] == scope and node["outcome"] == "pending"]
+        def paths(plan_id):
+            found = []
+            for owner, event_id, flagged in sorted(self.flagged):
+                if owner != project or flagged != plan_id:
+                    continue
+                for fact in json.loads(self.get("UpdateEvent", project, event_id)["result_json"])["retired_fact_ids"]:
+                    if (project, plan_id, fact) in self.dependencies:
+                        found.append({"event_id": event_id, "plan_id": plan_id, "fact_id": fact,
+                                      "relationship": "DEPENDS_ON"})
+            return found
+
         return {"active_facts": facts, "sources": self.sources(project, [node["id"] for node in facts]),
-                "affected_plans": [{"plan": plan} for plan in plans], "pending_conflicts": pending}
+                "affected_plans": [{"plan": plan, "explanation_paths": paths(plan["id"])} for plan in plans],
+                "pending_conflicts": pending}
+
+    def history(self, project, fact_id):
+        ids, frontier = {fact_id}, [fact_id]
+        while frontier:
+            current = frontier.pop()
+            for owner, newer, older in self.replacements:
+                for neighbour in ((older,) if newer == current else (newer,) if older == current else ()):
+                    if owner == project and neighbour not in ids:
+                        ids.add(neighbour)
+                        frontier.append(neighbour)
+        facts = sorted((self.get("Fact", project, i) for i in ids), key=lambda f: (f["recorded_at"], f["id"]))
+        events = [json.loads(n["result_json"]) for (label, owner, _), n in self.nodes.items()
+                  if label == "UpdateEvent" and owner == project
+                  and ids & set(json.loads(n["result_json"])["retired_fact_ids"] + json.loads(n["result_json"])["accepted_fact_ids"])]
+        return {"facts": facts, "sources": self.sources(project, sorted(ids)),
+                "replacement_links": [{"new_fact_id": a, "old_fact_id": b} for owner, a, b in sorted(self.replacements)
+                                      if owner == project and a in ids and b in ids],
+                "events": events}
 
     def list_projects(self):
         projects = sorted([deepcopy(n) for (label, _, _), n in self.nodes.items() if label == 'Project'], key=lambda n: (n['name'], n['id']))

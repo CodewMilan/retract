@@ -236,26 +236,36 @@ class MemoryService:
             identifier(subject, "subject")
         with self.lock:
             project = self.project(project_id)
+            recalled = self.store.recall(project_id, scope, subjects)
+            for warning in recalled["affected_plans"]:
+                warning["dependencies"] = self._dependency_status(
+                    project_id, self.store.plan_dependencies(project_id, warning["plan"]["id"]))
+                warning["handoffs"] = [
+                    {key: item.get(key) for key in ("id", "from_agent", "to_agent", "status", "claimed_by")}
+                    for item in self.store.plan_handoffs(project_id, warning["plan"]["id"])]
             handoffs = [self._handoff_context(project_id, item)
                         for item in self.store.open_handoffs(project_id, scope)]
-            return {**self.store.recall(project_id, scope, subjects), "open_handoffs": handoffs,
-                    "project_revision": project["revision"]}
+            return {**recalled, "open_handoffs": handoffs, "project_revision": project["revision"]}
+
+    def _dependency_status(self, project_id: str, fact_ids: list[str]) -> list[dict]:
+        result = []
+        for fact_id in fact_ids:
+            current = self.store.current_fact(project_id, fact_id)
+            result.append({"fact_id": fact_id, "current_fact_id": current, "changed": current != fact_id})
+        return result
 
     def _handoff_context(self, project_id: str, handoff: dict) -> dict:
         """Compare what the sender relied on with what the graph says is current now."""
         handoff = {key: value for key, value in handoff.items() if key != "fingerprint"}
         plan = self.store.current_plan(project_id, handoff["plan_id"])
-        facts = []
-        for fact_id in self.store.handoff_fact_ids(project_id, handoff["id"]):
-            current = self.store.current_fact(project_id, fact_id)
-            facts.append({"fact_id": fact_id, "current_fact_id": current, "changed": current != fact_id})
+        facts = self._dependency_status(project_id, self.store.handoff_fact_ids(project_id, handoff["id"]))
         warnings = []
         if plan is None:
             warnings.append(f"Plan {handoff['plan_id']} has no current version")
         elif plan["plan_id"] != handoff["plan_id"]:
             warnings.append(f"Plan {handoff['plan_id']} was revised; current version is {plan['plan_id']}")
         elif plan["status"] == "needs_review":
-            warnings.append(f"Plan {plan['plan_id']} needs review since this handoff was written")
+            warnings.append(f"Plan {plan['plan_id']} still needs review")
         for item in facts:
             if item["changed"]:
                 replacement = item["current_fact_id"] or "no active replacement"

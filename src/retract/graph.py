@@ -191,6 +191,13 @@ class GraphStore:
         )
         return [dict(row[0]) for row in rows]
 
+    def plan_handoffs(self, project, plan_id):
+        rows = self.query(
+            "MATCH (h:Handoff {project_id: $project})-[:CONCERNS]->(:Plan {project_id: $project, id: $plan}) "
+            "RETURN properties(h) ORDER BY h.recorded_at, h.id", {"project": project, "plan": plan_id},
+        )
+        return [dict(row[0]) for row in rows]
+
     def handoff_fact_ids(self, project, handoff_id):
         rows = self.query(
             "MATCH (h:Handoff {project_id: $project, id: $id})-[:CITES]->(f:Fact {project_id: $project}) "

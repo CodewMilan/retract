@@ -207,6 +207,12 @@ class GroqInterpreter:
 
     def extract(self, request: NaturalUpdateInput, current: dict | None) -> Interpretation:
         payload = build_payload(request, current, self.model)
+        extraction, model, elapsed, usage, attempts = self.complete(
+            payload, lambda value: Extraction.validate(value, request))
+        return Interpretation(extraction, model, elapsed, usage, attempts)
+
+    def complete(self, payload: dict, validate):
+        """POST one strict-JSON chat completion; return (validated, model, ms, usage, attempts)."""
         encoded = json.dumps(payload).encode()
         started = time.perf_counter()
         for attempt in range(2):
@@ -227,7 +233,7 @@ class GroqInterpreter:
                     content = choice["message"]["content"]
                     if not isinstance(content, str):
                         raise ModelResponseError("Model did not return JSON text")
-                    extraction = Extraction.validate(json.loads(content), request)
+                    validated = validate(json.loads(content))
                     usage = envelope.get("usage", {})
                     if not isinstance(usage, dict):
                         raise ModelResponseError("Model returned invalid token usage")
@@ -241,8 +247,8 @@ class GroqInterpreter:
                     reported_model = envelope.get("model", self.model)
                     if not isinstance(reported_model, str) or not 0 < len(reported_model) <= 160:
                         raise ModelResponseError("Model returned an invalid model identifier")
-                    return Interpretation(extraction, reported_model,
-                                          round((time.perf_counter() - started) * 1000, 3), counters, attempt + 1)
+                    return (validated, reported_model, round((time.perf_counter() - started) * 1000, 3),
+                            counters, attempt + 1)
                 except (ValueError, TypeError, KeyError, IndexError, UnicodeDecodeError) as exc:
                     raise ModelResponseError("Model returned an invalid response envelope") from exc
             except HTTPError as exc:

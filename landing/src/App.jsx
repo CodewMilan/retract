@@ -822,9 +822,6 @@ export default function App() {
 
       <footer className="site-footer section">
         <div className="site-footer__grid grid">
-          <div className="site-footer__left">
-            <a className="site-footer__branding brand-name" href="#top">Retract</a>
-          </div>
           <nav className="site-footer__right footer-nav" aria-label="Footer">
             {FOOTER.map(([title, links]) => (
               <div className="footer-nav__column" key={title}>

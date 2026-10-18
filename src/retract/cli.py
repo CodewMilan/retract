@@ -82,6 +82,14 @@ def main():
     recall.add_argument("project_id")
     recall.add_argument("scope")
     recall.add_argument("--subject", action="append", default=[])
+    agent = commands.add_parser("agent", help="Run the reviewer agent over plans flagged by corrections")
+    agent.add_argument("action", choices=["review"])
+    agent.add_argument("project_id")
+    agent.add_argument("scope")
+    agent.add_argument("--to-agent", default="codex", help="Agent that should claim the handoff")
+    agent.add_argument("--agent-id", default="retract-reviewer")
+    agent.add_argument("--template", action="store_true",
+                       help="Draft deterministically without the Groq model")
     history = commands.add_parser("history")
     history.add_argument("project_id")
     target = history.add_mutually_exclusive_group(required=True)
@@ -118,6 +126,13 @@ def main():
                     if server:
                         server.server_close()
                     store.close()
+            return
+        if args.command == "agent":
+            from .agent import ReviewerAgent, default_drafter
+
+            reviewer = ReviewerAgent(lambda route, body: call(args.url, route, body),
+                                     default_drafter(not args.template), args.agent_id, args.to_agent)
+            print(json.dumps(reviewer.run(args.project_id, args.scope), indent=2))
             return
         if args.command == "call":
             result = call(args.url, args.route, json.loads(args.file.read_text()))
