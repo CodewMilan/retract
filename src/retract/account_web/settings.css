@@ -73,7 +73,7 @@ h2 { font-size: 1.7rem; margin: 0 0 0.55rem; }
 .profile-heading h2 { margin: 0 0 0.2rem; font-size: 1.25rem; }
 .profile-heading .quiet { margin-left: auto; }
 .profile-heading .muted { font-size: 0.85rem; overflow-wrap: anywhere; }
-.avatar { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; background: var(--brand); color: #fff; font-family: var(--ff-heading); font-weight: 600; }
+.avatar { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; background: var(--pale-gray); color: var(--text); font-family: var(--ff-heading); font-weight: 600; }
 
 button {
   --button-bg: var(--pale-gray);
