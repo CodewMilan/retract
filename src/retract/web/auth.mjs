@@ -53,7 +53,7 @@ export async function initAuth() {
   await clerk.load({appearance, ui: {ClerkUI: window.__internal_ClerkUICtor}});
   if (!clerk.session) {
     $('auth-status').hidden = true;
-    clerk.mountSignIn($('sign-in'), {appearance, routing: 'hash', forceRedirectUrl: config.origin});
+    clerk.mountSignIn($('sign-in'), {appearance, routing: 'hash', forceRedirectUrl: `${config.origin}/dashboard`});
     await new Promise(resolve => {
       const unsubscribe = clerk.addListener(({session}) => {
         if (session) { queueMicrotask(() => unsubscribe()); resolve(); }

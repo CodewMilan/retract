@@ -1,7 +1,18 @@
+FROM node:22-bookworm-slim AS landing
+WORKDIR /src/landing
+COPY landing/package.json landing/package-lock.json ./
+RUN npm ci
+COPY landing ./
+COPY docs /src/docs
+COPY examples /src/examples
+COPY README.md SUBMISSION.md THIRD_PARTY_NOTICES.md /src/
+RUN npm run build
+
 FROM python:3.12-slim-bookworm AS builder
 WORKDIR /build
 COPY pyproject.toml ./
 COPY src ./src
+COPY --from=landing /src/landing/dist ./src/retract/site
 RUN pip wheel --no-deps --wheel-dir /wheels .
 
 FROM python:3.12-slim-bookworm

@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 from .graph import DatabaseUnavailable
 from .hosted import AccessError
+from .landing_pages import LANDING_CSP, landing_asset, warn_missing_landing
 from .inference import ModelRateLimited, ModelResponseError, ModelUnavailable
 from .models import (
     ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
@@ -21,6 +22,10 @@ from .service import MemoryService
 MAX_BODY = 65536
 logger = logging.getLogger(__name__)
 _FONT = re.compile(r"[a-z0-9-]+\.woff2\Z")
+LOCAL_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; "
+    "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+)
 
 
 def font_bytes(name):
@@ -87,6 +92,22 @@ def make_handler(service: MemoryService, hosted=None):
             self.wfile.write(encoded)
             self.close_connection = True
 
+        def send_static(self, encoded, mime, cache, policy):
+            self.send_response(200)
+            charset = "; charset=utf-8" if mime.startswith("text/") else ""
+            self.send_header("Content-Type", mime + charset)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.send_header("Cache-Control", cache)
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", policy)
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(encoded)
+            self.close_connection = True
+
+        def content_policy(self):
+            return hosted.config.csp() if hosted else LOCAL_CSP
+
         def valid_origin(self):
             allowed = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
             origin = self.headers.get("Origin")
@@ -123,21 +144,20 @@ def make_handler(service: MemoryService, hosted=None):
                     if encoded is None:
                         self.respond(404, {"error": "Unknown API route"})
                         return
-                    self.send_response(200)
-                    self.send_header("Content-Type", "font/woff2")
-                    self.send_header("Content-Length", str(len(encoded)))
-                    self.send_header("Cache-Control", "public, max-age=86400")
-                    self.send_header("X-Content-Type-Options", "nosniff")
-                    self.send_header("Content-Security-Policy", hosted.config.csp() if hosted else "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-                    self.send_header("Connection", "close")
-                    self.end_headers()
-                    self.wfile.write(encoded)
-                    self.close_connection = True
+                    self.send_static(encoded, "font/woff2", "public, max-age=86400", self.content_policy())
                     return
                 if self.path == "/api/config":
                     self.respond(200, hosted.config.public() if hosted else {"mode": "local"})
                     return
+                # The public site opens on the marketing page. Sign-in stays at /dashboard.
+                if hosted and self.path == "/":
+                    landing = landing_asset("/")
+                    if landing is not None:
+                        self.send_static(*landing, LANDING_CSP)
+                        return
+                    warn_missing_landing()
                 assets = {"/": ("index.html", "text/html"),
+                          "/dashboard": ("index.html", "text/html"),
                           "/assets/dashboard.css": ("dashboard.css", "text/css"),
                           "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
@@ -145,17 +165,13 @@ def make_handler(service: MemoryService, hosted=None):
                 if self.path in assets:
                     name, mime = assets[self.path]
                     encoded = files("retract").joinpath("web", name).read_bytes()
-                    self.send_response(200)
-                    self.send_header("Content-Type", mime + "; charset=utf-8")
-                    self.send_header("Content-Length", str(len(encoded)))
-                    self.send_header("Cache-Control", "no-store")
-                    self.send_header("X-Content-Type-Options", "nosniff")
-                    self.send_header("Content-Security-Policy", hosted.config.csp() if hosted else "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-                    self.send_header("Connection", "close")
-                    self.end_headers()
-                    self.wfile.write(encoded)
-                    self.close_connection = True
+                    self.send_static(encoded, mime, "no-store", self.content_policy())
                     return
+                if hosted:
+                    landing = landing_asset(self.path)
+                    if landing is not None:
+                        self.send_static(*landing, LANDING_CSP)
+                        return
                 if self.path == "/api/projects":
                     self.respond(200, self.workspace().list_projects())
                     return

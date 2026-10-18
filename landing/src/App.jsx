@@ -10,7 +10,7 @@ import groqLogo from "./assets/groq.png";
 import postgresLogo from "./assets/postgresql.png";
 import playwrightLogo from "./assets/playwright.png";
 
-const DASHBOARD = "http://127.0.0.1:8100";
+const DASHBOARD = import.meta.env.DEV ? "http://127.0.0.1:8100" : "/dashboard";
 const SETTINGS = "http://127.0.0.1:8101/settings";
 const DESKTOP_NAV = "(min-width: 70em)";
 const SETUP = "python -m pip install -e . && docker compose up -d --wait && retract serve";

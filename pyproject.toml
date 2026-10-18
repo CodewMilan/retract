@@ -21,4 +21,4 @@ retract = "retract.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-retract = ["web/*", "web/fonts/*", "account_web/*"]
+retract = ["web/*", "web/fonts/*", "account_web/*", "site/*", "site/*/*"]
