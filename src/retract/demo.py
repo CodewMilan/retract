@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from importlib.resources import files
 import os
+import re
 import secrets
 import sys
 from threading import RLock
@@ -151,6 +152,22 @@ def make_demo_handler(app):
                           "/assets/account/settings.css": ("settings.css", "text/css"),
                           "/assets/account/settings.mjs": ("settings.mjs", "text/javascript"),
                           "/assets/account/account-client.mjs": ("account-client.mjs", "text/javascript")}
+                if self.command == "GET" and self.path.startswith("/assets/account/fonts/"):
+                    name = self.path.removeprefix("/assets/account/fonts/")
+                    font = files("retract").joinpath("web", "fonts", name)
+                    if not (re.fullmatch(r"[a-z0-9-]+\.woff2", name) and font.is_file()):
+                        raise DemoError(404, "Unknown demo route")
+                    encoded = font.read_bytes()
+                    self.send_response(200)
+                    for header, value in (("Content-Type", "font/woff2"), ("Content-Length", str(len(encoded))),
+                                          ("Cache-Control", "public, max-age=86400"), ("X-Content-Type-Options", "nosniff"),
+                                          ("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"),
+                                          ("Connection", "close")):
+                        self.send_header(header, value)
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    self.close_connection = True
+                    return
                 if self.command == "GET" and self.path in assets:
                     name, mime = assets[self.path]
                     encoded = files("retract").joinpath("account_web", name).read_bytes()

@@ -2,17 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="light">
   <title>RETRACT · Project memory</title>
   <link rel="stylesheet" href="/assets/dashboard.css">
   <script type="module" src="/assets/dashboard.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to memory</a>
-<section id="auth-screen" class="auth-screen" hidden aria-label="Sign in to RETRACT"><h1>RETRACT</h1><p id="auth-status" role="status">Loading secure sign-in…</p><div id="sign-in"></div><button id="auth-retry" hidden>Retry</button></section>
+<section id="auth-screen" class="auth-screen" hidden aria-label="Sign in to RETRACT">
+  <div class="auth-stage">
+    <a class="wordmark" href="/"><span class="brand-mark" aria-hidden="true">R</span><span class="brand-name">RETRACT</span></a>
+    <p class="eyebrow">Private workspace</p>
+    <h1><span class="mark">Sign in.</span> Your agents keep the decisions that still hold.</h1>
+    <p class="auth-sub">Facts, sources, and the plans that depend on them stay on this account.</p>
+    <ul class="auth-points">
+      <li>Current facts stay separate from history</li>
+      <li>A changed decision flags the plan that used it</li>
+      <li>Coding-client keys can be revoked from here</li>
+    </ul>
+  </div>
+  <div class="auth-panel">
+    <p id="auth-status" class="auth-status" role="status">Loading secure sign-in…</p>
+    <div id="sign-in"></div>
+    <button id="auth-retry" class="primary" hidden>Retry</button>
+  </div>
+</section>
 <div class="shell" hidden>
   <aside class="sidebar" aria-label="Project navigation">
-    <a class="wordmark" href="/">↶ RETRACT<span>Project memory</span></a>
+    <a class="wordmark" href="/"><span class="brand-mark" aria-hidden="true">R</span><span class="brand-name">RETRACT</span></a>
+    <p class="sidebar-kicker">Project memory</p>
     <label for="project">Project</label><select id="project"><option value="">Loading projects…</option></select>
     <button id="new-project" class="quiet">+ New project</button>
     <label for="scope">Scope</label><select id="scope" disabled><option value="">All scopes</option></select>

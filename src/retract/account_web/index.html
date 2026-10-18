@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
- <meta name="color-scheme" content="light dark"><title>Account settings · RETRACT demo</title>
+ <meta name="color-scheme" content="light"><title>Account settings · RETRACT demo</title>
  <link rel="stylesheet" href="/assets/account/settings.css">
  <script type="module" src="/assets/account/settings.mjs"></script>
 </head>
 <body>
  <a class="skip" href="#content">Skip to account settings</a>
- <header class="site-header"><a href="/settings" class="wordmark">↶ RETRACT</a><span class="demo-label">Synthetic account demo</span></header>
+ <header class="site-header"><a href="/settings" class="wordmark"><span class="brand-mark" aria-hidden="true">R</span><span class="brand-name">RETRACT</span></a><span class="demo-label">Synthetic account demo</span></header>
  <main id="content" tabindex="-1">
   <div class="page-heading"><p class="eyebrow">Your account</p><h1>Account settings</h1><p class="muted">Keep your profile up to date.</p></div>
   <div id="message" class="message" role="status" aria-live="polite" hidden></div>
@@ -17,7 +17,7 @@
    <p class="muted">Checking your session…</p><div class="skeleton short" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div>
   </section>
   <section id="signed-out" class="panel" aria-labelledby="login-heading" hidden>
-   <h2 id="login-heading">Sign in to the demo</h2><p class="muted">Choose a synthetic account to edit its profile.</p>
+   <p class="eyebrow">Demo sign-in</p><h2 id="login-heading"><span class="mark">Sign in</span> to the demo</h2><p class="muted">Choose a synthetic account to edit its profile.</p>
    <form id="login-form">
     <fieldset><legend>Demo account</legend><div class="account-options">
      <label class="account-option"><input type="radio" name="user_id" value="alice" checked><span><strong>Alice Example</strong><small>alice@example.test</small></span></label>

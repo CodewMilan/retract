@@ -3,6 +3,7 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
+import re
 from importlib.resources import files
 from time import monotonic
 from urllib.parse import urlsplit
@@ -19,6 +20,14 @@ from .service import MemoryService
 
 MAX_BODY = 65536
 logger = logging.getLogger(__name__)
+_FONT = re.compile(r"[a-z0-9-]+\.woff2\Z")
+
+
+def font_bytes(name):
+    if not _FONT.fullmatch(name):
+        return None
+    path = files("retract").joinpath("web", "fonts", name)
+    return path.read_bytes() if path.is_file() else None
 
 
 def dispatch(service: MemoryService, path: str, body: dict) -> dict:
@@ -109,6 +118,22 @@ def make_handler(service: MemoryService, hosted=None):
                 self.respond(403, {"error": "Local origin required"})
                 return
             try:
+                if self.path.startswith("/assets/fonts/"):
+                    encoded = font_bytes(self.path.removeprefix("/assets/fonts/"))
+                    if encoded is None:
+                        self.respond(404, {"error": "Unknown API route"})
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", "font/woff2")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.send_header("Cache-Control", "public, max-age=86400")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    self.send_header("Content-Security-Policy", hosted.config.csp() if hosted else "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    self.close_connection = True
+                    return
                 if self.path == "/api/config":
                     self.respond(200, hosted.config.public() if hosted else {"mode": "local"})
                     return
