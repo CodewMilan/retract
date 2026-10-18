@@ -4,6 +4,7 @@ export const views = {
   pending: ['Pending & proposals', 'These updates have not replaced accepted memory.'],
   affected: ['Affected plans', 'Plans whose recorded dependencies need review.'],
   plans: ['All plans', 'Current plans and preserved versions, with their recorded dependencies.'],
+  handoffs: ['Agent handoffs', 'Work passed between agents, with what the sender relied on and what has changed since.'],
   updates: ['Update history', 'Recorded update outcomes, evidence, and revision changes.'],
   activity: ['Request activity', 'Recent API requests in this service process. Clears on restart.'],
 };
@@ -14,10 +15,12 @@ export function rowsFor(snapshot, view, search = '') {
     : view === 'affected' ? snapshot.plans.filter(p => p.status === 'needs_review')
     : view === 'plans' ? snapshot.plans
     : view === 'activity' ? snapshot.activity
+    : view === 'handoffs' ? (snapshot.handoffs ?? [])
     : snapshot.updates.filter(e => view !== 'pending' || ['pending', 'proposal'].includes(e.outcome));
   const term = search.toLowerCase().trim();
   return term ? rows.filter(row => [row.id, row.subject, row.predicate, row.value, row.scope, row.text,
-    row.outcome, row.route, row.client, row.status].some(v => String(v ?? '').toLowerCase().includes(term))) : rows;
+    row.outcome, row.route, row.client, row.status, row.note, row.from_agent, row.to_agent, row.plan_id,
+    row.claimed_by].some(v => String(v ?? '').toLowerCase().includes(term))) : rows;
 }
 export function updateRequest(project, revision, fact, draft, ids) {
   if (!fact || fact.status !== 'active') throw new Error('Select a current fact first.');

@@ -10,6 +10,13 @@ test('views keep current, historical, and unaccepted records separate', () => {
   assert.equal(rowsFor(snapshot, 'superseded')[0].id, 'old');
   assert.deepEqual(rowsFor(snapshot, 'pending').map(r => r.id), ['proposal', 'pending']);
 });
+test('handoff view lists handoffs and searches agents and notes', () => {
+  const handoffs = [{id: 'H1', scope: 'web/main', status: 'open', from_agent: 'retract-reviewer', to_agent: 'codex', plan_id: 'P1', note: 'Use cookie sessions'}];
+  assert.deepEqual(rowsFor({...snapshot, handoffs}, 'handoffs'), handoffs);
+  assert.equal(rowsFor({...snapshot, handoffs}, 'handoffs', 'CODEX').length, 1);
+  assert.equal(rowsFor({...snapshot, handoffs}, 'handoffs', 'cookie').length, 1);
+  assert.deepEqual(rowsFor(snapshot, 'handoffs'), []);
+});
 test('search is case insensitive and includes scope', () => {
   assert.equal(rowsFor(snapshot, 'active', ' BEARER ').length, 1);
   assert.equal(rowsFor(snapshot, 'active', 'web/main').length, 1);

@@ -92,6 +92,11 @@ class ModelStore:
                        if label == "Handoff" and owner == project and n["scope"] == scope and n["status"] == "open"],
                       key=lambda n: (n["recorded_at"], n["id"]))
 
+    def recent_handoffs(self, project, scope=None, limit=200):
+        return sorted([deepcopy(n) for (label, owner, _), n in self.nodes.items()
+                       if label == "Handoff" and owner == project and scope in (None, n["scope"])],
+                      key=lambda n: (n["recorded_at"], n["id"]), reverse=True)[:limit + 1]
+
     def plan_handoffs(self, project, plan_id):
         return sorted([deepcopy(n) for (label, owner, _), n in self.nodes.items()
                        if label == "Handoff" and owner == project and n["plan_id"] == plan_id],

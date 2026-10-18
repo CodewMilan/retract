@@ -27,6 +27,21 @@ class DashboardTests(unittest.TestCase):
             else:
                 self.service.record_plan(parse(PlanInput, action['body']))
 
+    def test_snapshot_shows_handoffs_checked_against_current_graph(self):
+        from retract.models import ClaimInput, HandoffInput
+        self.service.create_handoff(HandoffInput('account-settings', 'web-client/main', 'H1', 'agent-a', 'P1',
+                                                 'Finish the settings page', ['F1', 'F4'], 'codex'))
+        self.service.process_update(confirmed_update())
+        self.service.claim_handoff(ClaimInput('account-settings', 'H1', 'codex'))
+        snapshot = self.service.dashboard('account-settings', 'web-client/main')
+        [handoff] = snapshot['handoffs']
+        self.assertEqual((handoff['id'], handoff['status'], handoff['claimed_by']), ('H1', 'claimed', 'codex'))
+        self.assertIn('Fact F1 was superseded; current: F5', handoff['warnings'])
+        self.assertEqual(snapshot['counts']['handoffs'], 1)
+        self.assertFalse(snapshot['truncated']['handoffs'])
+        self.assertNotIn('fingerprint', json.dumps(snapshot))
+        self.assertEqual(self.service.dashboard('account-settings', 'cli-client/main')['handoffs'], [])
+
     def test_readonly_snapshot_shows_replacements_evidence_and_actual_paths(self):
         self.service.process_update(confirmed_update())
         before = self.service.project('account-settings')['revision']

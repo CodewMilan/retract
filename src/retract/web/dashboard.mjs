@@ -52,6 +52,22 @@ function inspect(record, kind) {
   renderRecords();
   const box = $('inspector'); box.replaceChildren(el('p', 'Evidence inspector', 'eyebrow'));
   box.append(el('h2', kind === 'fact' ? `${record.subject} / ${record.predicate}` : kind === 'activity' ? record.route : record.id));
+  if (kind === 'handoff') {
+    box.append(el('p', `${record.id} · ${record.scope}`, 'mono muted'),
+      el('p', record.status === 'claimed' ? `claimed by ${record.claimed_by}` : 'open', `badge ${record.stale ? 'warning' : ''}`),
+      el('p', `${record.from_agent} → ${record.to_agent || 'any agent'} · plan ${record.plan_id}`, 'mono'),
+      el('pre', record.note));
+    box.append(el('h3', 'Checked against the graph now'));
+    if (!record.warnings.length) box.append(el('p', 'Plan and cited facts are unchanged since the handoff.', 'muted'));
+    for (const warning of record.warnings) box.append(el('p', warning, 'badge warning'));
+    box.append(el('h3', 'Recorded relationships'),
+      el('pre', `${record.from_agent}\n  └─ HANDED_OFF → ${record.id}\n${record.id}\n  └─ CONCERNS → ${record.plan_id}` +
+        (record.current_plan && record.current_plan.plan_id !== record.plan_id ? ` (current: ${record.current_plan.plan_id})` : '') +
+        record.cited_facts.map(f => `\n  └─ CITES → ${f.fact_id}${f.changed ? ` (superseded; current: ${f.current_fact_id || 'none'})` : ''}`).join('') +
+        (record.to_agent ? `\n  └─ ASSIGNED_TO → ${record.to_agent}` : '') +
+        (record.claimed_by ? `\n${record.claimed_by}\n  └─ CLAIMED → ${record.id}` : '')));
+    return;
+  }
   if (kind === 'activity') {
     box.append(el('p', `${record.client} · HTTP ${record.status} · ${number(record.elapsed_ms)} ms`, 'mono'),
       el('p', record.recorded_at, 'muted'), el('p', 'Client labels are supplied by callers. This entry records an API request, not proof that a coding agent completed its task.', 'muted'));
@@ -100,13 +116,16 @@ function renderRecords() {
   const rows = rowsFor(state.snapshot, state.view, $('search').value);
   $('row-count').textContent = `${number(rows.length)} shown`;
   if (!rows.length) { container.append(el('p', $('search').value ? 'No matching records. Try a different search.' : state.view === 'active' ? 'No accepted facts here yet. Remember a fact with its evidence to begin.' : 'No records in this view.', 'empty')); return; }
-  const kind = ['active', 'superseded'].includes(state.view) ? 'fact' : ['affected', 'plans'].includes(state.view) ? 'plan' : state.view === 'activity' ? 'activity' : 'event';
+  const kind = ['active', 'superseded'].includes(state.view) ? 'fact' : ['affected', 'plans'].includes(state.view) ? 'plan'
+    : state.view === 'activity' ? 'activity' : state.view === 'handoffs' ? 'handoff' : 'event';
   for (const row of rows) {
     const button = el('button', undefined, 'record'); button.setAttribute('aria-pressed', String((row.id ?? row.recorded_at) === state.selection));
     const top = el('div', undefined, 'record-top');
     top.append(el('strong', kind === 'fact' ? `${row.subject} / ${row.predicate}` : kind === 'activity' ? row.route : row.id),
       el('span', String(row.outcome ?? row.status), 'badge'));
-    button.append(top, el('p', row.value || row.text || `${row.client} · ${number(row.elapsed_ms)} ms`),
+    const summary = kind === 'handoff' ? `${row.from_agent} → ${row.to_agent || 'any agent'} · plan ${row.plan_id}${row.stale ? ' · context changed' : ''}`
+      : row.value || row.text || [row.client, `${number(row.elapsed_ms)} ms`, row.handoff_id, row.agent || row.from_agent].filter(Boolean).join(' · ');
+    button.append(top, el('p', summary),
       el('small', `${row.scope || 'Project'} · ${row.id || row.recorded_at}`, 'mono'));
     button.onclick = () => inspect(row, kind); container.append(button);
   }

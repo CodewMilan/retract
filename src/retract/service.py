@@ -45,6 +45,13 @@ class MemoryService:
             for event in snapshot["updates"]:
                 event["result"] = json.loads(event.pop("result_json"))
                 event.pop("fingerprint", None)
+            handoffs = self.store.recent_handoffs(project_id, scope)
+            snapshot["truncated"]["handoffs"] = len(handoffs) > 200
+            snapshot["counts"]["handoffs"] = len(handoffs[:200])
+            snapshot["handoffs"] = []
+            for item in handoffs[:200]:
+                context = self._handoff_context(project_id, item)
+                snapshot["handoffs"].append({**context.pop("handoff"), **context})
             return {**snapshot, "project": project, "observed_at": timestamp(),
                     "activity": self.activity.read(project_id, scope),
                     "activity_retention": "service_process"}

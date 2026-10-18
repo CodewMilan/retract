@@ -191,6 +191,14 @@ class GraphStore:
         )
         return [dict(row[0]) for row in rows]
 
+    def recent_handoffs(self, project, scope=None, limit=200):
+        rows = self.query(
+            "MATCH (h:Handoff {project_id: $project}) WHERE $scope IS NULL OR h.scope = $scope "
+            "RETURN properties(h) ORDER BY h.recorded_at DESC, h.id LIMIT $limit",
+            {"project": project, "scope": scope, "limit": limit + 1},
+        )
+        return [dict(row[0]) for row in rows]
+
     def plan_handoffs(self, project, plan_id):
         rows = self.query(
             "MATCH (h:Handoff {project_id: $project})-[:CONCERNS]->(:Plan {project_id: $project, id: $plan}) "

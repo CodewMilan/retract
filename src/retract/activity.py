@@ -15,7 +15,8 @@ class ActivityJournal:
         entry = {"route": route, "status": status, "client": client,
                  "recorded_at": datetime.now(timezone.utc).isoformat(),
                  "elapsed_ms": round(elapsed_ms),
-                 **{key: value[:160] for key in ("project_id", "scope", "event_id")
+                 **{key: value[:160] for key in ("project_id", "scope", "event_id", "handoff_id",
+                                                 "from_agent", "agent")
                     if isinstance(value := body.get(key), str)}}
         with self.lock:
             self.entries.append(entry)
