@@ -123,6 +123,38 @@ flowchart LR
 dependency status and existing handoffs. A claim reports whether cited facts
 were superseded or the plan was revised since the handoff was written.
 
+## Investigator agent and graph algorithms
+
+The investigator explores the whole project graph on its own and decides each
+next step itself:
+
+```sh
+retract agent investigate account-settings             # Groq plans every step
+retract agent investigate account-settings --playbook  # fixed order, no model
+```
+
+Its tools are read-only graph queries on FalkorDB (`/analyze`, also the
+`analyze_graph` MCP tool):
+
+| Tool | What it runs |
+| --- | --- |
+| `findings` | Detectors: live plans on retired facts, plans on facts with no trusted source, cross-scope drift (a correction retired a value another scope still holds), open handoffs whose plan or facts changed, unresolved updates touching live plans |
+| `centrality` | `algo.pageRank` over `DEPENDS_ON`, or `algo.betweenness` over plan/fact/handoff links |
+| `blast_radius` | Variable-length (1–4 hop) neighbourhood of a node, with each node's shortest path |
+| `trace` | `shortestPath` between two nodes |
+| `components` | `algo.WCC`; facts with no plan in their component |
+
+Traversals skip the `Project` membership edge so unrelated facts never look
+connected. The planner (Groq `openai/gpt-oss-20b`, strict JSON per step) sees a
+compact notebook of earlier steps. The only write it can make is a handoff to the
+coding agent, and code enforces the guards: the finding must have been observed
+in this run, the plan must have been inspected with `blast_radius` or `trace`
+first, cited facts come from the graph rather than the model, a plan that already
+has an open or claimed handoff is skipped, repeated steps are answered from the
+notebook, and at most three handoffs are made. Leads with no dependent plan, such
+as the cross-scope drift on F2 after U1, are reported, not acted on. The report
+lists every step, its graph evidence, and the outcome for each finding.
+
 Seeding is explicit and refuses a project whose revision is already nonzero.
 Startup never seeds or resets data. If a seed is interrupted, inspect the stored
 state and continue individual actions from [the fixture](fixtures/demo-seed.json)
@@ -203,8 +235,8 @@ atomicity or crash recovery.
 
 ## Coding-client integration
 
-The eight memory tools (`remember`, `process_update`, `recall`, `history`,
-`record_plan`, `revise_plan`, `handoff`, `claim_handoff`) are available through
+The nine memory tools (`remember`, `process_update`, `recall`, `history`,
+`record_plan`, `revise_plan`, `handoff`, `claim_handoff`, `analyze_graph`) are available through
 local MCP stdio. The adapter calls
 the existing memory service; it keeps no separate memory cache.
 

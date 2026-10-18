@@ -38,6 +38,44 @@ passing controlled HTTP/client checks. A fresh coding-client recall/construction
 run, real browser behavior, and PostgreSQL-backed feature checks remain
 unverified integration steps.
 
+## Investigator agent: graph reasoning as tools
+
+The **investigator agent** (`retract agent investigate`,
+[investigator.py](src/retract/investigator.py)) runs an autonomous
+investigate-and-act loop over the memory graph. Groq `openai/gpt-oss-20b` picks
+each step from read-only FalkorDB tools ([analysis.py](src/retract/analysis.py)):
+five detectors, `algo.pageRank` and `algo.betweenness` centrality, a 1–4 hop
+variable-length blast radius, `shortestPath` tracing, and `algo.WCC` components.
+It acts by handing a plan to the coding agent. Code guards that action: the
+finding must be observed, the plan inspected first, and cited facts taken from
+the graph. The same tools are the `analyze_graph` MCP tool.
+
+Observed live run (real FalkorDB, real Groq, fresh graph after U1), 8 steps in
+24 s, each model call succeeding first time:
+1. `findings` returned `stale_plan:P1` and the cross-scope lead
+   `cross_scope_drift:F2:U1`.
+2. `trace` F2→U1 found no path.
+3. The model asked for `findings` again; the repeat guard answered it from the
+   notebook.
+4. `blast_radius` on P1 returned `(P1)-[:DEPENDS_ON]->(F1)` and
+   `(U1)-[:FLAGGED]->(P1)`.
+5. `handoff` created `investigate-5d2f0c5e5da59453` for codex.
+6. `handoff` on the F2 lead was rejected ("no live plan to hand off; report it
+   instead").
+7. `overview`.
+8. `finish`.
+
+In an earlier run the model tried to hand off before inspecting P1, and the
+guard rejected it. A playbook re-run skipped P1 because it already had an open
+handoff. A real Codex session given only `analyze_graph` and `history` ran
+findings, blast radius, trace and PageRank. It reported
+`F5 -[SUPERSEDES]-> F1 <-[DEPENDS_ON]- P1`, and resolved the F2 lead from the U1
+source ("CLI authentication is unchanged"). Traces are in
+[docs/evidence/investigation-20261018](docs/evidence/investigation-20261018). With the
+reviewer's handoff already open, a live investigator run skipped P1 ("already
+has a open handoff (review-e3cb279fb1df4915, codex)"), so the two agents did not
+duplicate work.
+
 ## Coordination between agents
 
 Two agents share one graph memory. The **reviewer agent**

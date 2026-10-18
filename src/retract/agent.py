@@ -122,6 +122,11 @@ class ReviewerAgent:
             handoff_id = "review-" + hashlib.sha256(json.dumps(
                 [plan["id"], events, current_ids]).encode()).hexdigest()[:16]
             existing = next((h for h in warning["handoffs"] if h["id"] == handoff_id), None)
+            other = next((h for h in warning["handoffs"] if h["status"] == "open"), None)
+            if existing is None and other:
+                decisions.append({**decision, "action": "skipped", "handoff_id": other["id"],
+                                  "reason": f"Plan already has open handoff {other['id']} from {other['from_agent']}"})
+                continue
             if existing:
                 state = (f"claimed by {existing['claimed_by']}" if existing["status"] == "claimed"
                          else f"open for {existing['to_agent'] or 'any agent'}")

@@ -11,7 +11,7 @@ import hashlib
 import json
 import time
 
-from .inference import GroqInterpreter, ModelRateLimited, ModelResponseError
+from .inference import GroqInterpreter, ModelError, ModelRateLimited, ModelResponseError
 from .mcp_tools import ApiError
 
 AGENT_ID = "retract-investigator"
@@ -31,7 +31,7 @@ Choose exactly ONE next action per turn:
 - blast_radius: multi-hop neighbourhood of node_id (fact, plan, event, handoff); depth 1-4.
 - trace: shortest path between node_id and target_id.
 - components: weakly connected components; shows isolated facts.
-- history: replacement chain and evidence of fact node_id.
+- history: replacement chain of fact node_id, or the source text of update event node_id.
 - overview: node and relationship counts.
 - handoff: give finding_id (a finding you observed that has a plan_id) to the coding agent;
   note = what the coding agent must verify or change, citing the path you found.
@@ -40,6 +40,7 @@ The notebook lists steps already taken with their observations; never repeat a s
 In findings, current_fact_ids are the active facts a fixed plan should cite; retired ones are named before →.
 Rules: start with findings. Before a handoff, inspect its plan or fact with blast_radius or trace.
 Never hand off the same finding twice; at most three handoffs. Finish when nothing new is left.
+To judge a cross-scope lead, read the correcting event's source with history.
 Leads that no plan depends on are reported, not handed off. Fill unused fields with null.
 """
 
@@ -98,6 +99,11 @@ def digest(action, result):
     if action == "history":
         return "; ".join(f"{f['id']} {f['status']} '{f['value']}' ({f['scope']})" for f in result["facts"]) + \
             "; replacements: " + ", ".join(f"{l['new_fact_id']} replaces {l['old_fact_id']}" for l in result["replacement_links"])
+    if action == "event":
+        event, source = result["event"], result.get("source") or {}
+        return (f"event {event['event_id']} {event['outcome']}: retired {event['retired_fact_ids']} accepted "
+                f"{event['accepted_fact_ids']}; source {source.get('id')} ({source.get('authority')}) says: "
+                f"\"{(source.get('content') or '')[:600]}\"")
     return json.dumps({k: v for k, v in result.items() if k != "tool"}, ensure_ascii=False)[:1500]
 
 
@@ -115,15 +121,22 @@ class GroqPlanner:
                                 {"role": "user", "content": json.dumps(state, ensure_ascii=False)}],
                    "response_format": {"type": "json_schema", "json_schema": {
                        "name": "retract_investigation_step", "strict": True, "schema": SCHEMA}}}
-        for attempt in range(5):
+        invalid = 0
+        for attempt in range(6):
             try:
                 decision, model, elapsed, usage, attempts = self.interpreter.complete(payload, _validate_decision)
                 break
             except ModelRateLimited as exc:
                 # The free tier allows a few thousand tokens per minute; wait it out.
-                if attempt == 4:
+                if attempt == 5:
                     raise
                 self.sleep(min(exc.retry_after, 30) + 1)
+            except ModelResponseError:
+                # Strict-schema generation occasionally fails provider-side validation.
+                invalid += 1
+                if invalid == 3 or attempt == 5:
+                    raise
+                payload = {**payload, "temperature": 0.2 * invalid}
         self.label = f"groq:{model}"
         self.audit.append({"model": model, "elapsed_ms": elapsed, "usage": usage, "attempts": attempts})
         return decision
@@ -219,10 +232,17 @@ class InvestigatorAgent:
                                   for i, s in enumerate(notebook)],
                      "findings": [{k: f.get(k) for k in ("id", "kind", "severity", "plan_id", "summary")}
                                   for f in findings.values()],
-                     "handled": sorted(handled)}
+                     "handled": sorted(handled),
+                     "plans_not_inspected": sorted({f["plan_id"] for f in findings.values()
+                                                    if f.get("plan_id") and f["id"] not in handled} - set(evidence)),
+                     "tools_not_used": [t for t in ACTIONS[:-2] if t not in {s["action"] for s in notebook}]}
             if step == self.max_steps:
                 state["instruction"] = "Last step: choose finish and write the final report."
-            decision = self.planner.decide(state)
+            try:
+                decision = self.planner.decide(state)
+            except ModelError as exc:
+                summary = f"Planner stopped at step {step}: {exc}. Steps and actions above are complete and real."
+                break
             action = decision["action"]
             entry = {"step": step, "action": action, "reasoning": decision["reasoning"][:600],
                      "node_id": decision["node_id"], "target_id": decision["target_id"],
@@ -232,7 +252,8 @@ class InvestigatorAgent:
                 entry["observation"] = "finished"
                 notebook.append(entry)
                 break
-            key = (action, decision["node_id"], decision["target_id"], decision["algorithm"], decision["depth"])
+            key = (action, decision["node_id"], decision["target_id"], decision["algorithm"] or "pagerank",
+                   (decision["depth"] or 2) if action == "blast_radius" else None)
             repeat = seen.get(key) if action != "handoff" else None
             seen.setdefault(key, entry)
             try:
@@ -259,8 +280,15 @@ class InvestigatorAgent:
                             actions.append({"finding_id": finding["id"], "plan_id": finding["plan_id"], "detail": detail})
                     entry.update(outcome=outcome, observation=f"{outcome}: {detail}")
                 elif action == "history":
-                    result = self.api("/history", {"project_id": project_id, "fact_id": decision["node_id"]})
-                    entry.update(result=result, observation=digest("history", result))
+                    try:
+                        result = self.api("/history", {"project_id": project_id, "fact_id": decision["node_id"]})
+                        kind = "history"
+                    except ApiError as exc:
+                        if exc.status != 404:
+                            raise
+                        result = self.api("/history", {"project_id": project_id, "event_id": decision["node_id"]})
+                        kind = "event"
+                    entry.update(result=result, observation=digest(kind, result))
                 else:
                     args = {}
                     if action == "findings" and scope:
@@ -285,8 +313,16 @@ class InvestigatorAgent:
             notebook.append(entry)
         else:
             summary = "Step budget reached before the planner finished."
+        outcomes = []
+        for finding in findings.values():
+            tried = [s for s in notebook if s["finding_id"] == finding["id"] and s["action"] == "handoff"]
+            done = next((a for a in actions if a["finding_id"] == finding["id"]), None)
+            outcomes.append({"finding_id": finding["id"], "severity": finding["severity"], "summary": finding["summary"],
+                             "outcome": done["detail"] if done else (tried[-1]["observation"] if tried else "reported only"),
+                             "inspected_with": sorted({s["action"] for s in notebook if s["action"] in ("blast_radius", "trace", "history")
+                                                       and s["node_id"] in (finding.get("plan_id"), finding.get("fact_id"))})})
         return {"agent": self.agent_id, "planner": self.planner.label, "project_id": project_id, "scope": scope,
                 "steps": notebook, "findings": list(findings.values()), "actions": actions,
-                "report": summary, "elapsed_ms": round((time.perf_counter() - started) * 1000, 1),
+                "outcomes": outcomes, "report": summary, "elapsed_ms": round((time.perf_counter() - started) * 1000, 1),
                 "model_audit": getattr(self.planner, "audit", []),
                 "summary": f"{len(notebook)} step(s), {len(findings)} finding(s), {len(actions)} handoff(s)"}

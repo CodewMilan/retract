@@ -42,12 +42,15 @@ MCP tool errors, never fabricated context.
 | `revise_plan` | `/plans/revise` | Explicitly confirmed replacement plan; the previous version is preserved. |
 | `handoff` | `/handoffs` | Leave work on a current plan for another agent, citing the active facts relied on. |
 | `claim_handoff` | `/handoffs/claim` | Take over an open handoff; single winner; reports superseded facts or revised plans since the handoff. |
+| `analyze_graph` | `/analyze` | Read-only investigation: findings detectors, PageRank/betweenness, multi-hop blast radius, shortest-path trace, connected components. |
 
 `recall` also returns open handoffs for the scope. The reviewer agent
 (`retract agent review`) uses these tools to hand drafted plan revisions to the
 coding client.
 
-Tool schemas describe effects and mark recall/history read-only. Metadata and
+The investigator agent (`retract agent investigate`) uses `/analyze` the same way.
+
+Tool schemas describe effects and mark recall/history/analyze_graph read-only. Metadata and
 server instructions ask the agent to retrieve context before planning, inspect
 the repository, cite fact/source IDs, and report contradictions. They do not
 guarantee that a client/model will obey or call a tool.

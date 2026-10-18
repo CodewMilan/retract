@@ -63,6 +63,28 @@ F5", draft citing `F4` and `F5`. Dashboard → Agent handoffs shows it as open
 with "Plan P1 still needs review". Running the command again prints
 "Already handed off" and makes no model call.
 
+## 4b. Investigator agent (graph algorithms, decides its own steps)
+
+```sh
+retract agent investigate account-settings > reports/demo-investigation.json
+```
+
+Takes 20–60 s, because Groq's free tier allows 8,000 tokens per minute and the
+agent waits out rate limits. Expected:
+- `findings` returns `stale_plan:P1` and `cross_scope_drift:F2:U1`.
+- The model inspects with `blast_radius`, `trace` or `centrality`.
+- The P1 handoff is **skipped**, because the reviewer's open handoff from step 4
+  already covers it. Two agents, no duplicate work.
+- The F2 lead is reported only, since no plan depends on F2.
+
+The `outcomes` field lists each finding with what happened to it. If you skip
+step 4, the investigator creates the P1 handoff itself
+(`investigate-…`), and a later reviewer run skips it.
+
+The model chooses its own path, so the exact step order varies between runs.
+Show the `steps` array as it came out; don't promise a fixed order. The
+`--playbook` flag runs a fixed order with no model.
+
 ## 5. Coding agent (second agent): real Codex session
 
 Codex works in the pre-frontend checkout so it must build the page. The MCP

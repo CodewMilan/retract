@@ -52,6 +52,16 @@ class PlannerTransportTests(unittest.TestCase):
         self.assertEqual(slept, [6])
         self.assertEqual(planner.audit[0]["model"], "openai/gpt-oss-20b")
 
+    def test_invalid_model_output_is_retried_then_stops_with_a_partial_report(self):
+        transport = Transport(envelope(step("findings")), envelope({"action": "drop"}), envelope({"action": "drop"}),
+                              envelope({"action": "drop"}))
+        planner = GroqPlanner(GroqInterpreter("test", opener=transport), sleep=lambda _: None)
+        api = lambda route, body: {"tool": "findings", "findings": []}
+        report = InvestigatorAgent(api, planner).run(PROJECT)
+        self.assertEqual([s["action"] for s in report["steps"]], ["findings"])
+        self.assertIn("Planner stopped at step 2", report["report"])
+        self.assertEqual(json.loads(transport.requests[-1][0].data)["temperature"], 0.4)
+
 
 @unittest.skipUnless(os.getenv("RUN_FALKORDB_TESTS") == "1", "Requires real FalkorDB")
 class InvestigationGraphTests(unittest.TestCase):
@@ -130,6 +140,11 @@ class InvestigationGraphTests(unittest.TestCase):
         self.assertIn("already has a open handoff", rerun["steps"][2]["observation"])
         self.assertNotIn("/handoffs", self.calls)
 
+        from retract.agent import ReviewerAgent, TemplateDrafter
+        [decision] = ReviewerAgent(self.api, TemplateDrafter()).run(PROJECT, "web-client/main")["decisions"]
+        self.assertEqual(decision["action"], "skipped")
+        self.assertIn("from retract-investigator", decision["reason"])
+
     def test_guards_reject_unsafe_or_unsupported_actions(self):
         self.service.process_update(confirmed_update())
         planner = Scripted(step("findings"), step("findings"),
@@ -138,6 +153,7 @@ class InvestigationGraphTests(unittest.TestCase):
                            step("blast_radius", node_id="F2"),
                            step("handoff", finding_id="cross_scope_drift:F2:U1"),
                            step("trace", node_id="F2", target_id="nope"),
+                           step("history", node_id="U1"),
                            step("finish", note="Reported F2 drift."))
         report = self.agent(planner).run(PROJECT)
         observations = [s["observation"] for s in report["steps"]]
@@ -146,6 +162,9 @@ class InvestigationGraphTests(unittest.TestCase):
         self.assertIn("does not name a finding", observations[3])
         self.assertIn("no live plan", observations[5])
         self.assertTrue(observations[6].startswith("error:"))
+        self.assertIn("CLI authentication is unchanged", observations[7])
+        self.assertEqual(planner.states[-1]["plans_not_inspected"], ["P1"])
+        self.assertNotIn("history", planner.states[-1]["tools_not_used"])
         self.assertEqual(report["actions"], [])
         self.assertEqual(self.calls.count("/analyze"), 3)
         self.assertNotIn("/handoffs", self.calls)
