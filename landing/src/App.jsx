@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import EcosystemMap from "./EcosystemMap.jsx";
 import HeroEtchTrail from "./HeroEtchTrail.jsx";
 import { AutoIncrementValue, SplitWords } from "./motion.jsx";
+import { MOTION_OK, gsap, useGSAP } from "./gsap.js";
 
 const DASHBOARD = "http://127.0.0.1:8100";
 const SETTINGS = "http://127.0.0.1:8101/settings";
+const DESKTOP_NAV = "(min-width: 70em)";
 const SETUP = "python -m pip install -e . && docker compose up -d --wait && retract serve";
 
 const MENUS = [
@@ -211,7 +213,12 @@ function Nav() {
                 <li
                   key={menu.label}
                   className={`nav__item${wide ? " nav__item--wide" : ""}${openIndex === index ? " is-subnav-open" : ""}`}
-                  onMouseLeave={() => setOpenIndex((v) => (v === index ? null : v))}
+                  onMouseEnter={() => {
+                    if (window.matchMedia(DESKTOP_NAV).matches) setOpenIndex(index);
+                  }}
+                  onMouseLeave={() => {
+                    if (window.matchMedia(DESKTOP_NAV).matches) setOpenIndex((v) => (v === index ? null : v));
+                  }}
                 >
                   <button
                     type="button"
@@ -240,19 +247,19 @@ function Nav() {
                             {group.items.map(([title, subtitle, href]) => (
                               <li key={title}>
                                 <a
-                                  className="nav__subnav__link btn btn--nav-primary btn--menu-item"
+                                  className="nav__subnav__link btn btn--nav-primary btn--icon-left btn--menu-item"
                                   href={href}
                                   onClick={() => {
                                     setOpenIndex(null);
                                     setOpen(false);
                                   }}
                                 >
-                                  <span className="btn__icon" aria-hidden="true">
-                                    <span className="menu-glyph">{title.slice(0, 1)}</span>
-                                  </span>
                                   <span className="stack">
                                     <span className="btn__text">{title}</span>
                                     <span className="btn__subtitle">{subtitle}</span>
+                                  </span>
+                                  <span className="btn__icon" aria-hidden="true">
+                                    <span className="menu-glyph">{title.slice(0, 1)}</span>
                                   </span>
                                 </a>
                               </li>
@@ -278,7 +285,7 @@ function Nav() {
             <a className="btn btn--secondary" href={SETTINGS}>Settings</a>
           </li>
           <li className="nav__item nav__item--cta">
-            <a className="btn btn--chevron btn--compact-nav" href="#setup">
+            <a className="btn btn--chevron" href="#setup">
               <span className="btn__text">Run locally</span>
               <span className="btn__icon"><Chevron /></span>
             </a>
@@ -312,10 +319,44 @@ function CopyButton() {
 }
 
 function FeatureMedia({ kind }) {
+  const ref = useRef(null);
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        const items = gsap.utils.toArray(":scope > .mock > *", ref.current);
+        const scrambles = gsap.utils.toArray("[data-scramble]", ref.current);
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.4, paused: true });
+        tl.from(items, { autoAlpha: 0, y: 6, duration: 0.45, ease: "power3.out", stagger: 0.45 });
+        scrambles.forEach((el) => {
+          tl.to(
+            el,
+            { duration: 0.9, ease: "none", scrambleText: { text: el.textContent, chars: "01/_·#", speed: 0.6 } },
+            items.indexOf(el.closest(".mock > *")) * 0.45,
+          );
+        });
+        tl.to(items, { autoAlpha: 0, duration: 0.35, ease: "power1.in" }, "+=3.2");
+        const observer = new IntersectionObserver(([entry]) => (entry.isIntersecting ? tl.play() : tl.pause()));
+        observer.observe(ref.current);
+        return () => observer.disconnect();
+      });
+    },
+    { scope: ref },
+  );
+
+  return (
+    <div ref={ref} className="mockStage">
+      <MockContent kind={kind} />
+    </div>
+  );
+}
+
+function MockContent({ kind }) {
   if (kind === "remember") {
     return (
       <div className="mock mock--remember">
-        <p className="mock__head">remember → web-client/main</p>
+        <p className="mock__head" data-scramble>remember → web-client/main</p>
         {[
           ["F5 Browser auth uses HTTP-only cookie sessions", "source: PR #212 · “we moved the browser client to cookies”"],
           ["F3 Account service stores users in PostgreSQL", "source: ADR-004 · accepted"],
@@ -334,7 +375,7 @@ function FeatureMedia({ kind }) {
     return (
       <div className="mock mock--recall">
         <div className="mock__row mock__row--query" style={{ "--i": 0 }}>
-          <span className="mock__title">recall(“how does the browser authenticate?”)</span>
+          <span className="mock__title" data-scramble>recall(“how does the browser authenticate?”)</span>
           <span className="mock__line">scope: web-client/main</span>
         </div>
         <p className="mock__head" style={{ "--i": 1 }}>Current fact from the graph</p>
@@ -355,7 +396,7 @@ function FeatureMedia({ kind }) {
       </div>
       <div className="mock__diff" style={{ "--i": 1 }}>
         <p className="mock__old">− F1 Browser auth uses bearer tokens</p>
-        <p className="mock__new">+ F5 Browser auth uses HTTP-only cookie sessions</p>
+        <p className="mock__new" data-scramble>+ F5 Browser auth uses HTTP-only cookie sessions</p>
       </div>
       <div className="mock__row" style={{ "--i": 2 }}>
         <span className="mock__title">P1 Settings page · needs review</span>

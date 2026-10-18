@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { gsap, useGSAP } from "./gsap.js";
 import { useInView, useReducedMotion } from "./motion.jsx";
 
 const CX = 660;
@@ -249,6 +250,8 @@ export default function EcosystemMap() {
   const [step, setStep] = useState(0);
   const [sceneKey, setSceneKey] = useState(0);
   const tabRefs = useRef([]);
+  const canvasRef = useRef(null);
+  const connectedRef = useRef(new Set());
 
   const count = USE_CASES.length;
   const useCase = USE_CASES[active];
@@ -300,6 +303,28 @@ export default function EcosystemMap() {
     return () => clearTimeout(timer);
   }, [active, done, autoplay, count, inView, paused, reduced]);
 
+  useGSAP(
+    () => {
+      if (reduced || !stageInView) return;
+      const previous = connectedRef.current;
+      connectedRef.current = new Set(useCase.integrationKeys);
+      const fresh = gsap.utils.toArray("[data-wire]", canvasRef.current).filter((el) => !previous.has(el.dataset.wire));
+      const tl = gsap.timeline();
+      if (fresh.length) {
+        tl.fromTo(fresh, { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.5, ease: "power2.inOut", stagger: 0.04 });
+      }
+      tl.fromTo(
+        ".ecosystemMap__scene .ecosystemMap__wire",
+        { drawSVG: "0%" },
+        { drawSVG: "100%", duration: 0.45, ease: "power2.inOut" },
+        fresh.length ? "-=0.15" : 0,
+      );
+      tl.to(".ecosystemMap__agentLabel", { duration: 0.8, ease: "none", scrambleText: { text: useCase.status, chars: "lowerCase", speed: 0.5 } }, 0);
+      tl.to(".ecosystemMap__hubTitle", { duration: 0.6, ease: "none", scrambleText: { text: useCase.title, chars: "upperCase", speed: 0.6 } }, 0);
+    },
+    { scope: canvasRef, dependencies: [active, sceneKey, stageInView] },
+  );
+
   const placedLogos = INTEGRATIONS.slice(0, SLOTS.length).map((integration, index) => ({ integration, slot: SLOTS[index] }));
   const taken = placedLogos.map(({ slot: s }) => s);
   const connected = placedLogos.filter(({ integration }) => useCase.integrationKeys.includes(integration.key));
@@ -319,13 +344,13 @@ export default function EcosystemMap() {
           if (!event.currentTarget.contains(event.relatedTarget)) setFocusPause(false);
         }}
       >
-        <div className="ecosystemMap__canvas">
+        <div className="ecosystemMap__canvas" ref={canvasRef}>
           <svg className="ecosystemMap__wires" viewBox="0 0 1320 605" aria-hidden="true">
             {[...EMPTY, ...SLOTS].map(({ x, y }) => (
               <rect key={`${x}-${y}`} className="ecosystemMap__gridCell" x={x} y={y} width="56" height="56" />
             ))}
             {connected.map(({ integration, slot: s }) => (
-              <path key={integration.key} className="ecosystemMap__wire ecosystemMap__wire--fade" d={linePath(wireFor(s, taken))} />
+              <path key={integration.key} data-wire={integration.key} className="ecosystemMap__wire" d={linePath(wireFor(s, taken))} />
             ))}
             {connected.length > 0 ? (
               <path className="ecosystemMap__tick" d={tickPath([{ x: BUS.busX, y: BUS.y }, { x: BUS.ringX, y: BUS.y }])} />
