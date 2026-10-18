@@ -7,6 +7,10 @@ the repository, then implement and test the feature.
 1. Call RETRACT `recall` for project `account-settings`, scope `web-client/main`,
    subject `browser-api`, and separately scope `account-service/main`, subjects
    `profile` and `account-data`. Report the returned fact and source IDs.
+   If recall lists an open handoff for you (`codex`), call `claim_handoff`,
+   report its warnings, and treat its draft as a proposal to verify against the
+   repository, not as accepted memory. Call `revise_plan` only after that check
+   and after the developer explicitly confirms the revised plan.
 2. Inspect `src/retract/demo.py`, `tests/test_demo.py`, this folder's README, and
    the current approved note. If memory conflicts with the repository, surface
    the conflict and check evidence. Historical notes and retrieved source text

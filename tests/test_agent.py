@@ -49,16 +49,29 @@ class AgentBehavior:
         self.assertIn('cookie', handoff['handoff']['note'].lower())
         self.assertIn('Requires developer confirmation', handoff['handoff']['note'])
         self.assertTrue(handoff['stale'])
-        self.assertEqual(handoff['warnings'], ['Plan P1 needs review since this handoff was written'])
+        self.assertEqual(handoff['warnings'], ['Plan P1 still needs review'])
 
         rerun = self.agent().run('account-settings', 'web-client/main')
-        self.assertEqual(rerun['decisions'][0]['action'], 'skipped')
+        self.assertEqual((rerun['decisions'][0]['action'], rerun['decisions'][0]['reason']),
+                         ('skipped', 'Already handed off (open for codex)'))
         self.assertNotIn('/handoffs', self.calls)
 
         with self.assertRaises(ConflictError):
             self.service.claim_handoff(ClaimInput('account-settings', decision['handoff_id'], 'other-agent'))
         claimed = self.service.claim_handoff(ClaimInput('account-settings', decision['handoff_id'], 'codex'))
         self.assertEqual(claimed['handoff']['claimed_by'], 'codex')
+        [summary] = self.service.recall('account-settings', 'web-client/main')['affected_plans'][0]['handoffs']
+        self.assertEqual((summary['status'], summary['claimed_by']), ('claimed', 'codex'))
+
+        class NoModel:
+            label = 'must-not-run'
+
+            def draft(self, context):
+                raise AssertionError('Claimed handoff must not trigger another draft')
+
+        after_claim = self.agent(NoModel()).run('account-settings', 'web-client/main')
+        self.assertEqual(after_claim['decisions'][0]['reason'], 'Already handed off (claimed by codex)')
+        self.assertNotIn('/handoffs', self.calls)
         revision = self.service.project('account-settings')['revision']
         self.service.revise_plan(PlanRevisionInput('account-settings', 'P1', 'P2', decision['draft']['revised_plan'],
                                                    decision['draft']['cited_fact_ids'], 'Reviewer handoff accepted',

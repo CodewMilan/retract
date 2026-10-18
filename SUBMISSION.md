@@ -24,7 +24,8 @@ A local Python service stores project facts, sources, updates, and explicit plan
 dependencies in FalkorDB. A confirmed authoritative correction supersedes the
 matching active fact, preserves its evidence/history, and flags plans linked to
 that fact. Proposals and ambiguous or unconfirmed changes stay outside accepted
-memory. An MCP adapter exposes remember, process_update, recall, and history.
+memory. An MCP adapter exposes remember, process_update, recall, history,
+record_plan, revise_plan, handoff, and claim_handoff.
 A neutral browser dashboard displays the same service state and actual API
 request metadata. Optional Groq extraction feeds the same deterministic policy.
 
@@ -38,6 +39,23 @@ run, real browser behavior, and PostgreSQL-backed feature checks remain
 unverified integration steps.
 
 ## Coordination between agents
+
+Two agents share one graph memory. The **reviewer agent**
+(`retract agent review`, [agent.py](src/retract/agent.py)) recalls flagged plans,
+follows `DEPENDS_ON` and `SUPERSEDES` to see which dependency was replaced,
+drafts a revised plan with Groq that may cite only current facts, and hands it
+to the **coding agent** (Codex over MCP). The coding agent claims the handoff,
+confirms the revision with `revise_plan`, implements it, and runs tests. The
+reviewer never applies a revision itself; confirmation stays with the developer
+and coding session.
+
+Observed live run (real FalkorDB, real Groq `openai/gpt-oss-20b`, real MCP
+stdio): correction U1 retired F1 and flagged P1; the reviewer reported "P1
+depends on F1 (browser-api authentication), replaced by F5" and handed off a
+draft citing F4 and F5; the MCP client recalled it, claimed it as `codex`, and
+revised P1 to P2; recall then showed no affected plans, and a reviewer re-run
+found nothing to do. The coding-client step in that run was a scripted MCP
+client, not a Codex session.
 
 The `handoff` and `claim_handoff` MCP tools let one agent leave scoped work for
 another. A `Handoff` node `CONCERNS` a plan and `CITES` the facts the sender

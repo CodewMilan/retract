@@ -92,6 +92,37 @@ replace PostgreSQL. Calling the confirmed-update command again returns the
 original result without repeating its effects. Reusing U1 for a different
 request returns a conflict.
 
+## Reviewer agent and handoffs
+
+After a correction, run the reviewer agent:
+
+```sh
+retract agent review account-settings web-client/main            # drafts with Groq
+retract agent review account-settings web-client/main --template # offline, no model
+```
+
+It calls `recall`, follows each flagged plan's `DEPENDS_ON` and `SUPERSEDES`
+paths to find which dependencies were replaced, drafts a revised plan that cites
+only current facts, and records a `handoff` to the coding agent (`--to-agent`,
+default `codex`). It never revises a plan or changes a fact; the coding agent
+claims the handoff with `claim_handoff`, confirms the plan with `revise_plan`,
+and implements it. Re-running is safe: a plan that already has the same handoff,
+open or claimed, is skipped before any model call. A model draft that cites a
+retired or unrelated fact is rejected and no handoff is recorded.
+
+```mermaid
+flowchart LR
+    Agent -->|HANDED_OFF| Handoff
+    Handoff -->|CONCERNS| Plan
+    Handoff -->|CITES| Fact
+    Handoff -->|ASSIGNED_TO| Receiver[Agent]
+    Claimer[Agent] -->|CLAIMED| Handoff
+```
+
+`recall` lists open handoffs for a scope; each affected plan also reports its
+dependency status and existing handoffs. A claim reports whether cited facts
+were superseded or the plan was revised since the handoff was written.
+
 Seeding is explicit and refuses a project whose revision is already nonzero.
 Startup never seeds or resets data. If a seed is interrupted, inspect the stored
 state and continue individual actions from [the fixture](fixtures/demo-seed.json)

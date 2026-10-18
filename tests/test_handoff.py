@@ -38,7 +38,7 @@ class HandoffBehavior:
         stale = self.service.recall('account-settings', 'web-client/main')['open_handoffs'][0]
         self.assertTrue(stale['stale'])
         self.assertIn({'fact_id': 'F1', 'current_fact_id': 'F5', 'changed': True}, stale['cited_facts'])
-        self.assertIn('Plan P1 needs review since this handoff was written', stale['warnings'])
+        self.assertIn('Plan P1 still needs review', stale['warnings'])
         revision = self.service.project('account-settings')['revision']
         self.service.revise_plan(PlanRevisionInput('account-settings', 'P1', 'P2', 'Use cookie sessions',
                                                    ['F5', 'F4'], 'F1 replaced', True, revision))
