@@ -19,7 +19,7 @@ import account from "../../examples/account-settings/README.md?raw";
 import submission from "../../SUBMISSION.md?raw";
 import notices from "../../THIRD_PARTY_NOTICES.md?raw";
 
-const GITHUB = "https://github.com/CodewMilan/graph/blob/main/";
+const GITHUB = "https://github.com/CodewMilan/retract/blob/main/";
 
 const SOURCES = [
   ["index", "Documentation", "Start", "docs/README.md", indexDoc],
