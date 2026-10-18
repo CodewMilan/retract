@@ -63,11 +63,11 @@ def main():
     parser.add_argument("--url", default=os.getenv("RETRACT_URL", "http://127.0.0.1:8100"))
     commands = parser.add_subparsers(dest="command", required=True)
     serve = commands.add_parser("serve")
-    serve.add_argument("--port", type=int, default=int(os.getenv("RETRACT_PORT", "8100")))
-    mcp = commands.add_parser("mcp", help="Serve the four memory tools over MCP stdio")
+    serve.add_argument("--port", type=int, default=int(os.getenv("PORT", os.getenv("RETRACT_PORT", "8100"))))
+    mcp = commands.add_parser("mcp", help="Serve memory tools over MCP stdio")
     mcp.add_argument("--activity-log", type=Path, help="Append actual tool metadata to a local JSONL log")
     request = commands.add_parser("call", help="POST a structured JSON file to an API route")
-    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "recall", "history"])
+    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "plans/revise", "recall", "history"])
     request.add_argument("file", type=Path)
     seed = commands.add_parser("seed", help="Seed explicitly once; existing memory is never reset")
     seed.add_argument("file", type=Path, nargs="?", default=Path("fixtures/demo-seed.json"))
@@ -97,8 +97,15 @@ def main():
                 server = None
                 try:
                     store.initialize()
-                    server = make_server(MemoryService(store), args.port)
-                    print(f"RETRACT listening on http://127.0.0.1:{server.server_port}", flush=True)
+                    hosted = None
+                    mode = os.getenv("RETRACT_MODE", "local")
+                    if mode == "hosted":
+                        from .hosted import HostedConfig, HostedWorkspaces
+                        hosted = HostedWorkspaces(HostedConfig.from_env(), store)
+                    elif mode != "local":
+                        raise ValueError("RETRACT_MODE must be local or hosted")
+                    server = make_server(MemoryService(store), args.port, hosted=hosted)
+                    print(f"RETRACT {mode} listening on port {server.server_port}", flush=True)
                     server.serve_forever()
                 finally:
                     if server:
@@ -123,7 +130,7 @@ def main():
         print(json.dumps(result, indent=2))
     except KeyboardInterrupt:
         pass
-    except (RuntimeError, ValueError, OSError, ImportError) as exc:
+    except (RuntimeError, ValueError, OSError, ImportError, KeyError) as exc:
         print(f"retract: {exc}", file=sys.stderr)
         raise SystemExit(1) from None
 

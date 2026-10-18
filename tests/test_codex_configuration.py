@@ -19,7 +19,7 @@ class ConfigurationTests(unittest.TestCase):
             parsed = tomllib.loads("server = " + toml_value(config))["server"]
             self.assertEqual(parsed, config)
             self.assertEqual(parsed["env"]["RETRACT_URL"], "http://127.0.0.1:8100")
-            self.assertEqual(set(parsed["enabled_tools"]), {"remember", "process_update", "recall", "history"})
+            self.assertEqual(set(parsed["enabled_tools"]), {"remember", "process_update", "recall", "history", "record_plan", "revise_plan"})
 
     def test_prepare_writes_reviewable_files_and_does_not_claim_an_agent_call(self):
         import sys

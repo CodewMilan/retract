@@ -20,7 +20,7 @@
   </aside>
   <main id="content" tabindex="-1">
     <header><div><p id="context" class="eyebrow">Workspace memory</p><h1 id="title">Current facts</h1><p id="description" class="muted">Accepted decisions for the selected project and scope.</p></div>
-      <div class="actions"><button id="refresh">Refresh</button><button id="remember" disabled>Remember fact</button><button id="update" class="primary" disabled>Record update</button></div>
+      <div class="actions"><button id="refresh">Refresh</button><button id="new-plan" disabled>Record plan</button><button id="remember" disabled>Remember fact</button><button id="update" class="primary" disabled>Record update</button></div>
     </header>
     <div id="notice" class="notice" role="status" hidden></div>
     <div id="result" class="result" aria-live="polite" hidden></div>
@@ -64,6 +64,17 @@
  <label for="project-id">Project ID</label><input id="project-id" maxlength="160" required placeholder="account-settings"><p class="hint">Letters, numbers, dots, slashes, underscores, and hyphens. Start with a letter or number.</p>
  <label for="project-name">Project name</label><input id="project-name" maxlength="300" required placeholder="Account settings">
  <p class="form-error" id="project-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit">Create project</button></div>
+ </form>
+</dialog>
+<dialog id="plan-dialog" aria-labelledby="plan-title">
+ <form id="plan-form"><div class="dialog-head"><h2 id="plan-title">Record a plan</h2><button type="button" data-close aria-label="Close plan dialog">×</button></div>
+ <p id="plan-context" class="muted">Record the decisions this plan relies on.</p>
+ <label for="plan-scope">Scope</label><input id="plan-scope" maxlength="160" required placeholder="web-client/main">
+ <label for="plan-text">Implementation plan</label><textarea id="plan-text" maxlength="4000" rows="5" required></textarea>
+ <fieldset><legend>Current decisions this plan depends on</legend><p class="hint">Choose up to 32. Historical dependencies remain on the previous version.</p><div id="plan-dependencies"></div></fieldset>
+ <div id="plan-review-fields" hidden><label for="plan-reason">What changed and why?</label><textarea id="plan-reason" maxlength="4000" rows="3"></textarea>
+ <label class="check"><input type="checkbox" id="plan-confirmation">I reviewed these dependencies and approve this revision</label></div>
+ <p class="form-error" id="plan-error" role="alert"></p><div class="dialog-actions"><button type="button" id="plan-refresh">Refresh decisions</button><button class="primary" type="submit">Save plan</button></div>
  </form>
 </dialog>
 </body></html>

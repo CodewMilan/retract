@@ -3,6 +3,7 @@ export const views = {
   superseded: ['Superseded facts', 'Historical decisions remain available as evidence.'],
   pending: ['Pending & proposals', 'These updates have not replaced accepted memory.'],
   affected: ['Affected plans', 'Plans whose recorded dependencies need review.'],
+  plans: ['All plans', 'Current plans and preserved versions, with their recorded dependencies.'],
   updates: ['Update history', 'Recorded update outcomes, evidence, and revision changes.'],
   activity: ['Request activity', 'Recent API requests in this service process. Clears on restart.'],
 };
@@ -10,7 +11,8 @@ export const number = value => new Intl.NumberFormat('en-US', {maximumFractionDi
 export function rowsFor(snapshot, view, search = '') {
   let rows = view === 'active' || view === 'superseded'
     ? snapshot.facts.filter(f => f.status === (view === 'active' ? 'active' : 'superseded'))
-    : view === 'affected' ? snapshot.plans
+    : view === 'affected' ? snapshot.plans.filter(p => p.status === 'needs_review')
+    : view === 'plans' ? snapshot.plans
     : view === 'activity' ? snapshot.activity
     : snapshot.updates.filter(e => view !== 'pending' || ['pending', 'proposal'].includes(e.outcome));
   const term = search.toLowerCase().trim();

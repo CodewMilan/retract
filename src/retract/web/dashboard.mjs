@@ -1,7 +1,7 @@
 import {views, number, rowsFor, updateRequest, RequestDraft} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
 const state = {snapshot: null, project: '', scope: '', view: 'active', selection: null, ready: false, generation: 0, submitting: false, loadingProjects: false};
-const drafts = {update: new RequestDraft(), remember: new RequestDraft()};
+const drafts = {update: new RequestDraft(), remember: new RequestDraft(), plan: new RequestDraft()};
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const el = (tag, content, cls) => {
   const node = document.createElement(tag);
@@ -14,6 +14,7 @@ function ready(value) {
   state.ready = value;
   $('update').disabled = !value || !state.snapshot?.facts.some(f => f.status === 'active');
   $('remember').disabled = !value;
+  $('new-plan').disabled = !value;
   $('project').disabled = state.submitting || state.loadingProjects;
   $('scope').disabled = !value || state.submitting;
 }
@@ -63,7 +64,7 @@ function inspect(record, kind) {
   const edges = state.snapshot.edges.filter(edge => {
     if (kind === 'fact') return (['SUPERSEDES'].includes(edge.relationship) && [edge.from.id, edge.to.id].includes(record.id)) ||
       (['SUPPORTS', 'DEPENDS_ON', 'RETIRED', 'ACCEPTED'].includes(edge.relationship) && edge.to.id === record.id);
-    if (kind === 'plan') return (edge.relationship === 'DEPENDS_ON' && edge.from.id === record.id) || (edge.relationship === 'FLAGGED' && edge.to.id === record.id);
+    if (kind === 'plan') return (edge.relationship === 'DEPENDS_ON' && edge.from.id === record.id) || (edge.relationship === 'FLAGGED' && edge.to.id === record.id) || (edge.relationship === 'REVISES' && [edge.from.id, edge.to.id].includes(record.id));
     return ['BASED_ON', 'RETIRED', 'ACCEPTED', 'FLAGGED'].includes(edge.relationship) && edge.from.id === record.id;
   });
   box.append(el('h3', 'Recorded relationships'));
@@ -77,6 +78,8 @@ function inspect(record, kind) {
     }
   }
   if (kind === 'plan') {
+    if (record.review_reason) box.append(el('h3', 'Revision reason'), el('p', record.review_reason));
+    if (record.status !== 'superseded') { const revise = el('button', 'Review and revise plan'); revise.disabled = !state.ready; revise.onclick = () => openPlan(record); box.append(revise); }
     for (const path of state.snapshot.explanation_paths.filter(p => p.plan.id === record.id)) {
       box.append(el('pre', `${path.event.id} ─ FLAGGED → ${record.id}\n${path.event.id} ─ RETIRED → ${path.fact.id}\n${record.id} ─ DEPENDS_ON → ${path.fact.id}`));
       box.append(el('p', `Update scope: ${path.event.scope}\nDependency scope: ${path.fact.scope}`, 'muted'));
@@ -96,7 +99,7 @@ function renderRecords() {
   const rows = rowsFor(state.snapshot, state.view, $('search').value);
   $('row-count').textContent = `${number(rows.length)} shown`;
   if (!rows.length) { container.append(el('p', $('search').value ? 'No matching records. Try a different search.' : state.view === 'active' ? 'No accepted facts here yet. Remember a fact with its evidence to begin.' : 'No records in this view.', 'empty')); return; }
-  const kind = ['active', 'superseded'].includes(state.view) ? 'fact' : state.view === 'affected' ? 'plan' : state.view === 'activity' ? 'activity' : 'event';
+  const kind = ['active', 'superseded'].includes(state.view) ? 'fact' : ['affected', 'plans'].includes(state.view) ? 'plan' : state.view === 'activity' ? 'activity' : 'event';
   for (const row of rows) {
     const button = el('button', undefined, 'record'); button.setAttribute('aria-pressed', String((row.id ?? row.recorded_at) === state.selection));
     const top = el('div', undefined, 'record-top');
@@ -183,7 +186,8 @@ function displayResult(result, before) {
     if (result.outcome === 'applied') box.append(el('p', `Before: ${before?.value ?? result.retired_fact_ids.join(', ')}\nAfter: ${result.candidate.value}`));
     else if (result.candidate) box.append(el('p', `Accepted value: ${before?.value ?? 'Unchanged'}\nCandidate (${result.outcome}): ${result.candidate.value}`));
     box.append(el('p', `Retired: ${result.retired_fact_ids.join(', ') || 'None'}\nAccepted: ${result.accepted_fact_ids.join(', ') || 'None'}\nPlans flagged: ${result.flagged_plan_ids.join(', ') || 'None'}`, 'mono'));
-  } else if (result.fact_id) box.append(el('p', `Fact ${result.fact_id} · revision ${number(result.project_revision)}`, 'mono'));
+  } else if (result.plan_id) box.append(el('p', `Plan ${result.plan_id} · revision ${number(result.project_revision)}`, 'mono'));
+  else if (result.fact_id) box.append(el('p', `Fact ${result.fact_id} · revision ${number(result.project_revision)}`, 'mono'));
   box.hidden = false;
 }
 async function submit(form, errorId, action) {
@@ -250,4 +254,48 @@ $('remember').onclick = () => { if (!state.ready) return; $('remember-form').res
 $('new-project').onclick = () => { if (state.submitting) return; $('project-form').reset(); $('project-error').textContent = ''; show('project-dialog'); };
 for (const button of document.querySelectorAll('[data-close]')) button.onclick = () => button.closest('dialog').close();
 for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('cancel', event => { if (state.submitting) event.preventDefault(); });
+let reviewingPlan = null;
+function planDependencies(selected = []) {
+  $('plan-dependencies').replaceChildren();
+  const facts = state.snapshot.facts.filter(f => f.status === 'active');
+  for (const fact of facts) {
+    const label = el('label', undefined, 'check'); const input = el('input');
+    input.type = 'checkbox'; input.value = fact.id; input.checked = selected.includes(fact.id);
+    label.append(input, el('span', `${fact.subject} / ${fact.predicate}: ${fact.value} · ${fact.scope}`));
+    $('plan-dependencies').append(label);
+  }
+  if (!facts.length) $('plan-dependencies').append(el('p', 'No current facts in this scope. Remember a decision first, or save a plan without dependencies.', 'muted'));
+}
+function openPlan(plan = null) {
+  if (!state.ready) return;
+  reviewingPlan = plan; drafts.plan.clear(); $('plan-form').reset(); $('plan-error').textContent = '';
+  $('plan-title').textContent = plan ? 'Review and revise plan' : 'Record a plan';
+  $('plan-context').textContent = plan ? `Previous version: ${plan.id}. It will be preserved with its original dependencies.` : 'Record the decisions this plan relies on.';
+  $('plan-scope').value = plan?.scope || state.scope; $('plan-scope').readOnly = Boolean(plan);
+  $('plan-text').value = plan?.text || ''; $('plan-review-fields').hidden = !plan;
+  $('plan-reason').required = Boolean(plan); $('plan-confirmation').required = Boolean(plan);
+  const selected = plan ? state.snapshot.edges.filter(e => e.relationship === 'DEPENDS_ON' && e.from.id === plan.id).map(e => e.to.id) : [];
+  planDependencies(selected); show('plan-dialog');
+}
+$('new-plan').onclick = () => openPlan();
+$('plan-refresh').onclick = async () => {
+  if (state.submitting) return;
+  const selected = [...$('plan-dependencies').querySelectorAll('input:checked')].map(i => i.value);
+  if (await loadSnapshot()) { drafts.plan.clear(); planDependencies(selected); $('plan-confirmation').checked = false; $('plan-error').textContent = 'Decisions refreshed. Review the selection and confirm again.'; }
+  else $('plan-error').textContent = 'Could not refresh. Your plan text is preserved.';
+};
+$('plan-form').onsubmit = event => {
+  event.preventDefault(); if (!state.ready) { $('plan-error').textContent = 'Refresh decisions before saving this plan.'; return; }
+  const ids = [...$('plan-dependencies').querySelectorAll('input:checked')].map(i => i.value);
+  if (ids.length > 32) { $('plan-error').textContent = 'Choose at most 32 dependencies.'; return; }
+  const draft = {text: $('plan-text').value, dependency_fact_ids: ids, expected_revision: state.snapshot.project.revision, project_id: state.project};
+  const signature = [draft, reviewingPlan?.id, $('plan-scope').value, $('plan-reason').value, $('plan-confirmation').checked];
+  const request = drafts.plan.prepare(signature, () => reviewingPlan
+    ? {route: '/plans/revise', body: {...draft, plan_id: reviewingPlan.id, replacement_plan_id: id('plan'), reason: $('plan-reason').value, confirmation: $('plan-confirmation').checked}}
+    : {route: '/plans', body: {...draft, scope: $('plan-scope').value, plan_id: id('plan')}});
+  submit(event.currentTarget, 'plan-error', async () => {
+    const result = await api(request.route, request.body); displayResult(result); $('plan-dialog').close(); drafts.plan.clear();
+    state.view = 'plans'; if (!await loadSnapshot()) notice('Plan saved. Refresh to see the current state.');
+  });
+};
 render(); loadProjects();

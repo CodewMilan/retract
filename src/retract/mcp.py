@@ -105,7 +105,7 @@ class McpServer:
             return error(request_id, -32002, "Initialize the connection and send notifications/initialized first")
         elif method == "tools/list":
             if params.get("cursor") is not None or set(params) - {"cursor", "_meta"}:
-                return error(request_id, -32602, "This server returns all four tools without pagination")
+                return error(request_id, -32602, "This server returns all tools without pagination")
             result = {"tools": definitions()}
         elif method == "tools/call":
             name = params.get("name")

@@ -32,7 +32,7 @@ def settings(root: Path, python: Path, api_url: str, report_dir: Path) -> dict:
         "cwd": str(root.resolve()),
         "env": {"PYTHONPATH": str((root / "src").resolve()), "RETRACT_URL": api_url},
         "startup_timeout_sec": 10, "tool_timeout_sec": 90, "required": True,
-        "enabled_tools": ["remember", "process_update", "recall", "history"],
+        "enabled_tools": ["remember", "process_update", "recall", "history", "record_plan", "revise_plan"],
     }
 
 

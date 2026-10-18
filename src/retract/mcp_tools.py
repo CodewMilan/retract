@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from .models import (
-    NaturalUpdateInput, RememberInput, UpdateInput, ValidationError, identifier, parse,
+    NaturalUpdateInput, PlanInput, PlanRevisionInput, RememberInput, UpdateInput, ValidationError, identifier, parse,
 )
 
 
@@ -42,6 +42,19 @@ STRUCTURED = obj({**UPDATE_COMMON, "mode": {"const": "structured"},
 
 def definitions() -> list[dict]:
     return [
+        {"name": "record_plan", "description": "Save an implementation plan with explicit dependencies on active fact IDs in this project.",
+         "inputSchema": obj({**KEY, "text": {"type": "string", "maxLength": 4000},
+                             "dependency_fact_ids": {"type": "array", "items": ID, "maxItems": 32, "uniqueItems": True},
+                             "plan_id": ID, "expected_revision": REVISION},
+                            ["project_id", "scope", "text", "dependency_fact_ids"]),
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}},
+        {"name": "revise_plan", "description": "Explicitly confirm a revised plan after inspecting current facts and code. Preserve the previous plan and its dependencies; use a new stable replacement ID. Never infer user confirmation.",
+         "inputSchema": obj({"project_id": ID, "plan_id": ID, "replacement_plan_id": ID,
+                             "text": {"type": "string", "maxLength": 4000}, "reason": {"type": "string", "maxLength": 4000},
+                             "dependency_fact_ids": {"type": "array", "items": ID, "maxItems": 32, "uniqueItems": True},
+                             "confirmation": {"const": True}, "expected_revision": {"type": "integer", "minimum": 0}},
+                            ["project_id", "plan_id", "replacement_plan_id", "text", "reason", "dependency_fact_ids", "confirmation", "expected_revision"]),
+         "annotations": {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}},
         {"name": "remember", "description": "Store an explicitly accepted scoped project fact with its source. Conflicts require process_update. Do not invent developer authority or acceptance.",
          "inputSchema": obj({**KEY, "subject": ID, "predicate": ID, "value": {"type": "string", "maxLength": 2000},
                              "source": SOURCE, "fact_id": {"type": ["string", "null"]}, "expected_revision": REVISION},
@@ -65,6 +78,10 @@ def route_tool(name: str, arguments: dict) -> tuple[str, dict]:
         raise ValidationError("Tool arguments must be a JSON object")
     if name == "remember":
         return "/remember", asdict(parse(RememberInput, arguments))
+    if name == "record_plan":
+        return "/plans", asdict(parse(PlanInput, arguments))
+    if name == "revise_plan":
+        return "/plans/revise", asdict(parse(PlanRevisionInput, arguments))
     if name == "process_update":
         values = dict(arguments)
         mode = values.pop("mode", None)
@@ -124,7 +141,7 @@ class LocalApi:
         self.open = opener or build_opener(ProxyHandler({}), NoRedirects()).open
 
     def call(self, route: str, body: dict) -> dict:
-        if route not in ("/remember", "/updates", "/updates/natural", "/recall", "/history"):
+        if route not in ("/remember", "/updates", "/updates/natural", "/recall", "/history", "/plans", "/plans/revise"):
             raise ValidationError("Unsupported memory API route")
         encoded = json.dumps(body).encode()
         if len(encoded) > 65536:
