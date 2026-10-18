@@ -56,7 +56,7 @@ def read_report(path):
 
 
 def render_report(report):
-    lines = ['# RETRACT evaluation run', '', f"Recorded: {report['recorded_at']}", '',
+    lines = ['# Retract evaluation run', '', f"Recorded: {report['recorded_at']}", '',
              f"Run status: **{report['status']}**. Submission readiness: **not verified**.", '',
              '| Check | Result |', '| --- | --- |']
     lines.extend(f"| {name} | {value['status']} |" for name, value in report['checks'].items())

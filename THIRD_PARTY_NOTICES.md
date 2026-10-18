@@ -16,6 +16,7 @@ package versions; actual image compatibility remains a live gate.
 | Python / standard library | Runtime, 3.12+ | [Python license](https://docs.python.org/3/license.html) |
 | Node.js | Development JavaScript checks, 20+; CI uses 24 | [Node.js license and notices](https://github.com/nodejs/node/blob/main/LICENSE) |
 | Setuptools | Python build backend, `>=75` | [MIT](https://github.com/pypa/setuptools/blob/main/LICENSE) |
+| General Sans | Brand wordmark, weights 500 and 600 | [Indian Type Foundry Font License](https://www.fontshare.com/fonts/general-sans) |
 
 Package installation and Docker image pulls obtain these components separately;
 the repository does not vendor their source or browser binaries. Preserve their

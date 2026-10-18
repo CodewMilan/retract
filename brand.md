@@ -1,4 +1,4 @@
-# Brand — RETRACT
+# Brand — Retract
 
 _Status: deferred_
 

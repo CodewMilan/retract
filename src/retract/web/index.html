@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>RETRACT · Project memory</title>
+  <title>Retract · Project memory</title>
   <link rel="stylesheet" href="/assets/dashboard.css">
   <script type="module" src="/assets/dashboard.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to memory</a>
-<section id="auth-screen" class="auth-screen" hidden aria-label="Sign in to RETRACT">
+<section id="auth-screen" class="auth-screen" hidden aria-label="Sign in to Retract">
   <div class="auth-stage">
-    <a class="wordmark" href="/"><span class="brand-mark" aria-hidden="true">R</span><span class="brand-name">RETRACT</span></a>
+    <a class="wordmark" href="/"><span class="brand-name">Retract</span></a>
     <p class="eyebrow">Private workspace</p>
     <h1><span class="mark">Sign in.</span> Your agents keep the decisions that still hold.</h1>
     <p class="auth-sub">Facts, sources, and the plans that depend on them stay on this account.</p>
@@ -29,7 +29,7 @@
 </section>
 <div class="shell" hidden>
   <aside class="sidebar" aria-label="Project navigation">
-    <a class="wordmark" href="/"><span class="brand-mark" aria-hidden="true">R</span><span class="brand-name">RETRACT</span></a>
+    <a class="wordmark" href="/"><span class="brand-name">Retract</span></a>
     <p class="sidebar-kicker">Project memory</p>
     <label for="project">Project</label><select id="project"><option value="">Loading projects…</option></select>
     <button id="new-project" class="quiet">+ New project</button>
@@ -104,7 +104,7 @@
  <form id="key-form"><label for="key-name">Key name</label><input id="key-name" required maxlength="100" placeholder="My laptop">
  <p class="form-error" id="key-error" role="alert"></p><button type="submit">Create access key</button></form>
  <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button></div>
- <h3>Client setup</h3><p>Install RETRACT's Python package, then configure the MCP command as <code>retract mcp</code>. Set <code>RETRACT_URL</code> to this workspace's HTTPS address and <code>RETRACT_API_KEY</code> to your access key in the client's environment.</p>
+ <h3>Client setup</h3><p>Install Retract's Python package, then configure the MCP command as <code>retract mcp</code>. Set <code>RETRACT_URL</code> to this workspace's HTTPS address and <code>RETRACT_API_KEY</code> to your access key in the client's environment.</p>
  <p class="muted">Keep keys out of source control. Revoking a key stops new requests immediately.</p>
 </dialog>
 </body></html>

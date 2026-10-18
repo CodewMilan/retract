@@ -1,4 +1,4 @@
-# RETRACT — the product we are building
+# Retract — the product we are building
 
 Direction agreed: 18 October 2026.
 

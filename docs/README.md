@@ -1,4 +1,4 @@
-# RETRACT — project documentation
+# Retract — project documentation
 
 Working name: RETRACT. Planning baseline: 16 October 2026.
 

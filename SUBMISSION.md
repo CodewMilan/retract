@@ -1,4 +1,4 @@
-# RETRACT — submission draft
+# Retract — submission draft
 
 Status: prepared copy, not submitted. Local runtime/database, live model,
 browser, and [fresh coding-client feature](docs/12-FRESH-CLIENT-RUN.md) checks

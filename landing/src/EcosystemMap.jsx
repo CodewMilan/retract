@@ -19,7 +19,6 @@ const EMPTY = [
 
 const INTEGRATIONS = [
   { key: "codex", name: "Codex", mark: "CDX" },
-  { key: "mcp", name: "MCP", mark: "MCP" },
   { key: "falkor", name: "FalkorDB", mark: "FDB" },
   { key: "groq", name: "Groq", mark: "GRQ" },
   { key: "claude", name: "Claude Code", mark: "CC" },
@@ -48,7 +47,7 @@ const USE_CASES = [
     shortLabel: "Remember",
     title: "Remember a scoped decision",
     icon: "M5 4h14v16l-7-4-7 4z",
-    integrationKeys: ["codex", "mcp", "falkor"],
+    integrationKeys: ["codex", "falkor", "cursor"],
     productKeys: ["remember", "evidence", "scopes"],
     status: "Writing F5 to the graph…",
     rows: ["remember(fact, scope)", "scope: web-client/main", "source: PR #212 excerpt", "status: accepted"],
@@ -59,7 +58,7 @@ const USE_CASES = [
     shortLabel: "Recall",
     title: "Recall the current fact",
     icon: "M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm5 11.5L20 20",
-    integrationKeys: ["codex", "claude", "mcp", "falkor"],
+    integrationKeys: ["codex", "claude", "falkor"],
     productKeys: ["recall", "scopes", "server"],
     status: "Recalling web-client auth…",
     rows: ["recall(\"browser auth\")", "F5 cookie sessions", "source: PR #212", "plan P1 flagged"],
@@ -167,12 +166,7 @@ function Icon({ path }) {
 }
 
 function HubMark({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true">
-      <rect width="48" height="48" fill="#ff4500" />
-      <path d="M15 12h12a8 8 0 0 1 2.5 15.6L35 36h-6.5l-4.8-8H21v8h-6zm6 5v6h5.5a3 3 0 0 0 0-6z" fill="#fff" />
-    </svg>
-  );
+  return <p className={`brand-name ${className}`}>Retract</p>;
 }
 
 function Scene({ useCase, step }) {
@@ -432,7 +426,7 @@ export default function EcosystemMap() {
           </div>
 
           <div className="ecosystemMap__hub ecosystemMap__placed" role="tabpanel" style={placed({ x: 493, y: 186.5, w: 334 })}>
-            <HubMark className="ecosystemMap__hubLogo" />
+            <HubMark className="ecosystemMap__hubWord" />
             <p className="ecosystemMap__hubTitle" key={useCase.key}>{useCase.title}</p>
             <div className="ecosystemMap__products">
               {columns.map((column) => (

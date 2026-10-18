@@ -1,4 +1,4 @@
-# RETRACT
+# Retract
 
 Persistent project memory for coding agents. A confirmed, scoped correction
 supersedes an outdated fact, keeps its evidence and history, and flags plans
