@@ -396,7 +396,7 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
   transition: background-color 0.1s var(--button-motion-ease);
 }
 .btn--nav-primary:hover, .btn--nav-primary:focus-visible, .btn--nav-primary:active { transition: background-color 0s var(--button-motion-ease); }
-.btn--menu-item { --button-gap: 1rem; --button-padding: 0.625rem 1rem; --button-icon-size: 1.875rem; --button-icon-bg: var(--color-warm-gray-100); justify-content: flex-end; inline-size: 100%; }
+.btn--menu-item { --button-gap: 1rem; --button-padding: 0.625rem 1rem; --button-icon-size: 1.875rem; --button-icon-bg: var(--color-warm-gray-100); justify-content: flex-start; inline-size: 100%; }
 .btn--menu-item:hover { --button-icon-bg: var(--color-light); }
 .btn--menu-item .btn__icon {
   display: grid;
@@ -405,9 +405,10 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
   block-size: var(--button-icon-size);
   inline-size: var(--button-icon-size);
   background-color: var(--button-icon-bg);
+  color: var(--color-text);
   transition: background-color 0s var(--button-motion-ease);
 }
-.menu-glyph { font-family: var(--ff-mono); font-size: 0.8125rem; font-weight: var(--fw-medium); color: var(--color-primary-browserbase-red); }
+.btn--menu-item .btn__icon svg { width: 1.5rem; height: 1.5rem; }
 
 .btn--nav-footer {
   --button-bg: transparent;
@@ -516,8 +517,9 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
   column-gap: var(--space-4);
 }
 .nav__subnav__link { --stack-spacing: var(--space-2); align-items: flex-start; justify-content: flex-start; inline-size: 100%; text-decoration: none; }
-.nav__subnav__link .stack { display: flex; flex-direction: column; gap: var(--space-2); text-align: left; }
-.nav__subnav__link .btn__text { display: block; }
+.nav__subnav__link--subtitle { align-items: flex-start; }
+.nav__subnav__link .stack { display: flex; flex: 1 1 auto; flex-direction: column; gap: var(--space-2); min-inline-size: 0; text-align: left; }
+.nav__subnav__link .btn__text { display: block; text-box-edge: cap alphabetic; text-box-trim: trim-both; }
 .nav__subnav__link .btn__subtitle { display: block; font-family: var(--ff-text); font-size: 0.75rem; font-weight: var(--fw-regular); line-height: 1.17; letter-spacing: 0.01em; }
 .nav__list--secondary { display: flex; align-items: center; }
 .nav__list--secondary .btn--secondary {

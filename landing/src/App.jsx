@@ -152,6 +152,36 @@ const FOOTER = [
   ["Demo", [["Dashboard", DASHBOARD], ["Settings", SETTINGS], ["Run locally", "#docs/overview/local-setup"]]],
 ];
 
+const MENU_ICON_PATHS = {
+  Remember: "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z",
+  Recall: "M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
+  Supersede: "M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+  Impact: "M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z",
+  Evidence: "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
+  Scopes: "M11.99 18.54 4.62 12.81 3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",
+  History: "M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8z",
+  "Natural updates": "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z",
+  "MCP server": "M17 16l-4-4V8.82A3 3 0 0 0 12 3a3 3 0 0 0-1 5.82V12l-4 4H3v5h5v-3.05l4-4.2 4 4.2V21h5v-5z",
+  CLI: "M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 14H4V8h16zm-10-1 1.41-1.41L8.83 13l2.58-2.59L10 9l-4 4zm6 0h-4v-2h4z",
+  "Coding agents": "M20 9V7a2 2 0 0 0-2-2h-3a3 3 0 0 0-6 0H6a2 2 0 0 0-2 2v2a3 3 0 0 0 0 6v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4a3 3 0 0 0 0-6zM9 11.5A1.5 1.5 0 1 1 10.5 13 1.5 1.5 0 0 1 9 11.5zM16 17H8v-2h8zm-.5-4A1.5 1.5 0 1 1 17 11.5 1.5 1.5 0 0 1 15.5 13z",
+  "Code review": "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14zm12 0h-7.5l2-2H18z",
+  Migrations: "M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z",
+  Onboarding: "M5 13.18v4L12 21l7-3.82v-4L12 17zm7-10.18L1 9l11 6 9-4.91V17h2V9z",
+  Dashboard: "M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z",
+  "Settings app": "M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61zM12 15.6A3.6 3.6 0 1 1 15.6 12 3.6 3.6 0 0 1 12 15.6z",
+  Docs: "M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5z",
+  Verification: "M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82 1.89 3.19 3.4-1.46 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69zm-12.91 4.72-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48z",
+  Changelog: "M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z",
+};
+
+function MenuIcon({ name }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d={MENU_ICON_PATHS[name] || MENU_ICON_PATHS.Docs} />
+    </svg>
+  );
+}
+
 function Chevron() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -254,19 +284,19 @@ function Nav() {
                             {group.items.map(([title, subtitle, href]) => (
                               <li key={title}>
                                 <a
-                                  className="nav__subnav__link btn btn--nav-primary btn--icon-left btn--menu-item"
+                                  className="nav__subnav__link nav__subnav__link--subtitle btn btn--nav-primary btn--menu-item"
                                   href={href}
                                   onClick={() => {
                                     setOpenIndex(null);
                                     setOpen(false);
                                   }}
                                 >
+                                  <span className="btn__icon" aria-hidden="true">
+                                    <MenuIcon name={title} />
+                                  </span>
                                   <span className="stack">
                                     <span className="btn__text">{title}</span>
                                     <span className="btn__subtitle">{subtitle}</span>
-                                  </span>
-                                  <span className="btn__icon" aria-hidden="true">
-                                    <span className="menu-glyph">{title.slice(0, 1)}</span>
                                   </span>
                                 </a>
                               </li>
