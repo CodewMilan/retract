@@ -12,6 +12,7 @@ dependencies = ["falkordb>=1.2,<2", "certifi>=2024.2"]
 [project.optional-dependencies]
 demo = ["psycopg[binary]>=3.2,<4"]
 mcp-test = ["mcp>=1.26,<2"]
+hosted = ["PyJWT[crypto]>=2.10,<3", "svix>=1.60,<2"]
 
 [project.scripts]
 retract = "retract.cli:main"

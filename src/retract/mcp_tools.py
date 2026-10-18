@@ -2,6 +2,7 @@
 
 from dataclasses import asdict
 import json
+import os
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
@@ -126,17 +127,23 @@ class NoRedirects(HTTPRedirectHandler):
 
 
 class LocalApi:
-    def __init__(self, base_url: str, opener=None):
+    def __init__(self, base_url: str, opener=None, api_key=None):
         try:
             parts = urlsplit(base_url)
-            valid = (parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost")
-                     and parts.username is None and parts.password is None
+            local = parts.scheme == "http" and parts.hostname in ("127.0.0.1", "localhost") and parts.port is not None
+            remote = parts.scheme == "https" and bool(parts.hostname)
+            valid = ((local or remote) and parts.username is None and parts.password is None
                      and parts.path in ("", "/") and not parts.query and not parts.fragment
-                     and parts.port is not None and 0 < parts.port < 65536)
+                     and (parts.port is None or 0 < parts.port < 65536))
         except (ValueError, TypeError):
             valid = False
         if not valid:
-            raise ValidationError("MCP API URL must be http://127.0.0.1:PORT or http://localhost:PORT")
+            raise ValidationError("MCP API URL must be a loopback HTTP origin with a port, or an HTTPS origin")
+        self.api_key = api_key if api_key is not None else os.getenv("RETRACT_API_KEY", "")
+        if parts.scheme == "https" and not self.api_key:
+            raise ValidationError("Set RETRACT_API_KEY to connect to a hosted workspace")
+        if "\r" in self.api_key or "\n" in self.api_key:
+            raise ValidationError("Invalid access key")
         self.base = base_url.rstrip("/")
         self.open = opener or build_opener(ProxyHandler({}), NoRedirects()).open
 
@@ -146,7 +153,10 @@ class LocalApi:
         encoded = json.dumps(body).encode()
         if len(encoded) > 65536:
             raise ValidationError("Tool request exceeds the memory API body limit")
-        request = Request(self.base + route, data=encoded, headers={"Content-Type": "application/json", "X-Retract-Client": "mcp"})
+        headers = {"Content-Type": "application/json", "X-Retract-Client": "mcp"}
+        if self.api_key:
+            headers["Authorization"] = "Bearer " + self.api_key
+        request = Request(self.base + route, data=encoded, headers=headers)
         try:
             with self.open(request, timeout=60 if route == "/updates/natural" else 15) as response:
                 return self.read_json(response)
@@ -160,7 +170,7 @@ class LocalApi:
             finally:
                 exc.close()
         except (URLError, TimeoutError, OSError):
-            raise ApiError("Local memory API unavailable; start retract serve and verify /health", 503) from None
+            raise ApiError("Memory API unavailable; check the workspace URL and service health", 503) from None
 
     @staticmethod
     def read_json(response) -> dict:

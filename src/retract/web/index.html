@@ -9,13 +9,15 @@
 </head>
 <body>
 <a class="skip" href="#content">Skip to memory</a>
-<div class="shell">
+<section id="auth-screen" class="auth-screen" hidden aria-label="Sign in to RETRACT"><h1>RETRACT</h1><p id="auth-status" role="status">Loading secure sign-in…</p><div id="sign-in"></div><button id="auth-retry" hidden>Retry</button></section>
+<div class="shell" hidden>
   <aside class="sidebar" aria-label="Project navigation">
     <a class="wordmark" href="/">↶ RETRACT<span>Project memory</span></a>
     <label for="project">Project</label><select id="project"><option value="">Loading projects…</option></select>
     <button id="new-project" class="quiet">+ New project</button>
     <label for="scope">Scope</label><select id="scope" disabled><option value="">All scopes</option></select>
     <nav id="navigation" aria-label="Memory views"></nav>
+    <div id="account-controls" hidden><div id="user-button"></div><button id="access-keys">Connect coding client</button></div>
     <div class="sidebar-foot"><span id="connection" role="status">Connecting…</span><p>Local workspace · FalkorDB</p></div>
   </aside>
   <main id="content" tabindex="-1">
@@ -76,5 +78,15 @@
  <label class="check"><input type="checkbox" id="plan-confirmation">I reviewed these dependencies and approve this revision</label></div>
  <p class="form-error" id="plan-error" role="alert"></p><div class="dialog-actions"><button type="button" id="plan-refresh">Refresh decisions</button><button class="primary" type="submit">Save plan</button></div>
  </form>
+</dialog>
+<dialog id="keys-dialog" aria-labelledby="keys-title">
+ <div class="dialog-head"><h2 id="keys-title">Connect your coding client</h2><button type="button" data-close aria-label="Close access keys">×</button></div>
+ <p>Access keys let a coding client use your private workspace. They expire after 90 days and can be revoked here.</p>
+ <div id="key-list" aria-live="polite"></div>
+ <form id="key-form"><label for="key-name">Key name</label><input id="key-name" required maxlength="100" placeholder="My laptop">
+ <p class="form-error" id="key-error" role="alert"></p><button type="submit">Create access key</button></form>
+ <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button></div>
+ <h3>Client setup</h3><p>Install RETRACT's Python package, then configure the MCP command as <code>retract mcp</code>. Set <code>RETRACT_URL</code> to this workspace's HTTPS address and <code>RETRACT_API_KEY</code> to your access key in the client's environment.</p>
+ <p class="muted">Keep keys out of source control. Revoking a key stops new requests immediately.</p>
 </dialog>
 </body></html>

@@ -1,3 +1,4 @@
+import {initAuth, authHeaders, authFailed} from './auth.mjs';
 import {views, number, rowsFor, updateRequest, RequestDraft} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
 const state = {snapshot: null, project: '', scope: '', view: 'active', selection: null, ready: false, generation: 0, submitting: false, loadingProjects: false};
@@ -23,7 +24,7 @@ async function api(route, body) {
   const timer = setTimeout(() => controller.abort(), route === '/updates/natural' ? 60000 : 15000);
   try {
     const response = await fetch(route, {method: body ? 'POST' : 'GET', signal: controller.signal,
-      headers: {'Content-Type': 'application/json', 'X-Retract-Client': 'dashboard'},
+      headers: {'Content-Type': 'application/json', 'X-Retract-Client': 'dashboard', ...await authHeaders()},
       ...(body ? {body: JSON.stringify(body)} : {})});
     const data = await response.json();
     if (!response.ok) { const error = new Error(data.error || `Request failed (${response.status})`); error.status = response.status; throw error; }
@@ -298,4 +299,34 @@ $('plan-form').onsubmit = event => {
     state.view = 'plans'; if (!await loadSnapshot()) notice('Plan saved. Refresh to see the current state.');
   });
 };
-render(); loadProjects();
+$('access-keys').onclick = async () => {
+  $('key-error').textContent = ''; $('key-secret').value = ''; $('key-created').hidden = true;
+  show('keys-dialog'); await loadKeys();
+};
+async function loadKeys() {
+  $('key-list').replaceChildren(el('p', 'Loading access keys…'));
+  try {
+    const result = await api('/api/keys'); $('key-list').replaceChildren();
+    if (!result.keys.length) $('key-list').append(el('p', 'No access keys yet. Create one to connect your coding client.', 'muted'));
+    for (const key of result.keys) {
+      const row = el('div', undefined, 'key-row');
+      row.append(el('span', `${key.name} · expires ${new Date(key.expires_at * 1000).toLocaleDateString()}`));
+      const revoke = el('button', 'Revoke'); revoke.type = 'button'; revoke.setAttribute('aria-label', `Revoke ${key.name}`);
+      revoke.onclick = async () => { revoke.disabled = true; try { await api('/account/keys/revoke', {id: key.id}); await loadKeys(); } catch (e) { $('key-error').textContent = e.message; revoke.disabled = false; } };
+      row.append(revoke); $('key-list').append(row);
+    }
+  } catch (error) { $('key-list').replaceChildren(); $('key-error').textContent = error.message; }
+}
+$('key-form').onsubmit = event => {
+  event.preventDefault(); submit(event.currentTarget, 'key-error', async () => {
+    const result = await api('/account/keys', {name: $('key-name').value});
+    $('key-secret').value = result.token; $('key-created').hidden = false; $('key-name').value = '';
+    await loadKeys(); $('key-secret').focus(); $('key-secret').select();
+  });
+};
+$('keys-dialog').addEventListener('close', () => { $('key-secret').value = ''; $('key-created').hidden = true; });
+$('key-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('key-secret').value); $('key-copy').textContent = 'Copied'; }
+  catch { $('key-error').textContent = 'Select the access key and copy it manually.'; }
+};
+render(); initAuth().then(() => loadProjects()).catch(authFailed);

@@ -1,0 +1,52 @@
+# One application replica. TLS must terminate at the hosting proxy.
+services:
+  app:
+    build: .
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:${RETRACT_PORT:-8100}:8100"
+    environment:
+      RETRACT_MODE: hosted
+      RETRACT_PUBLIC_URL: ${RETRACT_PUBLIC_URL:?Set the public HTTPS workspace origin}
+      CLERK_ISSUER_URL: ${CLERK_ISSUER_URL:?Set the Clerk Frontend API origin}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET:?Set the Clerk webhook signing secret}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Set the Clerk publishable key}
+      FALKORDB_HOST: falkordb
+      FALKORDB_PORT: 6379
+      FALKORDB_PASSWORD: ${FALKORDB_PASSWORD:?Set a unique database password}
+      RETRACT_GRAPH_PREFIX: retract_hosted
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    mem_limit: 512m
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  falkordb:
+    image: falkordb/falkordb:6.0.2
+    restart: unless-stopped
+    environment:
+      REDIS_ARGS: "--dir /var/lib/falkordb/data --appendonly yes --appendfsync always --requirepass ${FALKORDB_PASSWORD:?Set a unique database password}"
+      REDISCLI_AUTH: ${FALKORDB_PASSWORD:?Set a unique database password}
+    volumes:
+      - memory:/var/lib/falkordb/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+volumes:
+  memory:

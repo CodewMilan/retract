@@ -13,16 +13,23 @@ from urllib.request import Request, urlopen
 
 
 def call(base_url: str, path: str, body: dict) -> dict:
-    request = Request(f"{base_url.rstrip('/')}/{path.lstrip('/')}",
-                      data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-    try:
-        with urlopen(request, timeout=60 if path.strip("/") == "updates/natural" else 15) as response:
-            return json.load(response)
-    except HTTPError as exc:
-        result = json.load(exc)
-        raise RuntimeError(f"HTTP {exc.code}: {result.get('error', 'request failed')}") from None
-    except URLError as exc:
-        raise RuntimeError("Local service unavailable; start retract serve first") from exc
+    from .mcp_tools import LocalApi
+    # Reuse the transport's HTTPS/redirect/credential rules for CLI requests.
+    client = LocalApi(base_url)
+    route = "/" + path.strip("/")
+    if route in ("/projects", "/dashboard"):
+        headers = {"Content-Type": "application/json"}
+        if client.api_key:
+            headers["Authorization"] = "Bearer " + client.api_key
+        request = Request(client.base + route, data=json.dumps(body).encode(), headers=headers)
+        try:
+            with client.open(request, timeout=15) as response:
+                return client.read_json(response)
+        except HTTPError as exc:
+            raise RuntimeError(f"HTTP {exc.code}: request rejected") from None
+        except URLError:
+            raise RuntimeError("Memory service unavailable") from None
+    return client.call(route, body)
 
 
 @contextmanager

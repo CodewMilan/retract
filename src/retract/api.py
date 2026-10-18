@@ -85,7 +85,7 @@ def make_handler(service: MemoryService, hosted=None):
                 return False
             if hosted:
                 public_host = urlsplit(hosted.config.origin).netloc
-                if self.path == "/health" and self.headers.get("Host") in allowed and origin is None:
+                if self.path == "/health" and origin is None:
                     return True
                 return self.headers.get("Host") == public_host and origin in (None, hosted.config.origin)
             try:
@@ -163,7 +163,11 @@ def make_handler(service: MemoryService, hosted=None):
                 if not self.valid_origin():
                     self.respond(403, {"error": "Local origin required"})
                     return
-                active_service = self.workspace()
+                webhook = hosted is not None and self.path == "/webhooks/clerk"
+                if webhook:
+                    hosted.limits.check(("webhook", self.client_address[0]), 120)
+                else:
+                    active_service = self.workspace()
                 if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
                     self.respond(415, {"error": "Content-Type must be application/json"})
                     return
@@ -178,6 +182,9 @@ def make_handler(service: MemoryService, hosted=None):
                 raw = self.rfile.read(length)
                 if len(raw) != length:
                     raise ValidationError("Incomplete request body")
+                if webhook:
+                    self.respond(200, hosted.webhook(raw, self.headers))
+                    return
                 body = json.loads(raw)
                 if not isinstance(body, dict):
                     raise ValidationError("Request must be a JSON object")

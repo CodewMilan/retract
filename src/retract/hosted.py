@@ -7,6 +7,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import base64
 import hashlib
+import json
 import os
 import re
 import secrets
@@ -50,6 +51,8 @@ class HostedConfig:
 
     @classmethod
     def from_env(cls):
+        if not os.getenv("CLERK_WEBHOOK_SECRET"):
+            raise ValueError("Set CLERK_WEBHOOK_SECRET for account deletion and key revocation")
         return cls(os.environ["RETRACT_PUBLIC_URL"], os.environ["CLERK_ISSUER_URL"],
                    os.environ["CLERK_PUBLISHABLE_KEY"], os.getenv("RETRACT_GRAPH_PREFIX", "retract_hosted"))
 
@@ -70,7 +73,10 @@ class ClerkVerifier:
     def __init__(self, config):
         import jwt
         self.config = config
-        self.jwks = jwt.PyJWKClient(config.issuer + "/.well-known/jwks.json", timeout=5, lifespan=300)
+        import ssl
+        import certifi
+        self.jwks = jwt.PyJWKClient(config.issuer + "/.well-known/jwks.json", timeout=5, lifespan=300,
+                                    ssl_context=ssl.create_default_context(cafile=certifi.where()))
 
     def verify(self, token):
         import jwt
@@ -120,6 +126,9 @@ class HostedWorkspaces:
         self.auth = GraphStore(root_store.client.select_graph(config.graph_prefix + "_access"))
         self.auth.initialize()
 
+    def owner_id(self, subject):
+        return hashlib.sha256((self.config.issuer + "\0" + subject).encode()).hexdigest()
+
     def identity(self, headers):
         values = headers.get_all("Authorization", [])
         if len(values) != 1 or not values[0].startswith("Bearer ") or len(values[0]) > 16384:
@@ -134,7 +143,10 @@ class HostedWorkspaces:
                 raise AccessError("Access key expired or revoked")
             return rows[0][0], "key"
         subject = self.verifier.verify(token)
-        return hashlib.sha256((self.config.issuer + "\0" + subject).encode()).hexdigest(), "session"
+        owner = self.owner_id(subject)
+        if self.auth.query("MATCH (a:DeletedAccount {owner: $owner}) RETURN a.owner", {"owner": owner}):
+            raise AccessError("This account has been deleted")
+        return owner, "session"
 
     def service(self, owner):
         with self.lock:
@@ -157,6 +169,21 @@ class HostedWorkspaces:
         if kind != "session":
             raise AccessError("Sign in through the dashboard to manage access keys", 403)
         with self.lock:
+            if path == "/account/export":
+                if body:
+                    raise ValidationError("Export does not accept parameters")
+                store = self.service(owner).store
+                nodes = store.query("MATCH (n) RETURN id(n), labels(n), properties(n)", {})
+                edges = store.query("MATCH (a)-[r]->(b) RETURN id(a), type(r), id(b)", {})
+                result = {"format": "retract-workspace-v1", "exported_at": int(time.time()), "nodes": nodes, "edges": edges}
+                if len(json.dumps(result).encode()) > 16 * 1024 * 1024:
+                    raise AccessError("Export exceeds 16 MiB. Contact the operator for a database export.", 413)
+                return result
+            if path == "/account/clear":
+                if body != {"confirmation": "DELETE MY WORKSPACE"}:
+                    raise ValidationError("Type DELETE MY WORKSPACE to confirm")
+                self.clear(owner)
+                return {"status": "deleted"}
             if path == "/account/keys":
                 if set(body) != {"name"}:
                     raise ValidationError("Supply an access key name")
@@ -175,6 +202,31 @@ class HostedWorkspaces:
                 self.auth.query("MATCH (k:AccessKey {owner: $owner, id: $id}) SET k.revoked = true RETURN k.id", {"owner": owner, "id": body["id"]}, write=True)
                 return {"status": "revoked"}
         raise ValidationError("Unknown account operation")
+
+    def clear(self, owner, *, account_deleted=False):
+        with self.lock:
+            self.auth.query("MATCH (k:AccessKey {owner: $owner}) SET k.revoked = true RETURN k.id", {"owner": owner}, write=True)
+            if account_deleted:
+                self.auth.query("MERGE (a:DeletedAccount {owner: $owner}) SET a.deleted_at = $now RETURN a.owner", {"owner": owner, "now": int(time.time())}, write=True)
+            service = self.service(owner)
+            service.store.query("MATCH (n) DETACH DELETE n", {}, write=True)
+            self.services.pop(owner, None)
+
+    def webhook(self, raw, headers):
+        from svix.webhooks import Webhook, WebhookVerificationError
+        secret = os.getenv("CLERK_WEBHOOK_SECRET")
+        if not secret:
+            raise AccessError("Account webhook is not configured", 503)
+        try:
+            event = Webhook(secret).verify(raw.decode(), dict(headers.items()))
+        except (WebhookVerificationError, UnicodeError, ValueError):
+            raise AccessError("Invalid webhook signature", 400) from None
+        if event.get("type") == "user.deleted":
+            subject = event.get("data", {}).get("id")
+            if not isinstance(subject, str) or not subject.startswith("user_"):
+                raise ValidationError("Missing deleted user ID")
+            self.clear(self.owner_id(subject), account_deleted=True)
+        return {"status": "received"}
 
     def quota(self, service, route):
         limits = {"/projects": ("Project", 25), "/remember": ("Fact", 5000),
