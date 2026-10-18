@@ -33,8 +33,7 @@ plans without an adoption, are proposal even when they name a concrete value.
 Unclear, conflicting, conditional or negated replacements are ambiguous: any
 "if", "once", "unless" or "assuming" condition, approval described as pending,
 unresolved or not yet given, and "have not approved replacing X" are ambiguous.
-A negated or conditional statement about the selected fact is still about it, so
-it is ambiguous, never unrelated. A condition outranks modal wording: if a
+A condition outranks modal wording: if a
 replacement depends on a condition or unresolved approval, choose ambiguous,
 not proposal, even when it says "will". A change about a different subject or scope is
 unrelated, including a change approved "only" for another component, branch or

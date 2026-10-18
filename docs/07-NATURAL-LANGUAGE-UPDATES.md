@@ -70,7 +70,7 @@ calling Groq, including after a new service instance. Simultaneous first attempt
 may each call the provider but can commit only one event/result.
 
 Stored interpretation metadata includes the provider/model identifier, prompt
-version `retract-extract-v1`, validated extraction, measured latency, number of
+version `retract-extract-v2`, validated extraction, measured latency, number of
 attempts, and any provider-reported token counters. Missing counters remain
 unknown. Raw provider error bodies and credentials are not returned.
 

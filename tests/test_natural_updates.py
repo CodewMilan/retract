@@ -27,7 +27,7 @@ class NaturalUpdateTests(unittest.TestCase):
         self.assertEqual(result["retired_fact_ids"], ["F1"])
         self.assertEqual(result["flagged_plan_ids"], ["P1"])
         self.assertEqual(len(result["accepted_fact_ids"]), 1)
-        self.assertEqual(result["interpretation"]["prompt_version"], "retract-extract-v1")
+        self.assertEqual(result["interpretation"]["prompt_version"], "retract-extract-v2")
         self.assertEqual(result["interpretation"]["usage"]["total_tokens"], 150)
         current = self.service.recall("account-settings", "web-client/main")["active_facts"]
         self.assertEqual([fact["value"] for fact in current], ["HTTP-only cookie sessions"])

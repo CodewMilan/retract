@@ -127,6 +127,8 @@ class TransportTests(unittest.TestCase):
         self.assertNotIn("confirmation", context)
         self.assertNotIn("authority", context)
         self.assertNotIn("test-secret", request.data.decode())
+        self.assertNotIn("Python-urllib", request.get_header("User-agent", ""))
+        self.assertTrue(request.get_header("User-agent"))
         self.assertEqual(result.audit()["usage"]["total_tokens"], 150)
         self.assertEqual(result.attempts, 1)
         self.assertGreaterEqual(result.elapsed_ms, 0)
