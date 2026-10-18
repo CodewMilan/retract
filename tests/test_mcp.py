@@ -59,7 +59,7 @@ class ProtocolTests(unittest.TestCase):
     def test_tools_and_hints_match_their_effects(self):
         initialize(self.server)
         tools = self.server.handle(request("tools/list"))["result"]["tools"]
-        self.assertEqual({tool["name"] for tool in tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan"})
+        self.assertEqual({tool["name"] for tool in tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan", "handoff", "claim_handoff"})
         self.assertEqual({tool["name"] for tool in tools if tool["annotations"]["readOnlyHint"]}, {"recall", "history"})
         self.assertTrue(all(tool["inputSchema"]["type"] == "object" for tool in tools))
 

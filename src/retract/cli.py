@@ -74,7 +74,7 @@ def main():
     mcp = commands.add_parser("mcp", help="Serve memory tools over MCP stdio")
     mcp.add_argument("--activity-log", type=Path, help="Append actual tool metadata to a local JSONL log")
     request = commands.add_parser("call", help="POST a structured JSON file to an API route")
-    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "plans/revise", "recall", "history"])
+    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "plans/revise", "handoffs", "handoffs/claim", "recall", "history"])
     request.add_argument("file", type=Path)
     seed = commands.add_parser("seed", help="Seed explicitly once; existing memory is never reset")
     seed.add_argument("file", type=Path, nargs="?", default=Path("fixtures/demo-seed.json"))

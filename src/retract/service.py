@@ -10,8 +10,8 @@ from uuid import uuid4
 from .graph import GraphStore
 from .activity import ActivityJournal
 from .models import (
-    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
-    identifier, text,
+    ClaimInput, ConflictError, HandoffInput, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput,
+    RememberInput, UpdateInput, identifier, text,
 )
 from .policy import decide
 
@@ -236,7 +236,83 @@ class MemoryService:
             identifier(subject, "subject")
         with self.lock:
             project = self.project(project_id)
-            return {**self.store.recall(project_id, scope, subjects), "project_revision": project["revision"]}
+            handoffs = [self._handoff_context(project_id, item)
+                        for item in self.store.open_handoffs(project_id, scope)]
+            return {**self.store.recall(project_id, scope, subjects), "open_handoffs": handoffs,
+                    "project_revision": project["revision"]}
+
+    def _handoff_context(self, project_id: str, handoff: dict) -> dict:
+        """Compare what the sender relied on with what the graph says is current now."""
+        handoff = {key: value for key, value in handoff.items() if key != "fingerprint"}
+        plan = self.store.current_plan(project_id, handoff["plan_id"])
+        facts = []
+        for fact_id in self.store.handoff_fact_ids(project_id, handoff["id"]):
+            current = self.store.current_fact(project_id, fact_id)
+            facts.append({"fact_id": fact_id, "current_fact_id": current, "changed": current != fact_id})
+        warnings = []
+        if plan is None:
+            warnings.append(f"Plan {handoff['plan_id']} has no current version")
+        elif plan["plan_id"] != handoff["plan_id"]:
+            warnings.append(f"Plan {handoff['plan_id']} was revised; current version is {plan['plan_id']}")
+        elif plan["status"] == "needs_review":
+            warnings.append(f"Plan {plan['plan_id']} needs review since this handoff was written")
+        for item in facts:
+            if item["changed"]:
+                replacement = item["current_fact_id"] or "no active replacement"
+                warnings.append(f"Fact {item['fact_id']} was superseded; current: {replacement}")
+        return {"handoff": handoff, "current_plan": plan, "cited_facts": facts,
+                "stale": bool(warnings), "warnings": warnings}
+
+    def create_handoff(self, request: HandoffInput) -> dict:
+        fingerprint = hashlib.sha256(json.dumps(asdict(request), sort_keys=True).encode()).hexdigest()
+        with self.lock:
+            self.project(request.project_id)
+            existing = self.store.get("Handoff", request.project_id, request.handoff_id)
+            if existing:
+                if existing.get("fingerprint") != fingerprint:
+                    raise ConflictError("Handoff ID already exists with different content")
+                return {"handoff_id": existing["id"], "status": existing["status"], "outcome": "duplicate",
+                        "project_revision": self.project(request.project_id)["revision"]}
+            project = self.project(request.project_id, request.expected_revision)
+            plan = self.store.get("Plan", request.project_id, request.plan_id)
+            if not plan or plan["status"] == "superseded":
+                raise ConflictError("Hand off the current version of an existing plan")
+            if plan["scope"] != request.scope:
+                raise ConflictError("Handoff scope must match the plan scope")
+            for fact_id in request.fact_ids:
+                fact = self.store.get("Fact", request.project_id, fact_id)
+                if not fact or fact["status"] != "active":
+                    raise ConflictError("Handoffs may cite only active facts in this project")
+            handoff = {"id": request.handoff_id, "project_id": request.project_id, "scope": request.scope,
+                       "from_agent": request.from_agent, "plan_id": request.plan_id, "note": request.note,
+                       "status": "open", "recorded_at": timestamp(), "fingerprint": fingerprint}
+            if request.to_agent is not None:
+                handoff["to_agent"] = request.to_agent
+            self.store.create_handoff(request.project_id, project["revision"], handoff, request.fact_ids)
+            return {"handoff_id": request.handoff_id, "status": "open", "outcome": "created",
+                    "project_revision": project["revision"] + 1}
+
+    def claim_handoff(self, request: ClaimInput) -> dict:
+        with self.lock:
+            self.project(request.project_id)
+            handoff = self.store.get("Handoff", request.project_id, request.handoff_id)
+            if handoff is None:
+                raise NotFoundError("Handoff not found in this project")
+            if handoff["status"] == "claimed":
+                if handoff.get("claimed_by") != request.agent:
+                    raise ConflictError(f"Handoff already claimed by {handoff.get('claimed_by')}")
+                return {**self._handoff_context(request.project_id, handoff), "outcome": "duplicate",
+                        "project_revision": self.project(request.project_id)["revision"]}
+            if handoff.get("to_agent") not in (None, request.agent):
+                raise ConflictError(f"Handoff is assigned to {handoff['to_agent']}")
+            if handoff["from_agent"] == request.agent:
+                raise ConflictError("An agent cannot claim its own handoff")
+            project = self.project(request.project_id, request.expected_revision)
+            self.store.claim_handoff(request.project_id, project["revision"], request.handoff_id,
+                                     request.agent, timestamp())
+            claimed = self.store.get("Handoff", request.project_id, request.handoff_id)
+            return {**self._handoff_context(request.project_id, claimed), "outcome": "claimed",
+                    "project_revision": project["revision"] + 1}
 
     def history(self, project_id: str, *, fact_id: str | None = None, event_id: str | None = None) -> dict:
         from .models import ValidationError

@@ -229,3 +229,47 @@ class PlanRevisionInput:
             raise ValidationError("Explicit confirmation is required to revise a plan")
         if self.expected_revision is None:
             raise ValidationError("Retrieve the current project revision before reviewing a plan")
+
+
+@dataclass(frozen=True)
+class HandoffInput:
+    """One agent leaves scoped work, tied to a plan and the facts it relied on."""
+
+    project_id: str
+    scope: str
+    handoff_id: str
+    from_agent: str
+    plan_id: str
+    note: str
+    fact_ids: list[str]
+    to_agent: str | None = None
+    expected_revision: int | None = None
+
+    def __post_init__(self):
+        for name in ("project_id", "scope", "handoff_id", "from_agent", "plan_id"):
+            identifier(getattr(self, name), name)
+        if self.to_agent is not None:
+            identifier(self.to_agent, "to_agent")
+            if self.to_agent == self.from_agent:
+                raise ValidationError("to_agent must differ from from_agent")
+        text(self.note, "note", 4000)
+        if not isinstance(self.fact_ids, list) or len(self.fact_ids) > 32:
+            raise ValidationError("fact_ids must be a list of at most 32 IDs")
+        for item in self.fact_ids:
+            identifier(item, "fact ID")
+        if len(set(self.fact_ids)) != len(self.fact_ids):
+            raise ValidationError("Duplicate fact IDs")
+        revision(self.expected_revision)
+
+
+@dataclass(frozen=True)
+class ClaimInput:
+    project_id: str
+    handoff_id: str
+    agent: str
+    expected_revision: int | None = None
+
+    def __post_init__(self):
+        for name in ("project_id", "handoff_id", "agent"):
+            identifier(getattr(self, name), name)
+        revision(self.expected_revision)

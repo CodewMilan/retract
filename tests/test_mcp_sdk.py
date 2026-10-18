@@ -21,6 +21,6 @@ class SdkTests(unittest.IsolatedAsyncioTestCase):
                 initialized = await session.initialize()
                 self.assertEqual(initialized.serverInfo.name, "retract")
                 tools = await session.list_tools()
-                self.assertEqual({tool.name for tool in tools.tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan"})
+                self.assertEqual({tool.name for tool in tools.tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan", "handoff", "claim_handoff"})
                 result = await session.call_tool("remember", {})
                 self.assertTrue(result.isError)

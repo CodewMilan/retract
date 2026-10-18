@@ -13,8 +13,8 @@ from .hosted import AccessError
 from .landing_pages import LANDING_CSP, landing_asset, warn_missing_landing
 from .inference import ModelRateLimited, ModelResponseError, ModelUnavailable
 from .models import (
-    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
-    ValidationError, parse,
+    ClaimInput, ConflictError, HandoffInput, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput,
+    RememberInput, UpdateInput, ValidationError, parse,
 )
 from .service import MemoryService
 
@@ -54,6 +54,10 @@ def dispatch(service: MemoryService, path: str, body: dict) -> dict:
         return service.record_plan(parse(PlanInput, body))
     if path == "/plans/revise":
         return service.revise_plan(parse(PlanRevisionInput, body))
+    if path == "/handoffs":
+        return service.create_handoff(parse(HandoffInput, body))
+    if path == "/handoffs/claim":
+        return service.claim_handoff(parse(ClaimInput, body))
     if path == "/recall":
         if not {"project_id", "scope"} <= body.keys() or set(body) - {"project_id", "scope", "subjects"}:
             raise ValidationError("Supply project_id, scope, and optional subjects")
@@ -264,7 +268,7 @@ def make_handler(service: MemoryService, hosted=None):
                 logger.exception("Unexpected request failure")
                 self.respond(500, {"error": "Internal service error"})
             finally:
-                if active_service is not None and self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/plans/revise", "/recall", "/history"}:
+                if active_service is not None and self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/plans/revise", "/handoffs", "/handoffs/claim", "/recall", "/history"}:
                     client = self.headers.get("X-Retract-Client", "api")
                     active_service.activity.record(self.path, body if isinstance(body, dict) else {},
                                             self.response_status, client if client in {"mcp", "dashboard"} else "api",

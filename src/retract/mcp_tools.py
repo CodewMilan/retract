@@ -8,7 +8,8 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from .models import (
-    NaturalUpdateInput, PlanInput, PlanRevisionInput, RememberInput, UpdateInput, ValidationError, identifier, parse,
+    ClaimInput, HandoffInput, NaturalUpdateInput, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
+    ValidationError, identifier, parse,
 )
 
 
@@ -71,6 +72,17 @@ def definitions() -> list[dict]:
          "inputSchema": {**obj({"project_id": ID, "fact_id": ID, "event_id": ID}, ["project_id"]),
                          "oneOf": [{"required": ["fact_id"]}, {"required": ["event_id"]}]},
          "annotations": {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}},
+        {"name": "handoff", "description": "Leave unfinished work for another agent: name yourself, the current plan, the active fact IDs you relied on, and what remains. Optionally assign a receiving agent. Use a stable handoff ID.",
+         "inputSchema": obj({**KEY, "handoff_id": ID, "from_agent": ID, "to_agent": {"type": ["string", "null"]},
+                             "plan_id": ID, "note": {"type": "string", "minLength": 1, "maxLength": 4000},
+                             "fact_ids": {"type": "array", "items": ID, "maxItems": 32, "uniqueItems": True},
+                             "expected_revision": REVISION},
+                            ["project_id", "scope", "handoff_id", "from_agent", "plan_id", "note", "fact_ids"]),
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}},
+        {"name": "claim_handoff", "description": "Take over an open handoff listed by recall. Only one agent can claim it. The result reports whether the cited facts were superseded or the plan was revised since the handoff; resolve those warnings before continuing.",
+         "inputSchema": obj({"project_id": ID, "handoff_id": ID, "agent": ID, "expected_revision": REVISION},
+                            ["project_id", "handoff_id", "agent"]),
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}},
     ]
 
 
@@ -83,6 +95,10 @@ def route_tool(name: str, arguments: dict) -> tuple[str, dict]:
         return "/plans", asdict(parse(PlanInput, arguments))
     if name == "revise_plan":
         return "/plans/revise", asdict(parse(PlanRevisionInput, arguments))
+    if name == "handoff":
+        return "/handoffs", asdict(parse(HandoffInput, arguments))
+    if name == "claim_handoff":
+        return "/handoffs/claim", asdict(parse(ClaimInput, arguments))
     if name == "process_update":
         values = dict(arguments)
         mode = values.pop("mode", None)
@@ -148,7 +164,8 @@ class LocalApi:
         self.open = opener or build_opener(ProxyHandler({}), NoRedirects()).open
 
     def call(self, route: str, body: dict) -> dict:
-        if route not in ("/remember", "/updates", "/updates/natural", "/recall", "/history", "/plans", "/plans/revise"):
+        if route not in ("/remember", "/updates", "/updates/natural", "/recall", "/history", "/plans", "/plans/revise",
+                         "/handoffs", "/handoffs/claim"):
             raise ValidationError("Unsupported memory API route")
         encoded = json.dumps(body).encode()
         if len(encoded) > 65536:

@@ -230,7 +230,7 @@ class HostedWorkspaces:
 
     def quota(self, service, route):
         limits = {"/projects": ("Project", 25), "/remember": ("Fact", 5000),
-                  "/plans": ("Plan", 2000), "/plans/revise": ("Plan", 2000),
+                  "/plans": ("Plan", 2000), "/plans/revise": ("Plan", 2000), "/handoffs": ("Handoff", 2000),
                   "/updates": ("UpdateEvent", 10000), "/updates/natural": ("UpdateEvent", 10000)}
         if route in limits:
             label, maximum = limits[route]

@@ -47,7 +47,7 @@ class GraphStore:
             raise DatabaseUnavailable("FalkorDB query failed; inspect server logs and connectivity") from exc
 
     def get(self, label: str, project_id: str, node_id: str) -> dict | None:
-        if label not in {"Project", "Source", "Fact", "Plan", "UpdateEvent"}:
+        if label not in {"Project", "Source", "Fact", "Plan", "UpdateEvent", "Handoff"}:
             raise ValueError("Unsupported internal node label")
         rows = self.query(
             f"MATCH (n:{label} {{project_id: $project, id: $id}}) RETURN properties(n)",
@@ -153,6 +153,72 @@ class GraphStore:
             {"project": project, "revision": expected, "previous": previous_id,
              "plan": plan, "ids": dependency_ids},
         )
+
+    def create_handoff(self, project, expected, handoff, fact_ids):
+        self._write(
+            "MATCH (p:Project {id: $project, project_id: $project}), "
+            "(plan:Plan {project_id: $project, id: $handoff.plan_id}) "
+            "WHERE p.revision = $revision AND plan.status <> 'superseded' "
+            "OPTIONAL MATCH (f:Fact {project_id: $project, status: 'active'}) WHERE f.id IN $ids "
+            "WITH p, plan, collect(f) AS facts WHERE size(facts) = size($ids) "
+            "MERGE (sender:Agent {project_id: $project, id: $handoff.from_agent}) "
+            "CREATE (h:Handoff) SET h = $handoff "
+            "CREATE (sender)-[:HANDED_OFF]->(h), (h)-[:CONCERNS]->(plan) "
+            "FOREACH (f IN facts | CREATE (h)-[:CITES]->(f)) "
+            "FOREACH (name IN CASE WHEN $handoff.to_agent IS NULL THEN [] ELSE [$handoff.to_agent] END | "
+            "MERGE (receiver:Agent {project_id: $project, id: name}) CREATE (h)-[:ASSIGNED_TO]->(receiver)) "
+            "SET p.revision = $revision + 1 RETURN p.revision",
+            {"project": project, "revision": expected, "handoff": handoff, "ids": fact_ids},
+        )
+
+    def claim_handoff(self, project, expected, handoff_id, agent, claimed_at):
+        # status = 'open' in the same write makes concurrent claims single-winner.
+        self._write(
+            "MATCH (p:Project {id: $project, project_id: $project}), "
+            "(h:Handoff {project_id: $project, id: $id}) "
+            "WHERE p.revision = $revision AND h.status = 'open' "
+            "MERGE (a:Agent {project_id: $project, id: $agent}) CREATE (a)-[:CLAIMED]->(h) "
+            "SET h.status = 'claimed', h.claimed_by = $agent, h.claimed_at = $at, "
+            "p.revision = $revision + 1 RETURN p.revision",
+            {"project": project, "revision": expected, "id": handoff_id, "agent": agent, "at": claimed_at},
+        )
+
+    def open_handoffs(self, project, scope):
+        rows = self.query(
+            "MATCH (h:Handoff {project_id: $project, scope: $scope, status: 'open'}) "
+            "RETURN properties(h) ORDER BY h.recorded_at, h.id",
+            {"project": project, "scope": scope},
+        )
+        return [dict(row[0]) for row in rows]
+
+    def handoff_fact_ids(self, project, handoff_id):
+        rows = self.query(
+            "MATCH (h:Handoff {project_id: $project, id: $id})-[:CITES]->(f:Fact {project_id: $project}) "
+            "RETURN f.id ORDER BY f.id", {"project": project, "id": handoff_id},
+        )
+        return [row[0] for row in rows]
+
+    def current_plan(self, project, plan_id):
+        """Follow REVISES backwards to the plan version that is not superseded."""
+        rows = self.query(
+            "MATCH path=(latest:Plan {project_id: $project})-[:REVISES*0..32]->"
+            "(:Plan {project_id: $project, id: $plan}) WHERE latest.status <> 'superseded' "
+            "AND all(n IN nodes(path) WHERE n.project_id = $project) "
+            "RETURN latest.id, latest.status ORDER BY length(path) DESC LIMIT 1",
+            {"project": project, "plan": plan_id},
+        )
+        return {"plan_id": rows[0][0], "status": rows[0][1]} if rows else None
+
+    def current_fact(self, project, fact_id):
+        """Follow SUPERSEDES backwards to the active replacement, if one exists."""
+        rows = self.query(
+            "MATCH path=(latest:Fact {project_id: $project, status: 'active'})-[:SUPERSEDES*0..32]->"
+            "(:Fact {project_id: $project, id: $fact}) "
+            "WHERE all(n IN nodes(path) WHERE n.project_id = $project) "
+            "RETURN latest.id ORDER BY length(path) DESC LIMIT 1",
+            {"project": project, "fact": fact_id},
+        )
+        return rows[0][0] if rows else None
 
     def record_event(self, project: str, expected: int, source: dict, event: dict,
                      new_fact: dict | None, target_id: str | None):

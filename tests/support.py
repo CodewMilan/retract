@@ -74,6 +74,42 @@ class ModelStore:
         self.put("Plan", plan)
         self.dependencies.update((project, plan["id"], fact) for fact in ids)
 
+    def create_handoff(self, project, revision, handoff, fact_ids):
+        self._write(project, revision)
+        self.put("Handoff", handoff)
+        self.cites = getattr(self, "cites", set()) | {(project, handoff["id"], fact) for fact in fact_ids}
+
+    def claim_handoff(self, project, revision, handoff_id, agent, claimed_at):
+        handoff = self.get("Handoff", project, handoff_id)
+        if handoff["status"] != "open":
+            raise ConflictError("Handoff already claimed")
+        self._write(project, revision)
+        handoff.update(status="claimed", claimed_by=agent, claimed_at=claimed_at)
+        self.put("Handoff", handoff)
+
+    def open_handoffs(self, project, scope):
+        return sorted([deepcopy(n) for (label, owner, _), n in self.nodes.items()
+                       if label == "Handoff" and owner == project and n["scope"] == scope and n["status"] == "open"],
+                      key=lambda n: (n["recorded_at"], n["id"]))
+
+    def handoff_fact_ids(self, project, handoff_id):
+        return sorted(fact for owner, handoff, fact in getattr(self, "cites", set())
+                      if owner == project and handoff == handoff_id)
+
+    def current_plan(self, project, plan_id):
+        plan = self.get("Plan", project, plan_id)
+        while plan and plan["status"] == "superseded":
+            plan = next((deepcopy(n) for (label, owner, _), n in self.nodes.items() if label == "Plan"
+                         and owner == project and n.get("supersedes_plan_id") == plan["id"]), None)
+        return {"plan_id": plan["id"], "status": plan["status"]} if plan else None
+
+    def current_fact(self, project, fact_id):
+        fact = self.get("Fact", project, fact_id)
+        while fact and fact["status"] != "active":
+            newer = next((new for owner, new, old in self.replacements if owner == project and old == fact["id"]), None)
+            fact = self.get("Fact", project, newer) if newer else None
+        return fact["id"] if fact else None
+
     def dependent_paths(self, project, fact_id):
         return [{"plan_id": plan, "fact_id": fact, "relationship": "DEPENDS_ON"}
                 for owner, plan, fact in sorted(self.dependencies) if owner == project and fact == fact_id
