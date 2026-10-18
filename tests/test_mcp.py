@@ -59,8 +59,8 @@ class ProtocolTests(unittest.TestCase):
     def test_tools_and_hints_match_their_effects(self):
         initialize(self.server)
         tools = self.server.handle(request("tools/list"))["result"]["tools"]
-        self.assertEqual({tool["name"] for tool in tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan", "handoff", "claim_handoff"})
-        self.assertEqual({tool["name"] for tool in tools if tool["annotations"]["readOnlyHint"]}, {"recall", "history"})
+        self.assertEqual({tool["name"] for tool in tools}, {"remember", "process_update", "recall", "history", "record_plan", "revise_plan", "handoff", "claim_handoff", "analyze_graph"})
+        self.assertEqual({tool["name"] for tool in tools if tool["annotations"]["readOnlyHint"]}, {"recall", "history", "analyze_graph"})
         self.assertTrue(all(tool["inputSchema"]["type"] == "object" for tool in tools))
 
     def test_successful_call_returns_actual_api_payload(self):
@@ -126,7 +126,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stderr)
         responses = [json.loads(line) for line in process.stdout.splitlines()]
         self.assertEqual([row["id"] for row in responses], [1, 2, 3])
-        self.assertEqual(len(responses[1]["result"]["tools"]), 8)
+        self.assertEqual(len(responses[1]["result"]["tools"]), 9)
         self.assertEqual(process.stderr, "")
 
     def test_activity_records_actual_ids_without_source_text(self):

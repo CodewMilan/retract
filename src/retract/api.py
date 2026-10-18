@@ -62,6 +62,10 @@ def dispatch(service: MemoryService, path: str, body: dict) -> dict:
         if not {"project_id", "scope"} <= body.keys() or set(body) - {"project_id", "scope", "subjects"}:
             raise ValidationError("Supply project_id, scope, and optional subjects")
         return service.recall(**body)
+    if path == "/analyze":
+        if not {"project_id", "tool"} <= body.keys() or set(body) - {"project_id", "tool", "args"}:
+            raise ValidationError("Supply project_id, tool, and optional args")
+        return service.analyze(**body)
     if path == "/history":
         if "project_id" not in body or set(body) - {"project_id", "fact_id", "event_id"}:
             raise ValidationError("Supply project_id and either fact_id or event_id")
@@ -268,7 +272,7 @@ def make_handler(service: MemoryService, hosted=None):
                 logger.exception("Unexpected request failure")
                 self.respond(500, {"error": "Internal service error"})
             finally:
-                if active_service is not None and self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/plans/revise", "/handoffs", "/handoffs/claim", "/recall", "/history"}:
+                if active_service is not None and self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/plans/revise", "/handoffs", "/handoffs/claim", "/recall", "/history", "/analyze"}:
                     client = self.headers.get("X-Retract-Client", "api")
                     active_service.activity.record(self.path, body if isinstance(body, dict) else {},
                                             self.response_status, client if client in {"mcp", "dashboard"} else "api",

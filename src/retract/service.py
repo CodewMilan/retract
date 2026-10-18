@@ -350,3 +350,14 @@ class MemoryService:
             if self.store.get("Fact", project_id, fact_id) is None:
                 raise NotFoundError("Fact not found in this project")
             return {**self.store.history(project_id, fact_id), "project_revision": project["revision"]}
+
+    def analyze(self, project_id: str, tool: str, args: dict | None = None) -> dict:
+        from .analysis import GraphAnalysis
+        from .models import ValidationError
+
+        if args is not None and not isinstance(args, dict):
+            raise ValidationError("args must be an object")
+        with self.lock:
+            project = self.project(project_id)
+            result = GraphAnalysis(self.store).run(project_id, tool, args or {})
+            return {**result, "project_revision": project["revision"]}

@@ -74,7 +74,7 @@ def main():
     mcp = commands.add_parser("mcp", help="Serve memory tools over MCP stdio")
     mcp.add_argument("--activity-log", type=Path, help="Append actual tool metadata to a local JSONL log")
     request = commands.add_parser("call", help="POST a structured JSON file to an API route")
-    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "plans/revise", "handoffs", "handoffs/claim", "recall", "history"])
+    request.add_argument("route", choices=["projects", "remember", "updates", "updates/natural", "plans", "plans/revise", "handoffs", "handoffs/claim", "recall", "history", "analyze"])
     request.add_argument("file", type=Path)
     seed = commands.add_parser("seed", help="Seed explicitly once; existing memory is never reset")
     seed.add_argument("file", type=Path, nargs="?", default=Path("fixtures/demo-seed.json"))
@@ -82,14 +82,17 @@ def main():
     recall.add_argument("project_id")
     recall.add_argument("scope")
     recall.add_argument("--subject", action="append", default=[])
-    agent = commands.add_parser("agent", help="Run the reviewer agent over plans flagged by corrections")
-    agent.add_argument("action", choices=["review"])
+    agent = commands.add_parser("agent", help="Run the reviewer or investigator agent against the memory graph")
+    agent.add_argument("action", choices=["review", "investigate"])
     agent.add_argument("project_id")
-    agent.add_argument("scope")
+    agent.add_argument("scope", nargs="?", help="Required for review; optional filter for investigate")
     agent.add_argument("--to-agent", default="codex", help="Agent that should claim the handoff")
-    agent.add_argument("--agent-id", default="retract-reviewer")
+    agent.add_argument("--agent-id", help="Defaults to retract-reviewer or retract-investigator")
     agent.add_argument("--template", action="store_true",
-                       help="Draft deterministically without the Groq model")
+                       help="Review: draft deterministically without the Groq model")
+    agent.add_argument("--playbook", action="store_true",
+                       help="Investigate: follow a fixed tool order instead of the Groq planner")
+    agent.add_argument("--max-steps", type=int, default=10)
     history = commands.add_parser("history")
     history.add_argument("project_id")
     target = history.add_mutually_exclusive_group(required=True)
@@ -128,10 +131,19 @@ def main():
                     store.close()
             return
         if args.command == "agent":
-            from .agent import ReviewerAgent, default_drafter
+            api = lambda route, body: call(args.url, route, body)
+            if args.action == "investigate":
+                from .investigator import AGENT_ID, InvestigatorAgent, default_planner
 
-            reviewer = ReviewerAgent(lambda route, body: call(args.url, route, body),
-                                     default_drafter(not args.template), args.agent_id, args.to_agent)
+                agent = InvestigatorAgent(api, default_planner(not args.playbook), args.agent_id or AGENT_ID,
+                                          args.to_agent, max(1, min(args.max_steps, 20)))
+                print(json.dumps(agent.run(args.project_id, args.scope), indent=2))
+                return
+            from .agent import AGENT_ID, ReviewerAgent, default_drafter
+
+            if not args.scope:
+                parser.error("agent review requires a scope")
+            reviewer = ReviewerAgent(api, default_drafter(not args.template), args.agent_id or AGENT_ID, args.to_agent)
             print(json.dumps(reviewer.run(args.project_id, args.scope), indent=2))
             return
         if args.command == "call":
