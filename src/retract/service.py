@@ -10,7 +10,7 @@ from uuid import uuid4
 from .graph import GraphStore
 from .activity import ActivityJournal
 from .models import (
-    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, RememberInput, UpdateInput,
+    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
     identifier, text,
 )
 from .policy import decide
@@ -124,6 +124,36 @@ class MemoryService:
             self.store.record_plan(request.project_id, project["revision"], plan, request.dependency_fact_ids)
             return {"plan_id": plan_id, "status": "current", "outcome": "created",
                     "project_revision": project["revision"] + 1}
+
+    def revise_plan(self, request: PlanRevisionInput) -> dict:
+        fingerprint = hashlib.sha256(json.dumps(asdict(request), sort_keys=True).encode()).hexdigest()
+        with self.lock:
+            self.project(request.project_id)
+            existing = self.store.get("Plan", request.project_id, request.replacement_plan_id)
+            if existing:
+                if existing.get("review_fingerprint") != fingerprint:
+                    raise ConflictError("Replacement plan ID already exists with different content")
+                return json.loads(existing["review_result_json"])
+            project = self.project(request.project_id, request.expected_revision)
+            previous = self.store.get("Plan", request.project_id, request.plan_id)
+            if not previous:
+                raise NotFoundError("Plan does not exist in this project")
+            if previous["status"] == "superseded":
+                raise ConflictError("This plan was already revised; review its replacement")
+            for fact_id in request.dependency_fact_ids:
+                fact = self.store.get("Fact", request.project_id, fact_id)
+                if not fact or fact["status"] != "active":
+                    raise ConflictError("Plan dependencies must be active facts in this project")
+            result = {"plan_id": request.replacement_plan_id, "previous_plan_id": request.plan_id,
+                      "status": "current", "outcome": "revised", "project_revision": project["revision"] + 1}
+            plan = {"id": request.replacement_plan_id, "project_id": request.project_id,
+                    "scope": previous["scope"], "text": request.text, "status": "current",
+                    "recorded_at": timestamp(), "review_reason": request.reason,
+                    "supersedes_plan_id": request.plan_id, "review_fingerprint": fingerprint,
+                    "review_result_json": json.dumps(result, sort_keys=True)}
+            self.store.revise_plan(request.project_id, project["revision"], request.plan_id,
+                                   plan, request.dependency_fact_ids)
+            return result
 
     def process_natural_update(self, request: NaturalUpdateInput) -> dict:
         from .inference import GroqInterpreter

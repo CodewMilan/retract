@@ -79,7 +79,7 @@ class GraphStore:
         rows = self.query(
             "MATCH (p:Plan {project_id: $project})-[:DEPENDS_ON]->"
             "(f:Fact {project_id: $project, id: $fact}) "
-            "RETURN p.id, f.id ORDER BY p.id",
+            "WHERE p.status <> 'superseded' RETURN p.id, f.id ORDER BY p.id",
             {"project": project, "fact": fact_id},
         )
         return [{"plan_id": row[0], "fact_id": row[1], "relationship": "DEPENDS_ON"} for row in rows]
@@ -138,6 +138,22 @@ class GraphStore:
             {"project": project, "revision": expected, "plan": plan, "ids": dependency_ids},
         )
 
+    def revise_plan(self, project, expected, previous_id, plan, dependency_ids):
+        self._write(
+            "MATCH (p:Project {id: $project, project_id: $project}), "
+            "(old:Plan {id: $previous, project_id: $project}) "
+            "WHERE p.revision = $revision AND old.status <> 'superseded' "
+            "OPTIONAL MATCH (f:Fact {project_id: $project, status: 'active'}) WHERE f.id IN $ids "
+            "WITH p, old, collect(f) AS dependencies WHERE size(dependencies) = size($ids) "
+            "CREATE (plan:Plan) SET plan = $plan "
+            "CREATE (plan)-[:REVISES]->(old) "
+            "FOREACH (f IN dependencies | CREATE (plan)-[:DEPENDS_ON]->(f)) "
+            "SET old.status = 'superseded', old.superseded_at = $plan.recorded_at, "
+            "p.revision = $revision + 1 RETURN p.revision",
+            {"project": project, "revision": expected, "previous": previous_id,
+             "plan": plan, "ids": dependency_ids},
+        )
+
     def record_event(self, project: str, expected: int, source: dict, event: dict,
                      new_fact: dict | None, target_id: str | None):
         params = {"project": project, "revision": expected, "source": source, "event": event}
@@ -149,6 +165,7 @@ class GraphStore:
             prefix += (
                 "MATCH (old:Fact {project_id: $project, id: $target, status: 'active'}) "
                 "OPTIONAL MATCH (plan:Plan {project_id: $project})-[:DEPENDS_ON]->(old) "
+                "WHERE plan.status <> 'superseded' "
                 "WITH p, old, collect(DISTINCT plan) AS plans "
             )
             params.update({"target": target_id, "new_fact": new_fact})
@@ -188,6 +205,8 @@ class GraphStore:
         warnings = []
         for row in plans:
             plan = dict(row[0])
+            plan.pop("review_fingerprint", None)
+            plan.pop("review_result_json", None)
             paths = self.query(
                 "MATCH (e:UpdateEvent {project_id: $project})-[:FLAGGED]->"
                 "(p:Plan {project_id: $project, id: $plan}), "
@@ -251,7 +270,13 @@ class GraphStore:
 
         active = panel("Fact", "n.status = 'active'", "active")
         historical = panel("Fact", "n.status = 'superseded'", "superseded")
-        plans = panel("Plan", "n.status = 'needs_review'", "affected")
+        affected = panel("Plan", "n.status = 'needs_review'", "affected")
+        plans = panel("Plan", "true", "plans")
+        # Keep affected plans visible even if they fall outside the recent-plan panel.
+        plans = list({plan["id"]: plan for plan in plans + affected}.values())
+        for plan in plans:
+            plan.pop("review_fingerprint", None)
+            plan.pop("review_result_json", None)
         pending = panel("UpdateEvent", "n.outcome IN ['pending', 'proposal']", "pending")
         recent = panel("UpdateEvent", "true", "updates")
         updates = list({event["id"]: event for event in recent + pending}.values())
@@ -265,6 +290,7 @@ class GraphStore:
             "(type(r) = 'SUPPORTS' AND 'Fact' IN labels(b) AND b.id IN $facts) OR "
             "(type(r) = 'SUPERSEDES' AND 'Fact' IN labels(a) AND a.id IN $facts) OR "
             "(type(r) = 'DEPENDS_ON' AND 'Plan' IN labels(a) AND a.id IN $plans) OR "
+            "(type(r) = 'REVISES' AND 'Plan' IN labels(a) AND (a.id IN $plans OR b.id IN $plans)) OR "
             "(type(r) IN ['BASED_ON', 'RETIRED', 'ACCEPTED', 'FLAGGED'] AND 'UpdateEvent' IN labels(a) AND a.id IN $events) "
             "RETURN type(r), properties(a), properties(b) ORDER BY type(r), a.id, b.id LIMIT 1001",
             edge_params,
@@ -286,7 +312,7 @@ class GraphStore:
         # Event nodes in edges would expose replay internals and duplicate bodies.
         def endpoint(node):
             return {key: value for key, value in dict(node).items()
-                    if key not in ("fingerprint", "result_json")}
+                    if key not in ("fingerprint", "result_json", "review_fingerprint", "review_result_json")}
 
         return {"facts": facts, "plans": plans, "updates": updates, "counts": counts,
                 "scopes": [row[0] for row in scopes[:200]], "truncated": truncated,

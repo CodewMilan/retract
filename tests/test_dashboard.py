@@ -63,7 +63,7 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(snapshot['counts']['pending'], 1)
         self.assertEqual(snapshot['counts']['active'], 4)
         self.assertEqual(snapshot['counts']['superseded'], 0)
-        self.assertEqual(snapshot['plans'], [])
+        self.assertEqual(snapshot['plans'][0]['status'], 'current')
 
     def test_inputs_are_validated(self):
         for body in ({}, {'project_id': 'account-settings', 'scope': ''}, {'project_id': 'account-settings', 'extra': True}):

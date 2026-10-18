@@ -66,9 +66,18 @@ class ModelStore:
     def plan_dependencies(self, project, plan_id):
         return sorted(fact for owner, plan, fact in self.dependencies if owner == project and plan == plan_id)
 
+    def revise_plan(self, project, revision, previous_id, plan, ids):
+        self._write(project, revision)
+        previous = self.get("Plan", project, previous_id)
+        previous.update(status="superseded", superseded_at=plan["recorded_at"])
+        self.put("Plan", previous)
+        self.put("Plan", plan)
+        self.dependencies.update((project, plan["id"], fact) for fact in ids)
+
     def dependent_paths(self, project, fact_id):
         return [{"plan_id": plan, "fact_id": fact, "relationship": "DEPENDS_ON"}
-                for owner, plan, fact in sorted(self.dependencies) if owner == project and fact == fact_id]
+                for owner, plan, fact in sorted(self.dependencies) if owner == project and fact == fact_id
+                and self.get("Plan", project, plan)["status"] != "superseded"]
 
     def record_event(self, project, revision, source, event, new_fact, target_id):
         self._write(project, revision)
@@ -115,7 +124,12 @@ class ModelStore:
             return nodes[:200]
 
         facts = panel('Fact', lambda n: n['status'] == 'active', 'active') + panel('Fact', lambda n: n['status'] == 'superseded', 'superseded')
-        plans = panel('Plan', lambda n: n['status'] == 'needs_review', 'affected')
+        affected = panel('Plan', lambda n: n['status'] == 'needs_review', 'affected')
+        plans = panel('Plan', lambda n: True, 'plans')
+        plans = list({n['id']: n for n in plans + affected}.values())
+        for plan in plans:
+            plan.pop('review_fingerprint', None)
+            plan.pop('review_result_json', None)
         pending = panel('UpdateEvent', lambda n: n['outcome'] in ('pending', 'proposal'), 'pending')
         recent = panel('UpdateEvent', lambda n: True, 'updates')
         updates = list({n['id']: n for n in recent + pending}.values())
@@ -124,7 +138,7 @@ class ModelStore:
 
         def edge(kind, left_label, left, right_label, right):
             def clean(label, node_id):
-                return {k: v for k, v in self.get(label, project, node_id).items() if k not in ('fingerprint', 'result_json')}
+                return {k: v for k, v in self.get(label, project, node_id).items() if k not in ('fingerprint', 'result_json', 'review_fingerprint', 'review_result_json')}
             edges.append({'relationship': kind, 'from': clean(left_label, left), 'to': clean(right_label, right)})
 
         for owner, source, fact in sorted(self.supports):
@@ -136,6 +150,9 @@ class ModelStore:
         for owner, plan, fact in sorted(self.dependencies):
             if owner == project and any(n['id'] == plan for n in plans):
                 edge('DEPENDS_ON', 'Plan', plan, 'Fact', fact)
+        for plan in plans:
+            if plan.get('supersedes_plan_id'):
+                edge('REVISES', 'Plan', plan['id'], 'Plan', plan['supersedes_plan_id'])
         for event in updates:
             result = json.loads(event['result_json'])
             edge('BASED_ON', 'UpdateEvent', event['id'], 'Source', result['source_id'])

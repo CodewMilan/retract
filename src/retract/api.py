@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from .graph import DatabaseUnavailable
 from .inference import ModelRateLimited, ModelResponseError, ModelUnavailable
 from .models import (
-    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, RememberInput, UpdateInput,
+    ConflictError, NaturalUpdateInput, NotFoundError, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
     ValidationError, parse,
 )
 from .service import MemoryService
@@ -37,6 +37,8 @@ def dispatch(service: MemoryService, path: str, body: dict) -> dict:
         return service.process_natural_update(parse(NaturalUpdateInput, body))
     if path == "/plans":
         return service.record_plan(parse(PlanInput, body))
+    if path == "/plans/revise":
+        return service.revise_plan(parse(PlanRevisionInput, body))
     if path == "/recall":
         if not {"project_id", "scope"} <= body.keys() or set(body) - {"project_id", "scope", "subjects"}:
             raise ValidationError("Supply project_id, scope, and optional subjects")
@@ -167,7 +169,7 @@ def make_handler(service: MemoryService):
                 logger.exception("Unexpected request failure")
                 self.respond(500, {"error": "Internal service error"})
             finally:
-                if self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/recall", "/history"}:
+                if self.path in {"/projects", "/remember", "/updates", "/updates/natural", "/plans", "/plans/revise", "/recall", "/history"}:
                     client = self.headers.get("X-Retract-Client", "api")
                     service.activity.record(self.path, body if isinstance(body, dict) else {},
                                             self.response_status, client if client in {"mcp", "dashboard"} else "api",

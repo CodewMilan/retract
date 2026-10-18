@@ -205,3 +205,27 @@ class PlanInput:
 
 def data(value: Any) -> dict:
     return asdict(value)
+
+
+@dataclass(frozen=True)
+class PlanRevisionInput:
+    project_id: str
+    plan_id: str
+    replacement_plan_id: str
+    text: str
+    dependency_fact_ids: list[str]
+    reason: str
+    confirmation: bool
+    expected_revision: int
+
+    def __post_init__(self):
+        PlanInput(self.project_id, "validation", self.text, self.dependency_fact_ids,
+                  self.replacement_plan_id, self.expected_revision)
+        identifier(self.plan_id, "plan_id")
+        text(self.reason, "reason", 4000)
+        if self.plan_id == self.replacement_plan_id:
+            raise ValidationError("Use a new plan ID to preserve the previous plan")
+        if self.confirmation is not True:
+            raise ValidationError("Explicit confirmation is required to revise a plan")
+        if self.expected_revision is None:
+            raise ValidationError("Retrieve the current project revision before reviewing a plan")
