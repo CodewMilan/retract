@@ -139,7 +139,10 @@ rows above, which came from a sandbox without Docker or network access.
 | Dashboard browser (375/768/1280) and live read-only smoke | Passed; screenshots in `reports/phase4/browser/`. |
 | Account settings browser and live PostgreSQL edit/restore | Passed; screenshots in `reports/account-settings/browser/`. |
 | Real Codex MCP recall | `codex exec` (read-only sandbox) called `recall` and reported F5 and P1. Trace: `reports/phase3/codex-recall-smoke.jsonl`, `reports/phase3/mcp-activity.jsonl`. This is a recall smoke test, not the fresh feature-generation exercise. |
-| Phase 5 live bundle | Every check passed except `live_model`, blocked because `GROQ_API_KEY` is not set. Report: `reports/phase5-real/RESULTS.md`. |
+| Groq transport (18 October) | Two real-environment defects fixed: python.org macOS Python lacks root certificates (TLS now uses `certifi`), and Groq's edge rejected urllib's default User-Agent with Cloudflare error 1010 (a project User-Agent is now sent). |
+| Live classification | Prompt `retract-extract-v1` scored 13/16 with one wrong application (a conditional approval applied). Prompt `retract-extract-v2` adds explicit modal/conditional/other-scope rules; across six `gpt-oss-20b` runs it scored 13–16/16 with zero wrong applications. Remaining misses are conservative (pending instead of proposal/ignored). |
+| Natural update through the running API | Fresh graph, seeded, `/updates/natural` with the fixture: classified `confirmed_change`, retired F1, flagged P1, ~1.0 s model latency. |
+| Phase 5 live bundle | `live_checks_passed_manual_evidence_unverified`: every automated check passed, including 16/16 live classification. Report: `reports/phase5-live/RESULTS.md`. Remaining evidence is manual (fresh coding-client feature run, video, publication). |
 
 
 The follow-up Phase 1 review fixed malformed-origin handling in the HTTP adapter

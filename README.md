@@ -6,8 +6,8 @@ with explicit dependencies on that fact.
 
 Real FalkorDB integration, persistence across database and service restarts,
 PostgreSQL account storage, dashboard and settings browser checks, and a real
-Codex MCP recall have been verified locally. Live natural-language model quality
-(needs `GROQ_API_KEY`) and the fresh coding-client feature-generation run remain
+Codex MCP recall have been verified locally, as has live Groq classification on
+the 16-case synthetic set. The fresh coding-client feature-generation run remains
 **unverified**. See [the verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
@@ -57,9 +57,11 @@ retract serve
 The API binds to `127.0.0.1:8100`; FalkorDB binds to `127.0.0.1:6380`. The
 database uses a named volume and AOF with `appendfsync always`. The image pin
 `falkordb/falkordb:6.0.2` has passed this project's integration suite and restart gate.
-Configuration variables are listed in [.env.example](.env.example); export
-overrides before starting the service. No API key or inference account is
-needed for structured updates.
+Configuration variables are listed in [.env.example](.env.example). Copy it to
+`.env` (git-ignored); the `retract` CLI reads it from the working directory, and
+exported variables take precedence. Verification scripts read only exported
+variables, so run `set -a; source .env; set +a` first. No API key or inference
+account is needed for structured updates.
 
 Use one service process per graph. A local file lock prevents accidental second
 processes with the same database configuration. All clients send writes through
