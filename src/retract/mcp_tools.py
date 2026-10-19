@@ -3,9 +3,11 @@
 from dataclasses import asdict
 import json
 import os
+import ssl
+import certifi
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, ProxyHandler, Request, build_opener
 
 from .models import (
     ClaimInput, HandoffInput, NaturalUpdateInput, PlanInput, PlanRevisionInput, RememberInput, UpdateInput,
@@ -176,7 +178,12 @@ class LocalApi:
         if "\r" in self.api_key or "\n" in self.api_key:
             raise ValidationError("Invalid access key")
         self.base = base_url.rstrip("/")
-        self.open = opener or build_opener(ProxyHandler({}), NoRedirects()).open
+        # python.org macOS installs may have no default root certificates.
+        # Use the bundled trust store while keeping certificate verification on.
+        self.open = opener or build_opener(
+            ProxyHandler({}), NoRedirects(),
+            HTTPSHandler(context=ssl.create_default_context(cafile=certifi.where())),
+        ).open
 
     def call(self, route: str, body: dict) -> dict:
         if route not in ("/remember", "/updates", "/updates/natural", "/recall", "/history", "/plans", "/plans/revise",

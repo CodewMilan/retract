@@ -4,14 +4,16 @@ from email.message import Message
 from io import BytesIO
 import json
 import os
+import ssl
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from urllib.error import HTTPError, URLError
+from urllib.request import HTTPSHandler
 
 from retract.api import dispatch
 from retract.mcp import MAX_FRAME_BYTES, McpServer, VERSIONS, serve
@@ -144,6 +146,19 @@ class ProtocolTests(unittest.TestCase):
 
 
 class RoutingTests(unittest.TestCase):
+    def test_hosted_gateway_verifies_tls_without_platform_root_certificates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            # Reproduce Python installations whose default CA paths are missing.
+            with patch.dict(os.environ, {"SSL_CERT_FILE": str(Path(directory) / "missing.pem"),
+                                         "SSL_CERT_DIR": directory}):
+                self.assertEqual(ssl.create_default_context().cert_store_stats()["x509_ca"], 0)
+                api = LocalApi("https://memory.example.test", api_key="test-key")
+            handler = next(h for h in api.open.__self__.handlers if isinstance(h, HTTPSHandler))
+            context = handler._context
+            self.assertGreater(context.cert_store_stats()["x509_ca"], 0)
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(context.check_hostname)
+
     def test_both_update_modes_map_to_existing_api(self):
         natural = {**asdict(natural_request()), "mode": "natural"}
         structured = {**asdict(confirmed_update()), "mode": "structured"}
