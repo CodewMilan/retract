@@ -43,6 +43,7 @@ export function AccountLink() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [photoBroken, setPhotoBroken] = useState(false);
   const buttonRef = useRef(null);
   const firstRef = useRef(null);
@@ -151,12 +152,16 @@ export function AccountLink() {
   }
 
   async function signOut() {
+    setLeaving(true);
+    setError("");
     try {
-      await clerk.signOut();
-      setOpen(false);
-      setUser(null);
-      setPhase("out");
+      if (!clerk.client?.sessions?.length) {
+        window.location.replace(`${location.origin}/`);
+        return;
+      }
+      await clerk.signOut({ redirectUrl: `${location.origin}/` });
     } catch (failure) {
+      setLeaving(false);
       setError(clerkError(failure));
     }
   }
@@ -194,7 +199,7 @@ export function AccountLink() {
             <button className="btn account-save" type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
             <div className="account-links">
               <a href={SIGN_IN}>Workspace</a>
-              <button type="button" onClick={signOut}>Sign out</button>
+              <button type="button" onClick={signOut} disabled={leaving}>{leaving ? "Signing out…" : "Sign out"}</button>
             </div>
           </form>
         </div>

@@ -123,6 +123,7 @@ function isClerkReturn() {
     || location.hash.includes('sso-callback');
 }
 let releaseWorkspace = () => {};
+let signingOut = false;
 function clerkMessage(error) {
   return error?.errors?.[0]?.longMessage || error?.errors?.[0]?.message || error?.message || 'Sign-in could not continue.';
 }
@@ -230,12 +231,22 @@ function mountAccount() {
     }
   };
   $('account-sign-out').onclick = async () => {
-    $('account-sign-out').disabled = true;
+    const button = $('account-sign-out');
+    button.disabled = true;
+    button.textContent = 'Signing out…';
+    signingOut = true;
     try {
-      await clerk.signOut();
-      window.location.assign(dashboardUrl());
+      // Clerk finishes sign-out by leaving the page. A second navigation here
+      // cancels that handoff and the session cookie survives.
+      if (!clerk.client?.sessions?.length) {
+        window.location.replace(dashboardUrl());
+        return;
+      }
+      await clerk.signOut({redirectUrl: dashboardUrl()});
     } catch (error) {
-      $('account-sign-out').disabled = false;
+      signingOut = false;
+      button.disabled = false;
+      button.textContent = 'Sign out';
       $('account-error').textContent = clerkMessage(error);
     }
   };
@@ -245,7 +256,9 @@ function enterClerkWorkspace() {
   mountAccount();
   if (!clerk.listenerBound) {
     clerk.listenerBound = true;
-    clerk.addListener?.(({session}) => { if (!session) window.location.assign(dashboardUrl()); });
+    clerk.addListener?.(({session}) => {
+      if (!session && !signingOut) window.location.assign(dashboardUrl());
+    });
   }
   releaseWorkspace();
 }
@@ -331,6 +344,7 @@ async function mountClerk() {
     signUpForceRedirectUrl: done,
     signInFallbackRedirectUrl: done,
     signUpFallbackRedirectUrl: done,
+    afterSignOutUrl: done,
   });
   const pending = new Promise(resolve => { releaseWorkspace = resolve; });
   if (isClerkReturn()) {

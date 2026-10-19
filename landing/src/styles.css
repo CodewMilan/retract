@@ -1212,6 +1212,7 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
 .account-panel .account-save { width: 100%; margin-top: 0.9rem; }
 .account-panel .account-save:disabled { opacity: 0.55; cursor: progress; }
 .account-links { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.35rem; }
+.account-links button:disabled { opacity: 0.55; cursor: progress; }
 .account-links a, .account-links button {
   min-height: 44px;
   padding: 0.5rem 0;
