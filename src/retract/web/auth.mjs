@@ -1,6 +1,9 @@
 let config = {mode: 'local'};
 let clerk;
 const appearance = {
+  options: {
+    unsafe_disableDevelopmentModeWarnings: true,
+  },
   variables: {
     colorPrimary: '#000000',
     colorDanger: '#ff4500',
@@ -26,6 +29,7 @@ const appearance = {
     formFieldInput: {borderRadius: '0', border: '1px solid #c5d3e8', boxShadow: 'none'},
     footerActionLink: {color: '#ff4500', fontWeight: '500'},
     footer: {background: 'transparent'},
+    footerItem: {display: 'none'},
     logoBox: {display: 'none'},
     dividerLine: {background: '#c5d3e8'},
   },
@@ -53,7 +57,13 @@ export async function initAuth() {
   await clerk.load({appearance, ui: {ClerkUI: window.__internal_ClerkUICtor}});
   if (!clerk.session) {
     $('auth-status').hidden = true;
-    clerk.mountSignIn($('sign-in'), {appearance, routing: 'hash', forceRedirectUrl: `${config.origin}/dashboard`});
+    clerk.mountSignIn($('sign-in'), {
+      appearance,
+      routing: 'hash',
+      withSignUp: true,
+      forceRedirectUrl: `${config.origin}/dashboard`,
+      signUpForceRedirectUrl: `${config.origin}/dashboard`,
+    });
     await new Promise(resolve => {
       const unsubscribe = clerk.addListener(({session}) => {
         if (session) { queueMicrotask(() => unsubscribe()); resolve(); }

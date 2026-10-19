@@ -154,6 +154,7 @@ code { background: var(--pale-gray); padding: 0.05em 0.3em; }
 #auth-retry { align-self: flex-start; }
 
 .shell { display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); min-height: 100vh; }
+.shell > aside { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow: auto; }
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -240,6 +241,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.45); }
 fieldset { margin-top: 1.1rem; padding: 0.8rem; border: 1px solid var(--grid); }
 legend { padding: 0 0.35rem; font-family: var(--ff-mono); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
 .key-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.75rem 0; }
+pre.setup { max-height: 9rem; overflow: auto; padding: 0.75rem; background: var(--pale-gray); border: 1px solid var(--grid); white-space: pre; font-size: 0.8rem; line-height: 1.5; }
+.start-guide { margin: 0 0 1.25rem; padding: 1rem 1rem 1rem 2.25rem; border: 1px solid var(--grid); background: var(--pale-gray); line-height: 1.5; }
+.start-guide li { margin: 0.4rem 0; }
 .key-row span { overflow-wrap: anywhere; }
 #plan-dependencies { max-height: 15rem; overflow: auto; }
 #account-controls { display: grid; }

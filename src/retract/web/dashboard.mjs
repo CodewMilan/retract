@@ -108,6 +108,8 @@ function inspect(record, kind) {
 }
 function renderRecords() {
   const container = $('records'); container.replaceChildren();
+  const guide = $('start-guide');
+  guide.hidden = !(state.snapshot && !state.snapshot.facts.length && state.view === 'active' && !$('search').value);
   if (!state.snapshot) {
     $('row-count').textContent = '';
     container.append(el('p', state.project ? 'Project memory is unavailable. Use Refresh to retry.' : 'No project selected. Create a project to begin.', 'empty'));
@@ -115,7 +117,11 @@ function renderRecords() {
   }
   const rows = rowsFor(state.snapshot, state.view, $('search').value);
   $('row-count').textContent = `${number(rows.length)} shown`;
-  if (!rows.length) { container.append(el('p', $('search').value ? 'No matching records. Try a different search.' : state.view === 'active' ? 'No accepted facts here yet. Remember a fact with its evidence to begin.' : 'No records in this view.', 'empty')); return; }
+    if (!rows.length) {
+      container.append(el('p', $('search').value ? 'No matching records. Try a different search.'
+        : state.view === 'active' ? 'No accepted facts here yet. Remember a fact with its evidence to begin.'
+        : 'No records in this view.', 'empty')); return;
+    }
   const kind = ['active', 'superseded'].includes(state.view) ? 'fact' : ['affected', 'plans'].includes(state.view) ? 'plan'
     : state.view === 'activity' ? 'activity' : state.view === 'handoffs' ? 'handoff' : 'event';
   for (const row of rows) {
@@ -336,16 +342,26 @@ async function loadKeys() {
     }
   } catch (error) { $('key-list').replaceChildren(); $('key-error').textContent = error.message; }
 }
+function mcpConfig(token) {
+  const url = state.config?.origin || location.origin;
+  return JSON.stringify({mcpServers: {retract: {command: "uvx", args: ["--from", "git+https://github.com/CodewMilan/retract", "retract", "mcp"],
+    env: {RETRACT_URL: url, RETRACT_API_KEY: token}}}}, null, 2);
+}
 $('key-form').onsubmit = event => {
   event.preventDefault(); submit(event.currentTarget, 'key-error', async () => {
     const result = await api('/account/keys', {name: $('key-name').value});
     $('key-secret').value = result.token; $('key-created').hidden = false; $('key-name').value = '';
+    $('mcp-config').textContent = mcpConfig(result.token);
+    const url = state.config?.origin || location.origin;
+    $('mcp-fallback').textContent = `Needs uv (docs.astral.sh/uv). Without it: pip install "git+https://github.com/CodewMilan/retract", then command "retract" with args ["mcp"] and the same env: RETRACT_URL=${url}, RETRACT_API_KEY set to the key above.`;
     await loadKeys(); $('key-secret').focus(); $('key-secret').select();
   });
 };
 $('keys-dialog').addEventListener('close', () => { $('key-secret').value = ''; $('key-created').hidden = true; });
-$('key-copy').onclick = async () => {
-  try { await navigator.clipboard.writeText($('key-secret').value); $('key-copy').textContent = 'Copied'; }
-  catch { $('key-error').textContent = 'Select the access key and copy it manually.'; }
-};
+async function copy(id, button) {
+  try { await navigator.clipboard.writeText($(id).value || $(id).textContent); button.textContent = 'Copied'; }
+  catch { $('key-error').textContent = 'Select the text and copy it manually.'; }
+}
+$('key-copy').onclick = () => copy('key-secret', $('key-copy'));
+$('config-copy').onclick = () => copy('mcp-config', $('config-copy'));
 render(); initAuth().then(() => loadProjects()).catch(authFailed);

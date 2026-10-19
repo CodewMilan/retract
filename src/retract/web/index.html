@@ -36,7 +36,7 @@
     <label for="scope">Scope</label><select id="scope" disabled><option value="">All scopes</option></select>
     <nav id="navigation" aria-label="Memory views"></nav>
     <div id="account-controls" hidden><div id="user-button"></div><button id="access-keys">Connect coding client</button></div>
-    <div class="sidebar-foot"><span id="connection" role="status">Connecting…</span><p>Local workspace · FalkorDB</p></div>
+    <div class="sidebar-foot"><span id="connection" role="status">Connecting…</span><p id="storage-note">FalkorDB · one graph per account</p></div>
   </aside>
   <main id="content" tabindex="-1">
     <header><div><p id="context" class="eyebrow">Workspace memory</p><h1 id="title">Current facts</h1><p id="description" class="muted">Accepted decisions for the selected project and scope.</p></div>
@@ -44,6 +44,11 @@
     </header>
     <div id="notice" class="notice" role="status" hidden></div>
     <div id="result" class="result" aria-live="polite" hidden></div>
+    <ol id="start-guide" class="start-guide" hidden>
+      <li><strong>Remember a fact.</strong> A decision your agents should rely on, plus the evidence it came from.</li>
+      <li><strong>Record a plan</strong> and tick the facts it depends on. When one of those facts changes, the plan is flagged.</li>
+      <li><strong>Connect your coding agent</strong> (sidebar) so it recalls this memory before it writes code.</li>
+    </ol>
     <section class="workspace" aria-label="Project memory">
       <div class="list-panel"><div class="toolbar"><label for="search">Search this view</label><input type="search" id="search" placeholder="Subject, value, or ID…"><span id="row-count" class="mono"></span></div>
         <div id="records" aria-live="polite"><p class="empty">Loading project memory…</p></div>
@@ -103,8 +108,11 @@
  <div id="key-list" aria-live="polite"></div>
  <form id="key-form"><label for="key-name">Key name</label><input id="key-name" required maxlength="100" placeholder="My laptop">
  <p class="form-error" id="key-error" role="alert"></p><button type="submit">Create access key</button></form>
- <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button></div>
- <h3>Client setup</h3><p>Install Retract's Python package, then configure the MCP command as <code>retract mcp</code>. Set <code>RETRACT_URL</code> to this workspace's HTTPS address and <code>RETRACT_API_KEY</code> to your access key in the client's environment.</p>
- <p class="muted">Keep keys out of source control. Revoking a key stops new requests immediately.</p>
+ <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button>
+ <h3>Ready to paste</h3><p class="hint">This is your agent's MCP configuration, with the key already inside it. Paste it into Codex, Claude Code, Cursor, or any MCP client, and keep the file private.</p>
+ <pre id="mcp-config" class="setup"></pre><button type="button" id="config-copy">Copy configuration</button>
+ <p id="mcp-fallback" class="hint"></p>
+ <p class="hint">Your agent can then recall current facts before planning, record facts and plans, hand work to another agent, and investigate the memory graph with graph algorithms.</p></div>
+ <p class="hint">Revoking a key stops new requests immediately.</p>
 </dialog>
 </body></html>
