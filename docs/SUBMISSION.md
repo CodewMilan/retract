@@ -1,7 +1,7 @@
 # Retract — submission draft
 
 Status: prepared copy, not submitted. Local runtime/database, live model,
-browser, and [fresh coding-client feature](docs/12-FRESH-CLIENT-RUN.md) checks
+browser, and [fresh coding-client feature](12-FRESH-CLIENT-RUN.md) checks
 have passed. Working-video, publication, and final submission review remain
 pending. Older checklist entries below must be reconciled with the verification
 record before submission.
@@ -41,9 +41,9 @@ unverified integration steps.
 ## Investigator agent: graph reasoning as tools
 
 The **investigator agent** (`retract agent investigate`,
-[investigator.py](src/retract/investigator.py)) runs an autonomous
+[investigator.py](../src/retract/investigator.py)) runs an autonomous
 investigate-and-act loop over the memory graph. Groq `openai/gpt-oss-20b` picks
-each step from read-only FalkorDB tools ([analysis.py](src/retract/analysis.py)):
+each step from read-only FalkorDB tools ([analysis.py](../src/retract/analysis.py)):
 five detectors, `algo.pageRank` and `algo.betweenness` centrality, a 1–4 hop
 variable-length blast radius, `shortestPath` tracing, and `algo.WCC` components.
 It acts by handing a plan to the coding agent. Code guards that action: the
@@ -71,7 +71,7 @@ handoff. A real Codex session given only `analyze_graph` and `history` ran
 findings, blast radius, trace and PageRank. It reported
 `F5 -[SUPERSEDES]-> F1 <-[DEPENDS_ON]- P1`, and resolved the F2 lead from the U1
 source ("CLI authentication is unchanged"). Traces are in
-[docs/evidence/investigation-20261018](docs/evidence/investigation-20261018). With the
+[evidence/investigation-20261018](evidence/investigation-20261018). With the
 reviewer's handoff already open, a live investigator run skipped P1 ("already
 has a open handoff (review-e3cb279fb1df4915, codex)"), so the two agents did not
 duplicate work.
@@ -79,7 +79,7 @@ duplicate work.
 ## Coordination between agents
 
 Two agents share one graph memory. The **reviewer agent**
-(`retract agent review`, [agent.py](src/retract/agent.py)) recalls flagged plans,
+(`retract agent review`, [agent.py](../src/retract/agent.py)) recalls flagged plans,
 follows `DEPENDS_ON` and `SUPERSEDES` to see which dependency was replaced,
 drafts a revised plan with Groq that may cite only current facts, and hands it
 to the **coding agent** (Codex over MCP). The coding agent claims the handoff,
@@ -103,8 +103,8 @@ replaced or the plan was revised after the handoff was written. Only one agent
 can claim a handoff.
 
 `python scripts/stress_concurrency.py` exercises one service process over HTTP
-against a disposable FalkorDB graph. Measured result
-([report](reports/concurrency/result.json)): 400 concurrent requests across two
+against a disposable FalkorDB graph. A local run, kept out of git under
+`reports/`, recorded 400 concurrent requests across two
 projects (200 writes, 200 reads) with zero failures, zero lost writes, and zero
 cross-project leaks; 24 writers racing on one stale revision produced 1 accept
 and 23 conflicts; 24 agents claiming one handoff produced exactly 1 winner.
@@ -120,12 +120,12 @@ Hosted mode stores each signed-in account in a separate graph.
 FalkorDB as its authoritative store and has no in-memory substitute when it is
 unavailable. The test-only model is not a production fallback.
 
-See the [data model and actual-query guide](docs/11-GRAPH-QUERIES.md),
-[query implementation](src/retract/graph.py), and [policy](src/retract/policy.py).
+See the [data model and actual-query guide](11-GRAPH-QUERIES.md),
+[query implementation](../src/retract/graph.py), and [policy](../src/retract/policy.py).
 
 ## Running and evidence
 
-Follow the [README](README.md) for Python/Docker setup, explicit seed, service
+Follow the [README](../README.md) for Python/Docker setup, explicit seed, service
 startup, dashboard, and client connection. Structured updates need no model key.
 The configured local addresses are memory API/UI `127.0.0.1:8100`, FalkorDB
 `127.0.0.1:6380`, and the separate synthetic account API `127.0.0.1:8101`.
@@ -133,17 +133,17 @@ The configured local addresses are memory API/UI `127.0.0.1:8100`, FalkorDB
 Run `python scripts/verify_phase5.py` for fresh offline evidence and
 `python scripts/verify_phase5.py --live` for the prepared live checks after
 installing dependencies and configuring Groq/PostgreSQL. The
-[evaluation guide](docs/10-EVALUATION-AND-RELEASE.md) defines measurements and the
-[storyboard](docs/02-DEMO-AND-EVALUATION.md) defines the planned working demo.
+[evaluation guide](10-EVALUATION-AND-RELEASE.md) defines measurements and the
+[storyboard](02-DEMO-AND-EVALUATION.md) defines the planned working demo.
 No hosted deployment, genuine demo video, complete live benchmark, or comparative
 advantage is claimed here. Actual current observations are in the
-[implementation record](docs/06-IMPLEMENTATION-STATUS.md).
+[implementation record](06-IMPLEMENTATION-STATUS.md).
 
 ## Data, dependencies, and AI assistance
 
 All committed fixture content and demo accounts are synthetic. Direct runtime
 and development dependencies, license references, and related memory projects
-are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+are listed in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 OpenAI Codex assisted with implementation, tests, and documentation. The
 participant must review and understand the graph model, code, and actual results.
 This is a focused implementation of established memory/invalidation ideas,

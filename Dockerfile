@@ -5,7 +5,7 @@ RUN npm ci
 COPY landing ./
 COPY docs /src/docs
 COPY examples /src/examples
-COPY README.md SUBMISSION.md THIRD_PARTY_NOTICES.md /src/
+COPY README.md THIRD_PARTY_NOTICES.md /src/
 RUN npm run build
 
 FROM python:3.12-slim-bookworm AS builder

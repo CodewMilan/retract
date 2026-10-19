@@ -2,7 +2,7 @@
 
 Working name: RETRACT. Planning baseline: 16 October 2026.
 
-Status, 18 October 2026: local database/persistence, live classification, MCP, dashboard, and browser checks have passed. The [fresh coding-client construction run](12-FRESH-CLIENT-RUN.md) also passed with real retrieval, visible plan revision, generated code, and tests. Video and publication remain pending. No benchmark or production deployment is claimed. See the [implementation record](06-IMPLEMENTATION-STATUS.md) and [local setup instructions](../README.md). Read [realproduct.md](realproduct.md) first for the current product direction; earlier planning documents retain historical milestones.
+Status, 18 October 2026: local database/persistence, live classification, MCP, dashboard, and browser checks have passed. The [fresh coding-client construction run](12-FRESH-CLIENT-RUN.md) also passed with real retrieval, visible plan revision, generated code, and tests. Video and publication remain pending. No benchmark or production deployment is claimed. See the [implementation record](06-IMPLEMENTATION-STATUS.md) and [local setup instructions](../README.md). Read [00-DIRECTION.md](00-DIRECTION.md) first for the current product direction; earlier planning documents retain historical milestones.
 
 ## What we are building
 
@@ -10,10 +10,11 @@ A persistent project-memory service for coding agents. When a developer confirms
 
 Example: a browser application moves from bearer tokens to cookie sessions. RETRACT retires the old browser-authentication instruction, flags the plan that depended on it, and leaves unrelated CLI authentication and database decisions alone.
 
-## Read these six files in order
+## Read these files in order
 
 | File | Purpose |
 | --- | --- |
+| [00-DIRECTION.md](00-DIRECTION.md) | Current product direction. Read this before the earlier planning documents. |
 | [README.md](README.md) | Entry point, decisions, reading order, and agent handoff. |
 | [01-PRODUCT.md](01-PRODUCT.md) | User problem, target audience, scope, positioning, and product rules. |
 | [02-DEMO-AND-EVALUATION.md](02-DEMO-AND-EVALUATION.md) | Concrete demo, fixtures, success criteria, and honest comparisons. |

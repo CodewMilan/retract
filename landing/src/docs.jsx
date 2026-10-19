@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Marked } from "marked";
 import readme from "../../README.md?raw";
 import indexDoc from "../../docs/README.md?raw";
-import direction from "../../docs/realproduct.md?raw";
+import direction from "../../docs/00-DIRECTION.md?raw";
 import product from "../../docs/01-PRODUCT.md?raw";
 import demo from "../../docs/02-DEMO-AND-EVALUATION.md?raw";
 import architecture from "../../docs/03-ARCHITECTURE.md?raw";
@@ -15,8 +15,10 @@ import dashboard from "../../docs/09-DASHBOARD.md?raw";
 import evaluation from "../../docs/10-EVALUATION-AND-RELEASE.md?raw";
 import queries from "../../docs/11-GRAPH-QUERIES.md?raw";
 import fresh from "../../docs/12-FRESH-CLIENT-RUN.md?raw";
+import runbook from "../../docs/13-DEMO-RUNBOOK.md?raw";
+import usability from "../../docs/14-USABILITY.md?raw";
 import account from "../../examples/account-settings/README.md?raw";
-import submission from "../../SUBMISSION.md?raw";
+import submission from "../../docs/SUBMISSION.md?raw";
 import notices from "../../THIRD_PARTY_NOTICES.md?raw";
 
 const GITHUB = "https://github.com/CodewMilan/retract/blob/main/";
@@ -24,7 +26,7 @@ const GITHUB = "https://github.com/CodewMilan/retract/blob/main/";
 const SOURCES = [
   ["index", "Documentation", "Start", "docs/README.md", indexDoc],
   ["overview", "Overview", "Start", "README.md", readme],
-  ["direction", "Product direction", "Start", "docs/realproduct.md", direction],
+  ["direction", "Product direction", "Start", "docs/00-DIRECTION.md", direction],
   ["product", "Product", "Specification", "docs/01-PRODUCT.md", product],
   ["demo", "Demo", "Specification", "docs/02-DEMO-AND-EVALUATION.md", demo],
   ["architecture", "Architecture", "Specification", "docs/03-ARCHITECTURE.md", architecture],
@@ -36,9 +38,11 @@ const SOURCES = [
   ["dashboard", "Dashboard", "What shipped", "docs/09-DASHBOARD.md", dashboard],
   ["queries", "Graph queries", "What shipped", "docs/11-GRAPH-QUERIES.md", queries],
   ["fresh", "Fresh client run", "What shipped", "docs/12-FRESH-CLIENT-RUN.md", fresh],
+  ["runbook", "Demo runbook", "What shipped", "docs/13-DEMO-RUNBOOK.md", runbook],
+  ["usability", "Usability", "What shipped", "docs/14-USABILITY.md", usability],
   ["evaluation", "Evaluation", "What shipped", "docs/10-EVALUATION-AND-RELEASE.md", evaluation],
   ["account", "Account settings demo", "What shipped", "examples/account-settings/README.md", account],
-  ["submission", "Submission draft", "Project", "SUBMISSION.md", submission],
+  ["submission", "Submission draft", "Project", "docs/SUBMISSION.md", submission],
   ["notices", "Third-party notices", "Project", "THIRD_PARTY_NOTICES.md", notices],
 ];
 

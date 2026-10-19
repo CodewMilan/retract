@@ -166,7 +166,7 @@ No matches means no matches for these patterns, not proof of security or an
 exhaustive guarantee about personal data. Review new data and recordings before
 publishing. CI fetches full history for the same scan.
 
-[SUBMISSION.md](../SUBMISSION.md) contains reviewable project copy and the remaining
+[SUBMISSION.md](SUBMISSION.md) contains reviewable project copy and the remaining
 evidence checklist. [Graph queries](11-GRAPH-QUERIES.md) identify the implemented
 algorithm and authoritative query source. [Dependency notices](../THIRD_PARTY_NOTICES.md)
 record direct upstream license references, prior art, synthetic data, and AI

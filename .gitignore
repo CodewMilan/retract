@@ -1,15 +1,54 @@
+# Python
 .venv/
+venv/
 __pycache__/
 *.py[cod]
 *.egg-info/
+.eggs/
+*.egg
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+dist/
+build/
+*.whl
+src/retract/site/
+
+# Secrets. .env.example is the only environment file that belongs in git.
 .env
 .env.*
 *.env
 !.env.example
-.DS_Store
-.coverage
-.pytest_cache/
-dist/
-build/
-reports/
+
+# Node
 node_modules/
+*.tsbuildinfo
+.npm/
+
+# Local verification and browser output
+reports/
+playwright-report/
+test-results/
+blob-report/
+coverage/
+*.log
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local agent tooling. skills-lock.json stays tracked so the design skill can be reinstalled.
+.agents/
+.aider-desk/
+.claude/
+.cursor/
+.codex/

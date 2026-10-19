@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install -e '.[demo,mcp-test,hosted]'
+      - run: python -m pip install -e '.[demo,mcp-test]'
       - run: python -m compileall -q src tests scripts
       - run: python scripts/verify_phase2.py --report reports/phase2.json
       - run: docker compose -f compose.demo.yaml up -d --wait

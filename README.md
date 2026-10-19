@@ -13,11 +13,12 @@ and 10 Chromium scenarios. See the [recorded run and evidence](docs/12-FRESH-CLI
 and [verification record](docs/06-IMPLEMENTATION-STATUS.md).
 
 The product and remaining milestones are described in [docs/README.md](docs/README.md).
+Repository layout, tests, and what stays out of git are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The Phase 5 evaluator and submission draft are also implemented. Run
 `python scripts/verify_phase5.py` for a fresh offline evidence bundle, or follow
 [the evaluation guide](docs/10-EVALUATION-AND-RELEASE.md) for real graph/model
-measurements and demo rehearsal. [SUBMISSION.md](SUBMISSION.md) is a draft;
+measurements and demo rehearsal. [docs/SUBMISSION.md](docs/SUBMISSION.md) is a draft;
 working-video and public-submission evidence remain pending.
 
 ## Graph model
@@ -280,7 +281,7 @@ can be bookmarked. **Connect an agent** provides setup for local and hosted use.
 The neutral interface is served by Python; no Node process is needed to use it.
 Run `python scripts/verify_phase4.py` for offline checks. Browser checks require
 `npm install --ignore-scripts`, `npx playwright install chromium`, then
-`python scripts/verify_phase4.py --browser`. The [usability review](docs/13-USABILITY.md)
+`python scripts/verify_phase4.py --browser`. The [usability review](docs/14-USABILITY.md)
 records the latest browser and real-database journey checks. See the
 [dashboard guide](docs/09-DASHBOARD.md) for limits, retry behavior, and live checks.
 

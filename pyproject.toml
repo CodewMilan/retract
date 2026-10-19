@@ -6,8 +6,21 @@ build-backend = "setuptools.build_meta"
 name = "retract-memory"
 version = "0.1.0"
 description = "Scoped, evidence-backed project memory for coding agents"
+readme = "README.md"
 requires-python = ">=3.12"
+keywords = ["agents", "memory", "falkordb", "mcp"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
 dependencies = ["falkordb>=1.2,<2", "certifi>=2024.2", "PyJWT[crypto]>=2.10,<3", "svix>=1.60,<2"]
+
+[project.urls]
+Homepage = "https://github.com/CodewMilan/retract"
+Repository = "https://github.com/CodewMilan/retract"
+Documentation = "https://github.com/CodewMilan/retract/tree/main/docs"
+Issues = "https://github.com/CodewMilan/retract/issues"
 
 [project.optional-dependencies]
 demo = ["psycopg[binary]>=3.2,<4"]

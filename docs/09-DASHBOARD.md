@@ -135,7 +135,7 @@ The real graph suite now includes dashboard counts, replacement edges, isolation
 and cross-scope explanations. It is also part of the existing Phase 1 runner.
 
 For the current usability pass and its browser/database evidence, see
-[the usability review](13-USABILITY.md). The following describes the initial,
+[the usability review](14-USABILITY.md). The following describes the initial,
 historical Phase 4 run, not the current interface validation.
 
 Initially observed: 12 Phase 4 Python checks and 7 JavaScript checks pass. The complete
