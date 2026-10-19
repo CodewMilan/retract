@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/dashboard-model.test.mjs tests/account-client.test.mjs",
+    "test": "node --test tests/dashboard-model.test.mjs tests/account-client.test.mjs tests/agent-connect.test.mjs",
     "test:browser": "node tests/dashboard.browser.mjs && node tests/dashboard-keys.browser.mjs",
     "test:journey": "node tests/dashboard-journey.browser.mjs",
     "test:account-browser": "node tests/account-settings.browser.mjs"

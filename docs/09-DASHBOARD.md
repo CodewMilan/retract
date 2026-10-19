@@ -52,11 +52,24 @@ its dependencies automatically. **Review and revise plan** shows current decisio
 to select, requires a reason and confirmation, and preserves the previous version.
 Still-current linked decisions from another area remain selectable.
 
-**Connect an agent** is available in both modes. Local mode provides an MCP
-configuration and a project-specific prompt. Hosted mode creates revocable keys,
-offers copyable configuration, clears one-time secrets when the dialog closes,
-and requires a second click to confirm revocation. Closing a dialog is disabled
-while its save is in progress.
+**Connect an agent** offers **Connect Cursor**, **Connect Claude Code**, and
+**Connect Codex** in both modes. Cursor receives an install link with the server
+details filled in. Claude Code and Codex receive one copyable terminal command,
+with a project-specific prompt to use afterward. The UI does not expose a raw
+JSON configuration. All clients require `uv` on the computer running the agent.
+
+Hosted mode creates a revocable key for the selected client automatically. Each
+client gets a separate key; clicking the same client again in the open dialog
+reuses its prepared key. Secrets are held only while the dialog is open and are
+cleared on close. **Manage access keys** supports confirmed revocation and removes
+any prepared setup that used the revoked key. Local mode creates no access keys.
+Closing a dialog is disabled while its save is in progress. Preparing a connection
+does not claim that installation or authentication in the external client has
+completed.
+
+The installers follow the official [Cursor install-link format](https://cursor.com/docs/mcp/install-links),
+[Claude Code MCP CLI](https://code.claude.com/docs/en/mcp), and
+[Codex MCP CLI](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
 
 ## Read and activity contracts
 

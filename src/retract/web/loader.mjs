@@ -72,7 +72,7 @@ export function paintWait(host, {gsap: gsapLib, label = "", compact = false, bra
 }
 
 export function holdControl(button, label) {
-  const previous = button.textContent;
+  const previous = [...button.childNodes];
   const hold = document.createElement("span");
   hold.className = "wait-hold";
   const mark = document.createElement("span");
@@ -83,6 +83,6 @@ export function holdControl(button, label) {
   const stop = paintWait(mark, {compact: true, quiet: true, label});
   return () => {
     stop();
-    button.textContent = previous;
+    button.replaceChildren(...previous);
   };
 }

@@ -31,7 +31,7 @@ try {
     let snapshot = fixture(); const projects = [project]; let failSnapshots = false; let conflict = false; const submitted = [];
     await page.route('https://retract.test/**', async route => {
       const request = route.request(); const url = new URL(request.url());
-      const resources = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript'], '/assets/auth-portrait.mjs': ['auth-portrait.mjs', 'text/javascript'], '/assets/loader.mjs': ['loader.mjs', 'text/javascript'], '/assets/gsap.min.js': ['gsap.min.js', 'text/javascript']};
+      const resources = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/agent-connect.mjs': ['agent-connect.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript'], '/assets/auth-portrait.mjs': ['auth-portrait.mjs', 'text/javascript'], '/assets/loader.mjs': ['loader.mjs', 'text/javascript'], '/assets/gsap.min.js': ['gsap.min.js', 'text/javascript']};
       if (request.method() === 'GET' && resources[url.pathname]) { const [name, contentType] = resources[url.pathname]; return route.fulfill({contentType, headers: {'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"}, body: await readFile(new URL(name, root), 'utf8')}); }
       const json = (data, status = 200) => route.fulfill({status, contentType: 'application/json', body: JSON.stringify(data)});
       if (url.pathname === '/api/config') return json({mode: 'local'});
@@ -160,13 +160,22 @@ try {
     assert.ok((await page.locator('#records').innerText()).includes('cookies'));
     assert.equal(await page.locator('#result').isVisible(), true);
     await openMenu(); await page.locator('#access-keys').click();
-    assert.equal(await page.locator('#local-setup').isVisible(), true);
     assert.equal(await page.locator('#key-management').isVisible(), false);
-    const config = JSON.parse(await page.locator('#local-config').innerText());
-    assert.equal(config.mcpServers.retract.env.RETRACT_URL, 'https://retract.test');
-    assert.equal(config.mcpServers.retract.env.RETRACT_API_KEY, undefined);
-    assert.ok((await page.locator('#local-prompt').innerText()).includes('created-project'));
+    assert.equal(await page.locator('.connect-client').count(), 3);
+    assert.equal(await page.locator('#client-setup').isVisible(), false);
+    await page.locator('[name=client][value=cursor]').click();
+    const install = new URL(await page.locator('#cursor-install').getAttribute('href'));
+    const config = JSON.parse(Buffer.from(install.searchParams.get('config'), 'base64').toString('utf8'));
+    assert.equal(config.env.RETRACT_URL, 'https://retract.test');
+    assert.equal(config.env.RETRACT_API_KEY, undefined);
+    assert.ok((await page.locator('#agent-prompt').innerText()).includes('created-project'));
+    await page.locator('[name=client][value=claude]').click();
+    assert.ok((await page.locator('#install-command').innerText()).startsWith('claude mcp add '));
+    assert.equal(await page.locator('#cursor-install').getAttribute('href'), null);
+    await page.locator('[name=client][value=codex]').click();
+    assert.ok((await page.locator('#install-command').innerText()).startsWith('codex mcp add retract '));
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.querySelector('#install-command').textContent === '');
     // Query state survives navigation, reload, and the browser Back button.
     await page.locator('#search').fill('cookies');
     await page.waitForURL(url => url.searchParams.get('q') === 'cookies');

@@ -146,18 +146,22 @@
 </dialog>
 <dialog id="keys-dialog" aria-labelledby="keys-title">
  <div class="dialog-head"><h2 id="keys-title">Connect an agent</h2><button type="button" data-close aria-label="Close access keys">×</button></div>
- <p class="muted dialog-intro">Let Codex, Claude Code, Cursor, or another MCP client recall your project decisions before it starts work.</p>
-  <div id="local-setup" hidden><p class="step-label">1. Add this to your client's MCP configuration</p><pre id="local-config" class="setup" tabindex="0" role="region" aria-label="Local MCP configuration"></pre><button id="local-config-copy" type="button" class="secondary">Copy configuration</button><p class="hint">Requires uv and a running Retract server on this computer.</p><p class="step-label">2. Start a conversation with your agent</p><p id="local-prompt" class="before"></p></div>
- <div id="key-management"><p class="hint">Create an access key for each coding client. Keys expire after 90 days.</p>
- <div id="key-list" aria-live="polite"></div>
- <form id="key-form"><label for="key-name">Key name</label><input id="key-name" required maxlength="100" placeholder="My laptop">
- <p class="form-error" id="key-error" role="alert"></p><button type="submit">Create access key</button></form>
- <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button>
- <h3>Ready to paste</h3><p class="hint">This is your agent's MCP configuration, with the key already inside it. Paste it into Codex, Claude Code, Cursor, or any MCP client, and keep the file private.</p>
- <pre id="mcp-config" class="setup" tabindex="0" role="region" aria-label="Agent MCP configuration"></pre><button type="button" id="config-copy">Copy configuration</button>
- <p id="mcp-fallback" class="hint"></p>
- <p class="step-label">Next, ask your agent</p><p id="agent-prompt" class="before"></p></div>
- <p class="hint">Revoking a key stops new requests immediately.</p></div>
+ <p class="muted dialog-intro">Choose where you code. Bring your project decisions into your agent's next conversation.</p>
+ <form id="key-form" aria-label="Choose an agent"><div class="connect-clients">
+ <button type="submit" name="client" value="cursor" class="connect-client" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 3 15 9-7 1-3 7z"/></svg><span><strong>Connect Cursor</strong><small>Open the install screen in Cursor</small></span><span aria-hidden="true">↗</span></button>
+ <button type="submit" name="client" value="claude" class="connect-client" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M5.6 18.4 18.4 5.6M8.5 3.5l7 17M3.5 8.5l17 7M3.5 15.5l17-7M8.5 20.5l7-17"/></svg><span><strong>Connect Claude Code</strong><small>One command in your terminal</small></span><span aria-hidden="true">→</span></button>
+ <button type="submit" name="client" value="codex" class="connect-client" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></svg><span><strong>Connect Codex</strong><small>One command in your terminal</small></span><span aria-hidden="true">→</span></button>
+ </div><p class="form-error" id="key-error" role="alert" tabindex="-1"></p></form>
+ <p id="connection-note" class="hint"></p>
+ <section id="client-setup" class="client-setup" aria-labelledby="client-setup-title" hidden>
+ <h3 id="client-setup-title" tabindex="-1"></h3><p id="client-instructions" class="muted"></p>
+ <a id="cursor-install" class="connect-install" hidden rel="noreferrer">Open Cursor to install <span aria-hidden="true">↗</span></a>
+ <div id="command-setup" hidden><pre id="install-command" class="setup" tabindex="0" role="region" aria-label="Agent install command"></pre><button id="install-copy" type="button" class="primary">Copy command</button><p class="hint">Run it once in your terminal, then start a new conversation in your agent.</p></div>
+ <p id="connect-status" class="hint" role="status"></p>
+ <p class="hint">Requires <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noreferrer" class="inline-link">uv</a> on the computer running your agent.</p>
+ <p class="step-label">Then ask your agent</p><p id="agent-prompt" class="before"></p>
+ </section>
+ <details id="key-management" class="advanced" hidden><summary>Manage access keys</summary><p class="hint">Each connection gets its own key. Keys expire after 90 days. Revoking one stops new requests immediately.</p><div id="key-list" aria-live="polite"></div></details>
 </dialog>
 <dialog id="account-dialog" aria-labelledby="account-title">
  <form id="account-form"><div class="dialog-head"><h2 id="account-title">Your account</h2><button type="button" data-close aria-label="Close account">×</button></div>

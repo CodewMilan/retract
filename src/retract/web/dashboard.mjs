@@ -1,5 +1,6 @@
 import {initAuth, authHeaders, authFailed, authConfig} from './auth.mjs';
 import {paintWait, holdControl} from './loader.mjs';
+import {clients, serverConfig, cursorInstallLink, installCommand} from './agent-connect.mjs';
 import {views, number, rowsFor, updateRequest, RequestDraft, statusLabel} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
 const initial = new URLSearchParams(location.search);
@@ -317,16 +318,17 @@ function displayResult(result, before) {
   } else box.append(el('p', result.fact_id ? 'Your agents can now recall this decision and its source.' : 'If a linked decision changes, this plan will appear in Needs review.'));
   box.hidden = false;
 }
-async function submit(form, errorId, action) {
+async function submit(form, errorId, action, primary = form.querySelector('[type=submit]')) {
   if (state.submitting) return;
   const buttons = [...new Set([...form.querySelectorAll('button'), ...form.closest('dialog').querySelectorAll('[data-close]')])]; const fields = [...form.querySelectorAll('input,select,textarea')];
   const wasDisabled = fields.map(node => node.disabled);
   state.submitting = true; $('project').disabled = true; $('scope').disabled = true;
   buttons.forEach(node => node.disabled = true); fields.forEach(node => node.disabled = true);
-  const primary = form.querySelector('[type=submit]'); const release = holdControl(primary, 'Saving…'); form.setAttribute('aria-busy', 'true'); $(errorId).textContent = '';
+  const release = holdControl(primary, errorId === 'key-error' ? 'Preparing…' : 'Saving…'); form.setAttribute('aria-busy', 'true'); $(errorId).textContent = '';
   try { await action(); }
   catch (error) {
-    const conflict = errorId === 'project-error' ? ' Choose a different project name or identifier.' : ' Refresh context and review the latest decision before trying again.';
+    const conflict = errorId === 'key-error' ? '' : errorId === 'project-error' ? ' Choose a different project name or identifier.' : ' Refresh context and review the latest decision before trying again.';
+    if (errorId === 'key-error' && error.status === 409) $('key-management').open = true;
     $(errorId).textContent = error.message + (error.status === 409 ? conflict : ''); $(errorId).focus();
   }
   finally {
@@ -453,20 +455,56 @@ $('plan-form').onsubmit = event => {
     if (!await loadSnapshot()) notice('Plan saved. Refresh to see the current state.');
   });
 };
+const connections = new Map();
+let selectedClient = '';
+let keysGeneration = 0;
+function clearConnectionSetup() {
+  selectedClient = ''; $('client-setup').hidden = true; $('cursor-install').hidden = true;
+  $('cursor-install').removeAttribute('href'); $('command-setup').hidden = true;
+  $('install-command').textContent = ''; $('connect-status').textContent = '';
+  for (const button of $('key-form').querySelectorAll('[name=client]')) button.setAttribute('aria-pressed', 'false');
+}
+function showConnectionSetup(client, token) {
+  selectedClient = client;
+  const config = serverConfig(authConfig().origin || location.origin, token);
+  $('client-setup').hidden = false;
+  $('client-setup-title').textContent = client === 'cursor' ? 'Finish in Cursor' : `Add Retract to ${clients[client].name}`;
+  $('client-instructions').textContent = client === 'cursor'
+    ? 'Open Cursor and approve adding Retract. Your connection details are filled in for you.'
+    : `Copy this command and run it once to add Retract to ${clients[client].name}.`;
+  $('cursor-install').hidden = client !== 'cursor'; $('command-setup').hidden = client === 'cursor';
+  $('cursor-install').removeAttribute('href'); $('install-command').textContent = ''; $('connect-status').textContent = '';
+  if (client === 'cursor') $('cursor-install').href = cursorInstallLink(config);
+  else $('install-command').textContent = installCommand(client, config);
+  $('install-copy').textContent = 'Copy command';
+  for (const button of $('key-form').querySelectorAll('[name=client]')) button.setAttribute('aria-pressed', String(button.value === client));
+  if (client === 'cursor') $('cursor-install').focus(); else $('client-setup-title').focus();
+}
 $('access-keys').onclick = async () => {
-  $('key-error').textContent = ''; $('key-secret').value = ''; $('key-created').hidden = true;
+  $('key-error').textContent = ''; clearConnectionSetup();
   const local = authConfig().mode === 'local';
-  $('local-setup').hidden = !local; $('key-management').hidden = local;
-  const prompt = state.project ? `Recall the current decisions for project "${state.project}"${state.scope ? ` in area "${state.scope}"` : ''} before you plan the work.` : 'List my Retract projects, then recall the current decisions before planning the work.';
-  $('local-prompt').textContent = prompt; $('agent-prompt').textContent = prompt;
-  $('local-config').textContent = mcpConfig();
-  $('local-config-copy').textContent = 'Copy configuration'; $('config-copy').textContent = 'Copy configuration'; $('key-copy').textContent = 'Copy key';
+  $('key-management').hidden = local; $('key-management').open = false;
+  $('connection-note').textContent = local ? 'Connect on this computer, and keep your local Retract server running.' : 'We create a private, revocable access key for each agent you choose.';
+  $('agent-prompt').textContent = state.project ? `Recall the current decisions for project "${state.project}"${state.scope ? ` in area "${state.scope}"` : ''} before you plan the work.` : 'List my Retract projects, then recall the current decisions before planning the work.';
   show('keys-dialog'); if (!local) await loadKeys();
 };
+$('key-form').onsubmit = event => {
+  event.preventDefault(); if (state.submitting) return;
+  const button = event.submitter; const client = button?.value;
+  if (!Object.hasOwn(clients, client)) return;
+  $('key-error').textContent = '';
+  if (authConfig().mode === 'local' || connections.has(client)) { showConnectionSetup(client, connections.get(client)?.token); return; }
+  submit(event.currentTarget, 'key-error', async () => {
+    const result = await api('/account/keys', {name: clients[client].name});
+    if (!result.id || !result.token) throw new Error('The access key could not be prepared. Try connecting again.');
+    connections.set(client, result); showConnectionSetup(client, result.token); await loadKeys();
+  }, button);
+};
 async function loadKeys() {
+  const generation = ++keysGeneration;
   $('key-list').replaceChildren(); paintWait($('key-list'), {label: 'Loading access keys…'});
   try {
-    const result = await api('/api/keys'); $('key-list').replaceChildren();
+    const result = await api('/api/keys'); if (generation !== keysGeneration) return; $('key-list').replaceChildren();
     if (!result.keys.length) $('key-list').append(el('p', 'No access keys yet. Create one to connect your coding client.', 'muted'));
     for (const key of result.keys) {
       const row = el('div', undefined, 'key-row');
@@ -479,36 +517,23 @@ async function loadKeys() {
           row.append(cancel); return;
         }
         revoke.disabled = true;
-        try { await api('/account/keys/revoke', {id: key.id}); await loadKeys(); }
+        try {
+          await api('/account/keys/revoke', {id: key.id});
+          for (const [client, connection] of connections) if (connection.id === key.id) { connections.delete(client); if (selectedClient === client) clearConnectionSetup(); }
+          await loadKeys();
+        }
         catch (e) { $('key-error').textContent = e.message; revoke.disabled = false; }
       };
       row.append(revoke); $('key-list').append(row);
     }
-  } catch (error) { $('key-list').replaceChildren(); $('key-error').textContent = error.message; }
+  } catch (error) { if (generation === keysGeneration) { $('key-list').replaceChildren(); $('key-error').textContent = error.message; } }
 }
-function mcpConfig(token) {
-  const url = authConfig().origin || location.origin;
-  return JSON.stringify({mcpServers: {retract: {command: "uvx", args: ["--from", "git+https://github.com/CodewMilan/retract", "retract", "mcp"],
-    env: {RETRACT_URL: url, ...(token ? {RETRACT_API_KEY: token} : {})}}}}, null, 2);
-}
-$('key-form').onsubmit = event => {
-  event.preventDefault(); submit(event.currentTarget, 'key-error', async () => {
-    const result = await api('/account/keys', {name: $('key-name').value});
-    $('key-secret').value = result.token; $('key-created').hidden = false; $('key-name').value = '';
-    $('mcp-config').textContent = mcpConfig(result.token);
-    const url = authConfig().origin || location.origin;
-    $('mcp-fallback').textContent = `Needs uv (docs.astral.sh/uv). Without it: pip install "git+https://github.com/CodewMilan/retract", then command "retract" with args ["mcp"] and the same env: RETRACT_URL=${url}, RETRACT_API_KEY set to the key above.`;
-    await loadKeys(); $('key-secret').focus(); $('key-secret').select();
-  });
+$('keys-dialog').addEventListener('close', () => { connections.clear(); ++keysGeneration; clearConnectionSetup(); });
+$('install-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('install-command').textContent); $('install-copy').textContent = 'Copied'; $('connect-status').textContent = 'Command copied. Paste it into your terminal to finish setup.'; }
+  catch { $('connect-status').textContent = 'Select the command above and copy it manually.'; $('install-command').focus(); }
 };
-$('keys-dialog').addEventListener('close', () => { $('key-secret').value = ''; $('mcp-config').textContent = ''; $('key-created').hidden = true; });
-async function copy(id, button) {
-  try { await navigator.clipboard.writeText($(id).value || $(id).textContent); button.textContent = 'Copied'; }
-  catch { button.textContent = 'Select and copy manually'; $('key-error').textContent = 'Select the text and copy it manually.'; }
-}
-$('key-copy').onclick = () => copy('key-secret', $('key-copy'));
-$('config-copy').onclick = () => copy('mcp-config', $('config-copy'));
-$('local-config-copy').onclick = () => copy('local-config', $('local-config-copy'));
+$('cursor-install').onclick = () => { $('connect-status').textContent = 'Approve the install in Cursor, then start a new conversation. If Cursor did not open, check that it is installed on this computer.'; };
 $('menu-toggle').onclick = () => menu($('menu-toggle').getAttribute('aria-expanded') !== 'true');
 $('menu-overlay').onclick = () => { menu(false); $('menu-toggle').focus(); };
 mobile.addEventListener('change', () => menu(false));

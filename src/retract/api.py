@@ -230,6 +230,7 @@ def make_handler(service: MemoryService, hosted=None):
                           "/assets/dashboard.css": ("dashboard.css", "text/css"),
                           "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
+                          "/assets/agent-connect.mjs": ("agent-connect.mjs", "text/javascript"),
                           "/assets/auth.mjs": ("auth.mjs", "text/javascript"),
                           "/assets/auth-portrait.mjs": ("auth-portrait.mjs", "text/javascript"),
                           "/assets/gsap.min.js": ("gsap.min.js", "text/javascript"),

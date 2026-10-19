@@ -95,7 +95,7 @@ class DashboardTests(unittest.TestCase):
         return int(header.split(b' ')[1]), header.decode(), content
 
     def test_static_resources_are_served_with_strict_csp_and_allowlist(self):
-        for path, mime in [('/dashboard', 'text/html'), ('/assets/dashboard.mjs', 'text/javascript'), ('/assets/dashboard-model.mjs', 'text/javascript'), ('/assets/dashboard.css', 'text/css')]:
+        for path, mime in [('/dashboard', 'text/html'), ('/assets/dashboard.mjs', 'text/javascript'), ('/assets/dashboard-model.mjs', 'text/javascript'), ('/assets/agent-connect.mjs', 'text/javascript'), ('/assets/dashboard.css', 'text/css')]:
             with self.subTest(path=path):
                 status, headers, body = self.request(path)
                 self.assertEqual(status, 200)
