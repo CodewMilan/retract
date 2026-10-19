@@ -95,7 +95,7 @@ class DashboardTests(unittest.TestCase):
         return int(header.split(b' ')[1]), header.decode(), content
 
     def test_static_resources_are_served_with_strict_csp_and_allowlist(self):
-        for path, mime in [('/', 'text/html'), ('/assets/dashboard.mjs', 'text/javascript'), ('/assets/dashboard-model.mjs', 'text/javascript'), ('/assets/dashboard.css', 'text/css')]:
+        for path, mime in [('/dashboard', 'text/html'), ('/assets/dashboard.mjs', 'text/javascript'), ('/assets/dashboard-model.mjs', 'text/javascript'), ('/assets/dashboard.css', 'text/css')]:
             with self.subTest(path=path):
                 status, headers, body = self.request(path)
                 self.assertEqual(status, 200)
@@ -106,7 +106,7 @@ class DashboardTests(unittest.TestCase):
                 self.assertGreater(len(body), 100)
         for path in ['/assets/../service.py', '/assets/%2e%2e/service.py', '/brand.md', '/?file=.env']:
             self.assertEqual(self.request(path)[0], 404)
-        self.assertEqual(self.request('/', headers={'Origin': 'https://external.test'})[0], 403)
+        self.assertEqual(self.request('/dashboard', headers={'Origin': 'https://external.test'})[0], 403)
 
     def test_projects_and_snapshot_use_the_existing_service(self):
         self.assertEqual(json.loads(self.request('/api/projects')[2])['projects'][0]['id'], 'account-settings')
@@ -128,7 +128,7 @@ class DashboardTests(unittest.TestCase):
         with patch.object(self.store, 'dashboard_snapshot', side_effect=DatabaseUnavailable('Storage unavailable')):
             with self.assertLogs('retract.api', level='ERROR'):
                 self.assertEqual(self.request('/dashboard', 'POST', {'project_id': 'account-settings'})[0], 503)
-            self.assertEqual(self.request('/')[0], 200)
+            self.assertEqual(self.request('/dashboard')[0], 200)
 
     def test_bounded_panels_report_totals_and_truncation(self):
         for index in range(205):

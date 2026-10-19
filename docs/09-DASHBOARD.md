@@ -1,6 +1,7 @@
 # Phase 4: memory dashboard
 
-The local Python service now serves the dashboard at `http://127.0.0.1:8100/`.
+The local Python service serves the dashboard at `http://127.0.0.1:8100/dashboard`.
+`http://127.0.0.1:8100/` is the marketing page.
 Start it with `retract serve` after following the root README's database setup.
 The dashboard is included as package data; it needs no Node process or frontend
 build at runtime. Node and Playwright are development test tools only.

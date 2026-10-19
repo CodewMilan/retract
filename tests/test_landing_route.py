@@ -1,4 +1,4 @@
-"""Hosted / is the marketing page. The workspace sign-in stays on /dashboard."""
+"""/ is the marketing page in every mode. The workspace sign-in stays on /dashboard."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -30,12 +30,20 @@ class LandingRouteTests(unittest.TestCase):
         self.hosted = make_handler(None, SimpleNamespace(config=Config()))
         self.local = make_handler(None)
 
-    def test_local_root_stays_the_workspace(self):
-        status, headers, body = request(self.local, "/", "127.0.0.1:8100")
+    def test_local_root_is_the_landing_page_and_dashboard_opens_sign_in(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "index.html").write_text("<!doctype html><title>Landing marker</title>")
+            (root / "assets").mkdir()
+            (root / "assets" / "app-Ab12.js").write_text("landing-script")
+            with patch("retract.landing_pages.landing_root", return_value=root):
+                status, headers, body = request(self.local, "/", "127.0.0.1:8100")
+                script = request(self.local, "/assets/app-Ab12.js", "127.0.0.1:8100")
         self.assertEqual(status, 200)
-        self.assertIn("Sign in.", body.decode())
-        self.assertIn("script-src 'self'", headers)
-        self.assertNotIn("fonts.googleapis.com", headers)
+        self.assertIn("Landing marker", body.decode())
+        self.assertNotIn("Sign in.", body.decode())
+        self.assertIn("fonts.googleapis.com", headers)
+        self.assertEqual(script[2], b"landing-script")
         self.assertIn("Sign in.", request(self.local, "/dashboard", "127.0.0.1:8100")[2].decode())
 
     def test_hosted_root_is_the_landing_page_and_dashboard_opens_sign_in(self):
@@ -70,8 +78,13 @@ class LandingRouteTests(unittest.TestCase):
         self.assertEqual(escaped[0], 404)
         self.assertEqual(request(self.hosted, "/secret.txt", "retract.up.railway.app")[0], 404)
 
-    def test_missing_landing_build_keeps_the_workspace_available(self):
+    def test_missing_landing_build_keeps_the_workspace_on_dashboard(self):
         with patch("retract.landing_pages.landing_root", return_value=None):
             status, _, body = request(self.hosted, "/", "retract.up.railway.app")
-        self.assertEqual(status, 200)
-        self.assertIn("Sign in.", body.decode())
+            local = request(self.local, "/", "127.0.0.1:8100")
+            workspace = request(self.local, "/dashboard", "127.0.0.1:8100")
+        self.assertEqual(status, 404)
+        self.assertIn(b"/dashboard", body)
+        self.assertNotIn(b"Sign in.", body)
+        self.assertEqual(local[0], 404)
+        self.assertIn("Sign in.", workspace[2].decode())

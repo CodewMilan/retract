@@ -268,7 +268,8 @@ checks, and that distinction.
 
 ## Memory dashboard
 
-Open `http://127.0.0.1:8100/` while `retract serve` is running. Select a project
+Open `http://127.0.0.1:8100/dashboard` while `retract serve` is running. `/` is the
+marketing page. Select a project
 and scope to inspect current facts, superseded facts, proposals/pending updates,
 affected plans, update history, and recent API activity. Create projects,
 remember accepted facts with evidence, and record plain-language or explicit

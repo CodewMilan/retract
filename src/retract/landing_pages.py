@@ -1,4 +1,4 @@
-"""Prebuilt marketing page served at / on hosted deployments.
+"""Prebuilt marketing page served at /.
 
 The workspace UI stays in retract.web and is opened from /dashboard.
 """
@@ -47,7 +47,7 @@ def warn_missing_landing():
     if _missing_logged:
         return
     _missing_logged = True
-    logger.warning("Hosted landing build is missing; serving the workspace at /")
+    logger.warning("Landing build is missing; / cannot be served. The workspace stays at /dashboard")
 
 
 def landing_asset(path: str):

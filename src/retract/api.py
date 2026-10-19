@@ -157,15 +157,16 @@ def make_handler(service: MemoryService, hosted=None):
                 if self.path == "/api/config":
                     self.respond(200, hosted.config.public() if hosted else {"mode": "local"})
                     return
-                # The public site opens on the marketing page. Sign-in stays at /dashboard.
-                if hosted and self.path == "/":
+                # / is the marketing page in every mode. The workspace is /dashboard.
+                if self.path == "/":
                     landing = landing_asset("/")
                     if landing is not None:
                         self.send_static(*landing, LANDING_CSP)
                         return
                     warn_missing_landing()
-                assets = {"/": ("index.html", "text/html"),
-                          "/dashboard": ("index.html", "text/html"),
+                    self.respond(404, {"error": "Landing build is missing. The workspace is at /dashboard."})
+                    return
+                assets = {"/dashboard": ("index.html", "text/html"),
                           "/assets/dashboard.css": ("dashboard.css", "text/css"),
                           "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
@@ -175,11 +176,10 @@ def make_handler(service: MemoryService, hosted=None):
                     encoded = files("retract").joinpath("web", name).read_bytes()
                     self.send_static(encoded, mime, "no-store", self.content_policy())
                     return
-                if hosted:
-                    landing = landing_asset(self.path)
-                    if landing is not None:
-                        self.send_static(*landing, LANDING_CSP)
-                        return
+                landing = landing_asset(self.path)
+                if landing is not None:
+                    self.send_static(*landing, LANDING_CSP)
+                    return
                 if self.path == "/api/projects":
                     self.respond(200, self.workspace().list_projects())
                     return
