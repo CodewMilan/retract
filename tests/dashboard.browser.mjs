@@ -16,14 +16,23 @@ const browser = await chromium.launch({headless: true});
 const reportDir = resolve('reports/phase4/browser'); await mkdir(reportDir, {recursive: true});
 let passed = 0;
 try {
-  for (const width of [375, 768, 1280]) {
+  for (const width of [375, 768, 1024, 1440]) {
     const context = await browser.newContext({viewport: {width, height: 900}, colorScheme: width === 768 ? 'dark' : 'light', reducedMotion: 'reduce'});
     const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+    page.setDefaultTimeout(10000);
+    async function openMenu() { if (width <= 760 && await page.locator('#menu-toggle').getAttribute('aria-expanded') !== 'true') await page.locator('#menu-toggle').click(); }
+    async function navigate(view) {
+      await openMenu();
+      if (['superseded', 'pending', 'updates', 'activity'].includes(view) && !await page.locator('#history-nav').evaluate(node => node.open)) await page.locator('#history-nav > summary').click();
+      await page.locator(`[data-view="${view}"]`).click();
+    }
+    async function closeDetails() { if (await page.locator('#inspector').isVisible()) await page.getByRole('button', {name: 'Close details', exact: true}).click(); }
+    async function updateDecision() { await closeDetails(); await page.locator('#memory-actions > summary').click(); await page.locator('#update').click(); }
     let snapshot = fixture(); const projects = [project]; let failSnapshots = false; let conflict = false; const submitted = [];
     await page.route('https://retract.test/**', async route => {
       const request = route.request(); const url = new URL(request.url());
-      const resources = {'/': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript']};
-      if (resources[url.pathname]) { const [name, contentType] = resources[url.pathname]; return route.fulfill({contentType, headers: {'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"}, body: await readFile(new URL(name, root), 'utf8')}); }
+      const resources = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript']};
+      if (request.method() === 'GET' && resources[url.pathname]) { const [name, contentType] = resources[url.pathname]; return route.fulfill({contentType, headers: {'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"}, body: await readFile(new URL(name, root), 'utf8')}); }
       const json = (data, status = 200) => route.fulfill({status, contentType: 'application/json', body: JSON.stringify(data)});
       if (url.pathname === '/api/config') return json({mode: 'local'});
       if (url.pathname === '/api/projects') return json({projects, truncated: false});
@@ -57,18 +66,25 @@ try {
       if (url.pathname === '/updates/natural') return json({error: 'Groq is not configured'}, 503);
       return json({error: 'Unexpected test request'}, 404);
     });
-    await page.goto('https://retract.test/');
-    await page.getByText('Storage connected', {exact: true}).waitFor();
+    await page.goto('https://retract.test/dashboard');
+    await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
+    assert.equal(await page.locator('#inspector').isVisible(), false);
+    assert.equal(await page.locator('#navigation > button').count(), 4);
+    assert.equal(await page.locator('#history-nav').evaluate(node => node.open), false);
     assert.equal(await page.locator('#records .record').count(), 1);
     await page.locator('#records .record').click();
-    await page.locator('#inspector summary').click();
+    await page.locator('#inspector .source-details summary').click();
     assert.equal(await page.locator('#inspector img').count(), 0);
     assert.equal(await page.evaluate(() => window.sourceExecuted), undefined);
     assert.ok(await page.locator('#inspector').innerText().then(text => text.includes(evil)));
+    await closeDetails();
     await page.getByLabel('Search this view').fill('unmatched');
-    await page.getByText('No matching records. Try a different search.').waitFor();
+    await page.getByText('No matching results', {exact: true}).waitFor();
     await page.getByLabel('Search this view').fill('');
-    await page.locator('#update').click();
+    await updateDecision();
+    assert.equal(await page.locator('#mode').inputValue(), 'structured');
+    await page.locator('#update-form .advanced summary').click();
+    await page.locator('#mode').selectOption('natural');
     assert.equal(await page.locator('#authority').isChecked(), false);
     assert.equal(await page.locator('#confirmation').isChecked(), false);
     await page.locator('#update-text').fill('Switch to cookies');
@@ -81,11 +97,11 @@ try {
     await page.locator('#update-form button[type=submit]').click();
     await page.locator('#update-dialog').waitFor({state: 'hidden'});
     assert.equal(submitted[0].confirmation, false); assert.equal(submitted[0].source.authority, 'untrusted');
-    await page.getByRole('button', {name: /Pending & proposals/}).click();
+    await navigate('pending');
     assert.equal(await page.locator('#records .record').count(), 1);
-    await page.getByRole('button', {name: /Current facts/}).click();
+    await navigate('active');
     assert.ok((await page.locator('#records').innerText()).includes('bearer tokens'));
-    await page.locator('#update').click(); await page.locator('#mode').selectOption('structured');
+    await updateDecision();
     await page.locator('#replacement').fill('cookies'); await page.locator('#update-text').fill('Switch to cookies');
     await page.locator('#authority').check(); await page.locator('#confirmation').check();
     conflict = true;
@@ -105,40 +121,78 @@ try {
     await page.locator('#update-dialog').waitFor({state: 'hidden'});
     assert.notEqual(submitted.at(-1).event_id, retryEvent);
     assert.ok((await page.locator('#result').innerText()).includes('Before: bearer tokens\nAfter: cookies'));
-    await page.getByRole('button', {name: /Affected plans/}).click(); await page.locator('#records .record').click();
+    await navigate('affected'); await page.locator('#records .record').click();
+    await page.locator('#inspector .technical-details summary').click();
     assert.ok((await page.locator('#inspector').innerText()).includes('P1 ─ DEPENDS_ON → F1'));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({path: resolve(reportDir, `dashboard-${width}.png`), fullPage: true});
+    await closeDetails();
     failSnapshots = true; await page.locator('#refresh').click();
-    await page.getByText('Storage unavailable', {exact: true}).first().waitFor();
+    await page.locator('#notice').filter({hasText: 'Storage unavailable'}).waitFor();
     assert.equal(await page.locator('#update').isDisabled(), true);
     assert.equal(await page.locator('#remember').isDisabled(), true);
     // Exercise the empty-project path and both creation forms using the real DOM.
     failSnapshots = false; projects.length = 0; snapshot = fixture(); snapshot.facts = [];
     snapshot.counts = {active: 0, superseded: 0, pending: 0, affected: 0, updates: 0};
     snapshot.edges = []; await page.reload();
-    await page.getByText('No project selected. Create a project to begin.').waitFor();
-    await page.locator('#new-project').click();
-    await page.locator('#project-id').fill('created-project'); await page.locator('#project-name').fill('Created project');
+    await page.getByText('Give your agents a place to remember', {exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Create your first project', exact: true}).click();
+    await page.locator('#project-name').fill('Created project');
+    assert.equal(await page.locator('#project-id').inputValue(), 'created-project');
+    assert.equal(await page.locator('#project-form .advanced').evaluate(node => node.open), false);
     await page.locator('#project-form button[type=submit]').click();
-    await page.getByText('No accepted facts here yet. Remember a fact with its evidence to begin.').waitFor();
-    await page.locator('#remember').click();
-    await page.locator('#fact-scope').fill('web/main'); await page.locator('#subject').fill('auth');
-    await page.locator('#predicate').fill('method'); await page.locator('#fact-value').fill('cookies');
+    await page.getByText('What should your next agent know?', {exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Add your first memory', exact: true}).click();
+    assert.equal(await page.locator('#fact-scope').inputValue(), 'project/main');
+    assert.equal(await page.locator('#predicate').inputValue(), 'decision');
+    assert.equal(await page.locator('#remember-form .advanced').evaluate(node => node.open), false);
+    await page.locator('#subject').fill('auth');
+    await page.keyboard.press('Escape'); await page.locator('#remember').click();
+    assert.equal(await page.locator('#subject').inputValue(), 'auth');
+    await page.locator('#fact-value').fill('cookies');
     await page.locator('#fact-evidence').fill('Approved cookies decision'); await page.locator('#fact-authority').check();
     await page.locator('#remember-form button[type=submit]').click();
     await page.locator('#remember-dialog').waitFor({state: 'hidden'});
     assert.ok((await page.locator('#records').innerText()).includes('cookies'));
+    assert.equal(await page.locator('#result').isVisible(), true);
+    await openMenu(); await page.locator('#access-keys').click();
+    assert.equal(await page.locator('#local-setup').isVisible(), true);
+    assert.equal(await page.locator('#key-management').isVisible(), false);
+    const config = JSON.parse(await page.locator('#local-config').innerText());
+    assert.equal(config.mcpServers.retract.env.RETRACT_URL, 'https://retract.test');
+    assert.equal(config.mcpServers.retract.env.RETRACT_API_KEY, undefined);
+    assert.ok((await page.locator('#local-prompt').innerText()).includes('created-project'));
+    await page.keyboard.press('Escape');
+    // Query state survives navigation, reload, and the browser Back button.
+    await page.locator('#search').fill('cookies');
+    await page.waitForURL(url => url.searchParams.get('q') === 'cookies');
+    assert.equal(new URL(page.url()).searchParams.get('q'), 'cookies');
+    await navigate('plans'); await page.waitForURL(url => url.searchParams.get('view') === 'plans');
+    await page.goBack();
+    await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected' && document.querySelector('#title').textContent === 'Memory');
+    assert.equal(await page.locator('#search').inputValue(), 'cookies');
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
+    assert.equal(await page.locator('#search').inputValue(), 'cookies');
+    await page.locator('#clear-search').click();
+    assert.equal(new URL(page.url()).searchParams.has('q'), false);
+    await page.locator('#title').focus(); await page.keyboard.press('/');
+    assert.equal(await page.locator('#search').evaluate(node => document.activeElement === node), true);
+    if (width <= 760) {
+      await openMenu(); assert.equal(await page.locator('#content').evaluate(node => node.inert), true);
+      await page.keyboard.press('Escape'); assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'), 'false');
+      assert.equal(await page.locator('#content').evaluate(node => node.inert), false);
+    }
     assert.deepEqual(errors, []);
     await context.close(); passed++;
-    console.log(`PASS ${width}px: evidence, proposal, correction, stale retry, paths, failure, overflow`);
+    console.log(`PASS ${width}px: source safety, suggestions, corrections, stale retry, paths, recovery, first-run setup, defaults, agent connection, deep links, Back/reload, keyboard, overflow`);
   }
   const liveIndex = process.argv.indexOf('--live-url');
   if (liveIndex !== -1) {
     const target = new URL(process.argv[liveIndex + 1]);
     if (target.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(target.hostname)) throw new Error('Live URL must be local HTTP');
     const page = await browser.newPage();
-    await page.goto(target.href); await page.getByText('Storage connected', {exact: true}).waitFor();
+    await page.goto(target.href); await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
     assert.ok(await page.locator('#snapshot-meta').innerText().then(text => text.includes('Revision')));
     await page.close(); console.log('PASS read-only real-service dashboard smoke');
   }

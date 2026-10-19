@@ -512,3 +512,5 @@ pre.setup { border-color: var(--border); background: var(--surface); border-radi
   .dialog-head h2 { min-width: 0; }
   .key-row { align-items: flex-start; }
 }
+.source-details summary, .technical-details summary, .more-actions summary { min-height: 44px; }
+.result .icon-button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }

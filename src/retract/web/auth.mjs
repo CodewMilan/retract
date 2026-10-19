@@ -82,6 +82,7 @@ export async function authHeaders() {
   if (!token) throw new Error('Your session ended. Reload and sign in again.');
   return {Authorization: `Bearer ${token}`};
 }
+export function authConfig() { return config; }
 export function authFailed(error) {
   $('auth-screen').hidden = false; document.querySelector('.shell').hidden = true;
   $('auth-status').hidden = false; $('auth-status').textContent = error.message; $('auth-retry').hidden = false;

@@ -124,6 +124,14 @@ class DashboardTests(unittest.TestCase):
         self.assertNotIn('PRIVATE_CONTENT', json.dumps(entries))
         self.assertEqual(MemoryService(self.store).dashboard('account-settings')['activity'], [])
 
+    def test_dashboard_deep_links_serve_the_workspace_without_changing_asset_allowlist(self):
+        status, headers, body = self.request('/dashboard?project=account-settings&area=web%2Fmain&view=plans&q=cookies')
+        self.assertEqual(status, 200)
+        self.assertIn('text/html', headers)
+        self.assertIn(b'id="navigation"', body)
+        for path in ['/assets/dashboard.mjs?file=.env', '/?file=.env', '/dashboard/../.env?project=test']:
+            self.assertEqual(self.request(path)[0], 404)
+
     def test_storage_failure_returns_503_but_shell_still_loads(self):
         with patch.object(self.store, 'dashboard_snapshot', side_effect=DatabaseUnavailable('Storage unavailable')):
             with self.assertLogs('retract.api', level='ERROR'):

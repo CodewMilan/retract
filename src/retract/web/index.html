@@ -28,91 +28,106 @@
   </div>
 </section>
 <div class="shell" hidden>
-  <aside class="sidebar" aria-label="Project navigation">
+  <div class="mobile-bar"><a class="wordmark" href="/"><span class="brand-name">Retract</span></a><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="sidebar">Menu</button></div>
+  <button id="menu-overlay" class="menu-overlay" aria-label="Close navigation" hidden tabindex="-1"></button>
+  <aside id="sidebar" class="sidebar" aria-label="Project navigation">
     <a class="wordmark" href="/"><span class="brand-name">Retract</span></a>
-    <p class="sidebar-kicker">Project memory</p>
+    <p class="sidebar-kicker">A shared memory for your agents</p>
     <label for="project">Project</label><select id="project"><option value="">Loading projects…</option></select>
     <button id="new-project" class="quiet">+ New project</button>
-    <label for="scope">Scope</label><select id="scope" disabled><option value="">All scopes</option></select>
     <nav id="navigation" aria-label="Memory views"></nav>
-    <div id="account-controls" hidden><div id="user-button"></div><button id="access-keys">Connect coding client</button></div>
-    <div class="sidebar-foot"><span id="connection" role="status">Connecting…</span><p id="storage-note">FalkorDB · one graph per account</p></div>
+    <div class="sidebar-bottom"><button id="access-keys" class="secondary">Connect an agent <span aria-hidden="true">↗</span></button>
+    <div id="account-controls" hidden><div id="user-button"></div><span>Your account</span></div>
+    <div class="sidebar-foot"><span class="connection-dot" aria-hidden="true"></span><span id="connection" role="status">Connecting…</span><p id="storage-note">Your project context, kept together.</p></div></div>
   </aside>
   <main id="content" tabindex="-1">
-    <header><div><p id="context" class="eyebrow">Workspace memory</p><h1 id="title">Current facts</h1><p id="description" class="muted">Accepted decisions for the selected project and scope.</p></div>
-      <div class="actions"><button id="refresh">Refresh</button><button id="new-plan" disabled>Record plan</button><button id="remember" disabled>Remember fact</button><button id="update" class="primary" disabled>Record update</button></div>
+    <header class="page-header"><div><p id="context" class="eyebrow">Your workspace</p><h1 id="title" tabindex="-1">Memory</h1><p id="description" class="muted">The decisions your agents should work from.</p></div>
+      <div class="actions"><button id="refresh" class="icon-button secondary" aria-label="Refresh project" title="Refresh project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/></svg></button><button id="new-plan" class="secondary" disabled>New plan</button><button id="remember" class="primary" disabled><span aria-hidden="true">+</span> Add memory</button></div>
     </header>
     <div id="notice" class="notice" role="status" hidden></div>
     <div id="result" class="result" aria-live="polite" hidden></div>
-    <ol id="start-guide" class="start-guide" hidden>
-      <li><strong>Remember a fact.</strong> A decision your agents should rely on, plus the evidence it came from.</li>
-      <li><strong>Record a plan</strong> and tick the facts it depends on. When one of those facts changes, the plan is flagged.</li>
-      <li><strong>Connect your coding agent</strong> (sidebar) so it recalls this memory before it writes code.</li>
-    </ol>
+    <section id="review-banner" class="review-banner" aria-label="Plans to review" hidden></section>
+    <section id="start-guide" class="start-guide" hidden>
+      <p class="eyebrow">Start with one decision</p><h2>What should your next agent know?</h2>
+      <p class="muted">Save a project decision with its source. Your agents can recall it before they start work.</p>
+      <div class="guide-steps"><p><span>1</span><strong>Save a decision</strong>Architecture, conventions, or a constraint.</p><p><span>2</span><strong>Connect your agent</strong>Give your coding client access to this memory.</p><p><span>3</span><strong>Keep plans current</strong>See what needs review when a decision changes.</p></div>
+      <button type="button" class="primary" data-action="remember">Add your first memory</button>
+    </section>
     <section class="workspace" aria-label="Project memory">
-      <div class="list-panel"><div class="toolbar"><label for="search">Search this view</label><input type="search" id="search" placeholder="Subject, value, or ID…"><span id="row-count" class="mono"></span></div>
+      <div class="list-panel"><div class="toolbar" id="toolbar"><div class="search-field"><label for="search" class="sr-only">Search this view</label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input type="search" id="search" placeholder="Search memory…" autocomplete="off"><button id="clear-search" class="icon-button" aria-label="Clear search" hidden>×</button><kbd aria-hidden="true">/</kbd></div><div class="area-filter"><label for="scope">Area</label><select id="scope" disabled aria-describedby="area-help"><option value="">All areas</option></select><span id="area-help" class="sr-only">Filter by the part of your project a decision applies to.</span></div></div>
+        <div class="list-heading"><span id="list-label">Saved decisions</span><span id="row-count"></span><details id="memory-actions" class="more-actions"><summary>More actions</summary><button type="button" id="update" disabled>Update a decision</button></details></div>
         <div id="records" aria-live="polite"><p class="empty">Loading project memory…</p></div>
       </div>
-      <aside id="inspector" class="inspector" aria-label="Evidence inspector"><p class="eyebrow">Evidence inspector</p><h2>Select a record</h2><p class="muted">Inspect its source, status, and recorded relationships.</p></aside>
+      <aside id="inspector" class="inspector" aria-label="Memory details" hidden></aside>
     </section>
     <footer id="snapshot-meta">Waiting for a storage response.</footer>
   </main>
 </div>
+<dialog id="record-dialog" class="record-dialog" aria-label="Memory details"></dialog>
 <dialog id="update-dialog" aria-labelledby="update-title">
- <form id="update-form"><div class="dialog-head"><h2 id="update-title">Record an update</h2><button type="button" data-close aria-label="Close update dialog">×</button></div>
- <p class="muted">A proposal or unconfirmed change stays outside accepted memory.</p>
- <label for="target">Current fact</label><select id="target" required></select><p id="before" class="before"></p>
- <label for="mode">Interpretation</label><select id="mode"><option value="natural">Plain language · requires configured Groq key</option><option value="structured">Explicit change · no model required</option></select>
- <div id="structured-fields" hidden><label for="classification">Classification</label><select id="classification"><option value="confirmed_change">Confirmed change</option><option value="proposal">Proposal</option><option value="ambiguous">Ambiguous</option><option value="unrelated">Unrelated</option></select><label for="replacement">Proposed value</label><textarea id="replacement" maxlength="2000" rows="2"></textarea></div>
- <label for="update-source-title">Source title</label><input id="update-source-title" value="Developer update" maxlength="300" required>
- <label for="update-text">Update and source excerpt</label><textarea id="update-text" maxlength="4000" rows="4" required></textarea>
- <label class="check"><input type="checkbox" id="authority">This is an approved developer decision</label>
- <label class="check"><input type="checkbox" id="confirmation">Replace the selected accepted decision</label>
- <p class="form-error" id="update-error" role="alert"></p>
- <div class="dialog-actions"><button type="button" id="refresh-context">Refresh context</button><button class="primary" type="submit">Record update</button></div>
+ <form id="update-form"><div class="dialog-head"><h2 id="update-title">Update a decision</h2><button type="button" data-close aria-label="Close update dialog">×</button></div>
+ <p class="muted dialog-intro">Keep the original source and history, even when a decision changes.</p>
+ <label for="target">Which decision?</label><select id="target" required></select><p id="before" class="before"></p>
+ <div id="structured-fields"><label for="replacement">What is the new decision?</label><textarea id="replacement" maxlength="2000" rows="2" required placeholder="e.g. Use cookie sessions for the browser API."></textarea>
+ <label for="classification">Type of change</label><select id="classification"><option value="confirmed_change">Agreed change</option><option value="proposal">Suggestion</option><option value="ambiguous">Needs clarification</option><option value="unrelated">Unrelated note</option></select></div>
+ <label for="update-text">Why did this change? <span class="required">Required</span></label><textarea id="update-text" maxlength="4000" rows="3" required placeholder="Paste the approved message or explain the decision." aria-describedby="update-source-help"></textarea><p id="update-source-help" class="hint">This context becomes the source for the update.</p>
+ <fieldset class="confirm-group"><legend>Apply this change</legend><p class="hint">Without both confirmations, current memory stays unchanged.</p>
+ <label class="check"><input type="checkbox" id="authority">This change has been approved</label>
+ <label class="check"><input type="checkbox" id="confirmation">Replace this decision and flag linked plans for review</label></fieldset>
+ <p id="suggestion-note" class="before" hidden>This saves a note for review. Your current memory and linked plans stay unchanged.</p>
+ <details class="advanced"><summary>Advanced options</summary>
+ <label for="mode">How to read this update</label><select id="mode"><option value="structured">Use the exact decision above</option><option value="natural">Interpret the context with AI</option></select><p class="hint">AI interpretation requires an AI provider configured on the server.</p>
+ <label for="update-source-title">Source name</label><input id="update-source-title" value="Developer update" maxlength="300" required></details>
+ <p class="form-error" id="update-error" role="alert" tabindex="-1"></p>
+ <div class="dialog-actions"><button type="button" id="refresh-context" class="secondary">Refresh context</button><button class="primary" type="submit">Save update</button></div>
  </form>
 </dialog>
 <dialog id="remember-dialog" aria-labelledby="remember-title">
- <form id="remember-form"><div class="dialog-head"><h2 id="remember-title">Remember a fact</h2><button type="button" data-close aria-label="Close fact dialog">×</button></div>
- <p class="muted">Store an accepted decision with its original evidence.</p>
- <label for="fact-scope">Scope</label><input id="fact-scope" maxlength="160" required placeholder="web-client/main">
- <div class="field-pair"><div><label for="subject">Subject</label><input id="subject" maxlength="160" required placeholder="auth"></div><div><label for="predicate">Predicate</label><input id="predicate" maxlength="160" required placeholder="method"></div></div>
- <label for="fact-value">Accepted value</label><textarea id="fact-value" maxlength="2000" rows="2" required></textarea>
- <label for="fact-source-title">Source title</label><input id="fact-source-title" maxlength="300" value="Developer decision" required>
- <label for="fact-evidence">Source evidence</label><textarea id="fact-evidence" maxlength="16000" rows="4" required></textarea>
- <label class="check"><input type="checkbox" id="fact-authority" required>This is an approved developer decision</label>
- <p class="form-error" id="remember-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit">Remember fact</button></div>
+ <form id="remember-form"><div class="dialog-head"><h2 id="remember-title">Add memory</h2><button type="button" data-close aria-label="Close fact dialog">×</button></div>
+ <p class="muted dialog-intro">A decision your agents can rely on next time they work.</p>
+ <label for="subject">What is this about? <span class="required">Required</span></label><input id="subject" maxlength="160" required placeholder="e.g. Authentication" autocomplete="off">
+ <label for="fact-value">What should your agents remember? <span class="required">Required</span></label><textarea id="fact-value" maxlength="2000" rows="3" required placeholder="e.g. Use HTTP-only cookie sessions for the browser API."></textarea>
+ <label for="fact-evidence">Source or context <span class="required">Required</span></label><textarea id="fact-evidence" maxlength="16000" rows="3" required placeholder="Paste the message, note, or requirement that supports this decision." aria-describedby="evidence-help"></textarea><p id="evidence-help" class="hint">Keeping the source helps the next agent understand why.</p>
+ <label class="check"><input type="checkbox" id="fact-authority" required>This is an agreed project decision</label>
+ <details class="advanced"><summary>Organization &amp; source details</summary>
+ <label for="fact-scope">Project area</label><input id="fact-scope" maxlength="160" required value="project/main" placeholder="e.g. web/main" aria-describedby="scope-help"><p id="scope-help" class="hint">Use project/main for general decisions, or a specific area like web/main.</p>
+ <label for="predicate">Property</label><input id="predicate" maxlength="160" required value="decision" placeholder="e.g. method">
+ <label for="fact-source-title">Source name</label><input id="fact-source-title" maxlength="300" value="Developer decision" required></details>
+ <p class="form-error" id="remember-error" role="alert" tabindex="-1"></p><div class="dialog-actions"><button type="button" data-close class="secondary">Cancel</button><button class="primary" type="submit">Save memory</button></div>
  </form>
 </dialog>
 <dialog id="project-dialog" aria-labelledby="project-title">
  <form id="project-form"><div class="dialog-head"><h2 id="project-title">Create project</h2><button type="button" data-close aria-label="Close project dialog">×</button></div>
- <label for="project-id">Project ID</label><input id="project-id" maxlength="160" required placeholder="account-settings"><p class="hint">Letters, numbers, dots, slashes, underscores, and hyphens. Start with a letter or number.</p>
- <label for="project-name">Project name</label><input id="project-name" maxlength="300" required placeholder="Account settings">
- <p class="form-error" id="project-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit">Create project</button></div>
+ <p class="muted dialog-intro">Keep related decisions and plans in one place.</p>
+ <label for="project-name">Project name <span class="required">Required</span></label><input id="project-name" maxlength="300" required placeholder="e.g. My web app" autocomplete="off">
+ <details class="advanced"><summary>Project identifier</summary><label for="project-id">Project ID</label><input id="project-id" maxlength="160" required pattern="[A-Za-z0-9][A-Za-z0-9._/\-]*" placeholder="my-web-app" aria-describedby="project-id-help"><p id="project-id-help" class="hint">Generated from the name. Your agents use this ID to find the project.</p></details>
+ <p class="form-error" id="project-error" role="alert" tabindex="-1"></p><div class="dialog-actions"><button type="button" data-close class="secondary">Cancel</button><button class="primary" type="submit">Create project</button></div>
  </form>
 </dialog>
 <dialog id="plan-dialog" aria-labelledby="plan-title">
- <form id="plan-form"><div class="dialog-head"><h2 id="plan-title">Record a plan</h2><button type="button" data-close aria-label="Close plan dialog">×</button></div>
- <p id="plan-context" class="muted">Record the decisions this plan relies on.</p>
- <label for="plan-scope">Scope</label><input id="plan-scope" maxlength="160" required placeholder="web-client/main">
- <label for="plan-text">Implementation plan</label><textarea id="plan-text" maxlength="4000" rows="5" required></textarea>
- <fieldset><legend>Current decisions this plan depends on</legend><p class="hint">Choose up to 32. Historical dependencies remain on the previous version.</p><div id="plan-dependencies"></div></fieldset>
+ <form id="plan-form"><div class="dialog-head"><h2 id="plan-title">New plan</h2><button type="button" data-close aria-label="Close plan dialog">×</button></div>
+ <p id="plan-context" class="muted dialog-intro">Link the decisions this work depends on. If one changes, this plan will be flagged for review.</p>
+ <label for="plan-text">What are you planning to do? <span class="required">Required</span></label><textarea id="plan-text" maxlength="4000" rows="4" required placeholder="Describe the work and how you will approach it."></textarea>
+ <fieldset><legend>Decisions this plan relies on</legend><p class="hint">Select the memory you used. You can link up to 32 decisions.</p><div id="plan-dependencies"></div></fieldset>
+ <details class="advanced"><summary>Project area</summary><label for="plan-scope">Area</label><input id="plan-scope" maxlength="160" required value="project/main" placeholder="e.g. web/main"></details>
  <div id="plan-review-fields" hidden><label for="plan-reason">What changed and why?</label><textarea id="plan-reason" maxlength="4000" rows="3"></textarea>
  <label class="check"><input type="checkbox" id="plan-confirmation">I reviewed these dependencies and approve this revision</label></div>
- <p class="form-error" id="plan-error" role="alert"></p><div class="dialog-actions"><button type="button" id="plan-refresh">Refresh decisions</button><button class="primary" type="submit">Save plan</button></div>
+ <p class="form-error" id="plan-error" role="alert" tabindex="-1"></p><div class="dialog-actions"><button type="button" id="plan-refresh" class="secondary">Refresh decisions</button><button class="primary" type="submit">Save plan</button></div>
  </form>
 </dialog>
 <dialog id="keys-dialog" aria-labelledby="keys-title">
- <div class="dialog-head"><h2 id="keys-title">Connect your coding client</h2><button type="button" data-close aria-label="Close access keys">×</button></div>
- <p>Access keys let a coding client use your private workspace. They expire after 90 days and can be revoked here.</p>
+ <div class="dialog-head"><h2 id="keys-title">Connect an agent</h2><button type="button" data-close aria-label="Close access keys">×</button></div>
+ <p class="muted dialog-intro">Let Codex, Claude Code, Cursor, or another MCP client recall your project decisions before it starts work.</p>
+  <div id="local-setup" hidden><p class="step-label">1. Add this to your client's MCP configuration</p><pre id="local-config" class="setup" tabindex="0" role="region" aria-label="Local MCP configuration"></pre><button id="local-config-copy" type="button" class="secondary">Copy configuration</button><p class="hint">Requires uv and a running Retract server on this computer.</p><p class="step-label">2. Start a conversation with your agent</p><p id="local-prompt" class="before"></p></div>
+ <div id="key-management"><p class="hint">Create an access key for each coding client. Keys expire after 90 days.</p>
  <div id="key-list" aria-live="polite"></div>
  <form id="key-form"><label for="key-name">Key name</label><input id="key-name" required maxlength="100" placeholder="My laptop">
  <p class="form-error" id="key-error" role="alert"></p><button type="submit">Create access key</button></form>
  <div id="key-created" hidden><label for="key-secret">Copy this key now — it is only shown once</label><input id="key-secret" readonly autocomplete="off" spellcheck="false"><button type="button" id="key-copy">Copy key</button>
  <h3>Ready to paste</h3><p class="hint">This is your agent's MCP configuration, with the key already inside it. Paste it into Codex, Claude Code, Cursor, or any MCP client, and keep the file private.</p>
- <pre id="mcp-config" class="setup"></pre><button type="button" id="config-copy">Copy configuration</button>
+ <pre id="mcp-config" class="setup" tabindex="0" role="region" aria-label="Agent MCP configuration"></pre><button type="button" id="config-copy">Copy configuration</button>
  <p id="mcp-fallback" class="hint"></p>
- <p class="hint">Your agent can then recall current facts before planning, record facts and plans, hand work to another agent, and investigate the memory graph with graph algorithms.</p></div>
- <p class="hint">Revoking a key stops new requests immediately.</p>
+ <p class="step-label">Next, ask your agent</p><p id="agent-prompt" class="before"></p></div>
+ <p class="hint">Revoking a key stops new requests immediately.</p></div>
 </dialog>
 </body></html>

@@ -171,8 +171,10 @@ def make_handler(service: MemoryService, hosted=None):
                           "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
                           "/assets/auth.mjs": ("auth.mjs", "text/javascript")}
-                if self.path in assets:
-                    name, mime = assets[self.path]
+                # Workspace filters live in the URL so a saved link survives reload.
+                asset_path = "/dashboard" if self.path.startswith("/dashboard?") else self.path
+                if asset_path in assets:
+                    name, mime = assets[asset_path]
                     encoded = files("retract").joinpath("web", name).read_bytes()
                     self.send_static(encoded, mime, "no-store", self.content_policy())
                     return

@@ -1,13 +1,16 @@
 export const views = {
-  active: ['Current facts', 'Accepted decisions for the selected project and scope.'],
-  superseded: ['Superseded facts', 'Historical decisions remain available as evidence.'],
-  pending: ['Pending & proposals', 'These updates have not replaced accepted memory.'],
-  affected: ['Affected plans', 'Plans whose recorded dependencies need review.'],
-  plans: ['All plans', 'Current plans and preserved versions, with their recorded dependencies.'],
-  handoffs: ['Agent handoffs', 'Work passed between agents, with what the sender relied on and what has changed since.'],
-  updates: ['Update history', 'Recorded update outcomes, evidence, and revision changes.'],
-  activity: ['Request activity', 'Recent API requests in this service process. Clears on restart.'],
+  active: ['Memory', 'The decisions your agents should work from.'],
+  superseded: ['Previous decisions', 'Replaced decisions stay here with their original sources.'],
+  pending: ['Suggestions', 'Proposed changes. Your current memory stays unchanged until a change is approved.'],
+  affected: ['Needs review', 'A linked decision changed. Review these plans before continuing the work.'],
+  plans: ['Plans', 'Work your agents are planning, and the decisions it relies on.'],
+  handoffs: ['Handoffs', 'Context and next steps passed between agents.'],
+  updates: ['Change history', 'What changed, why it changed, and which plans were affected.'],
+  activity: ['API activity', 'Recent requests from connected clients. This log clears when the service restarts.'],
 };
+export const statusLabel = value => ({active: 'Current', current: 'Current', superseded: 'Replaced', needs_review: 'Needs review',
+  pending: 'Pending', proposal: 'Suggestion', applied: 'Applied', open: 'Open', claimed: 'Claimed',
+  ignored: 'Unchanged', ambiguous: 'Needs clarification', confirmed_change: 'Agreed change'}[value] || String(value ?? 'Recorded').replaceAll('_', ' '));
 export const number = value => new Intl.NumberFormat('en-US', {maximumFractionDigits: 0}).format(value);
 export function rowsFor(snapshot, view, search = '') {
   let rows = view === 'active' || view === 'superseded'
