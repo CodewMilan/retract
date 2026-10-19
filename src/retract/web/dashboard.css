@@ -554,6 +554,15 @@ dialog { scroll-padding-block: 1rem 6rem; overscroll-behavior: contain; }
 dialog .dialog-actions { position: sticky; bottom: -1.75rem; z-index: 2; margin-inline: -1.75rem; padding: 1rem 1.75rem; background: var(--surface-raised); }
 body:has(dialog[open]), body:has(.shell.menu-open) { overflow: hidden; }
 @media (max-width: 760px) { dialog .dialog-actions { bottom: -1.25rem; margin-inline: -1.25rem; padding-inline: 1.25rem; } }
+.wait-screen { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: #fff; }
+.wait { display: grid; justify-items: center; gap: 1.1rem; }
+.wait-grid { display: grid; grid-template-columns: repeat(4, 10px); gap: 4px; }
+.wait-grid span { display: block; width: 10px; height: 10px; transform-origin: center; }
+.wait-label { margin: 0; color: var(--muted-text, #646460); font-size: 0.875rem; line-height: 1.4; }
+.wait--compact { gap: 0.45rem; }
+.wait--compact .wait-grid { grid-template-columns: repeat(4, 7px); gap: 3px; }
+.wait--compact .wait-grid span { width: 7px; height: 7px; }
+.wait-screen .brand-name { font-size: 1.7rem; }
 .account-chip[hidden] { display: none; }
 .account-chip { display: flex; align-items: center; gap: 0.7rem; width: 100%; margin-top: 0.65rem; padding: 0.35rem 0.45rem; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; }
 .shell .account-chip:hover { background: #f5f5f2; border-radius: 8px; }

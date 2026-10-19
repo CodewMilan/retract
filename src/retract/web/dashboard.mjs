@@ -1,4 +1,5 @@
 import {initAuth, authHeaders, authFailed, authConfig} from './auth.mjs';
+import {paintWait} from './loader.mjs';
 import {views, number, rowsFor, updateRequest, RequestDraft, statusLabel} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
 const initial = new URLSearchParams(location.search);
@@ -173,6 +174,11 @@ function inspect(record, kind) {
 function emptyState(title, description, button) {
   const box = el('div', undefined, 'empty'); box.append(icon('memory'), el('h2', title), el('p', description, 'muted')); if (button) box.append(button); return box;
 }
+function waitState(label) {
+  const box = el('div', undefined, 'empty');
+  paintWait(box, {label});
+  return box;
+}
 function renderRecords() {
   const container = $('records'); container.replaceChildren();
   const search = $('search').value; $('clear-search').hidden = !search;
@@ -182,10 +188,8 @@ function renderRecords() {
   $('toolbar').hidden = !state.snapshot; document.querySelector('.list-heading').hidden = !state.snapshot;
   if (!state.snapshot) {
     $('row-count').textContent = '';
-    if (state.loadingSnapshot || state.loadingProjects) {
-      container.append(el('p', 'Loading your project…', 'loading-label'));
-      for (let i = 0; i < 3; i++) { const row = el('div', undefined, 'skeleton'); row.setAttribute('aria-hidden', 'true'); row.append(el('span'), el('span'), el('span')); container.append(row); }
-    } else container.append(state.project || state.projectsError
+    if (state.loadingSnapshot || state.loadingProjects) container.append(waitState(state.loadingSnapshot ? 'Reading project memory…' : 'Loading projects…'));
+    else container.append(state.project || state.projectsError
       ? emptyState('Your memory could not load', 'Check your connection, then try again.', action('Try again', () => loadProjects(), 'primary'))
       : emptyState('Give your agents a place to remember', 'Create a project to keep decisions, sources, and plans together.', action('Create your first project', () => $('new-project').click(), 'primary')));
     return;
@@ -233,7 +237,6 @@ async function loadSnapshot({quiet = false} = {}) {
   $('context').textContent = state.project ? `${$('project').selectedOptions[0]?.textContent || state.project} / ${state.scope || 'All areas'}` : 'Your workspace';
   if (!state.project) { state.snapshot = null; render(); $('connection').textContent = 'No project selected'; $('snapshot-meta').textContent = 'Create a project to store memory.'; return true; }
   $('connection').textContent = 'Reading storage…'; $('records').setAttribute('aria-busy', 'true');
-  $('records').replaceChildren(el('p', 'Reading project memory…', 'empty'));
   try {
     const snapshot = await api('/dashboard', {project_id: state.project, scope: state.scope || null});
     if (generation !== state.generation) return false;
@@ -461,7 +464,7 @@ $('access-keys').onclick = async () => {
   show('keys-dialog'); if (!local) await loadKeys();
 };
 async function loadKeys() {
-  $('key-list').replaceChildren(el('p', 'Loading access keys…'));
+  $('key-list').replaceChildren(); paintWait($('key-list'), {label: 'Loading access keys…'});
   try {
     const result = await api('/api/keys'); $('key-list').replaceChildren();
     if (!result.keys.length) $('key-list').append(el('p', 'No access keys yet. Create one to connect your coding client.', 'muted'));

@@ -1,3 +1,4 @@
+import {paintWait} from './loader.mjs';
 let config = {mode: 'local'};
 let clerk;
 const appearance = {
@@ -51,11 +52,31 @@ function script(src, key) {
   });
 }
 const LOCAL_KEY = 'retract-local-auth';
+function showWait(label) {
+  const screen = $('wait-screen');
+  document.querySelector('.shell').hidden = true;
+  $('auth-screen').hidden = true;
+  screen.hidden = false;
+  if (screen.dataset.live === label) return;
+  screen.dataset.live = label;
+  screen._stop?.();
+  screen._stop = paintWait(screen, {label, brand: true});
+}
+function hideWait() {
+  const screen = $('wait-screen');
+  if (!screen) return;
+  screen._stop?.();
+  screen._stop = null;
+  delete screen.dataset.live;
+  screen.hidden = true;
+}
 function showShell() {
+  hideWait();
   $('auth-screen').hidden = true;
   document.querySelector('.shell').hidden = false;
 }
 function showAuthScreen() {
+  hideWait();
   document.querySelector('.shell').hidden = true;
   $('auth-screen').hidden = false;
 }
@@ -133,6 +154,7 @@ function showClerkError(error) {
   node.textContent = clerkMessage(error);
 }
 async function finishClerkSession(sessionId) {
+  showWait('Signing you in…');
   await clerk.setActive({session: sessionId});
   enterClerkWorkspace();
 }
@@ -235,6 +257,7 @@ function mountAccount() {
     button.disabled = true;
     button.textContent = 'Signing out…';
     signingOut = true;
+    showWait('Signing you out…');
     try {
       // Clerk finishes sign-out by leaving the page. A second navigation here
       // cancels that handoff and the session cookie survives.
@@ -245,6 +268,8 @@ function mountAccount() {
       await clerk.signOut({redirectUrl: dashboardUrl()});
     } catch (error) {
       signingOut = false;
+      hideWait();
+      document.querySelector('.shell').hidden = false;
       button.disabled = false;
       button.textContent = 'Sign out';
       $('account-error').textContent = clerkMessage(error);
@@ -265,6 +290,7 @@ function enterClerkWorkspace() {
 async function startOAuth(strategy) {
   const params = {strategy, redirectUrl: callbackUrl(), redirectUrlComplete: dashboardUrl()};
   $('auth-error').hidden = true;
+  showWait(strategy === 'oauth_github' ? 'Continuing with GitHub…' : 'Continuing with Google…');
   if ($('auth-title').textContent === 'Welcome back') await clerk.client.signIn.authenticateWithRedirect(params);
   else await clerk.client.signUp.authenticateWithRedirect(params);
 }
@@ -274,8 +300,9 @@ function bindClerkForm() {
   $('auth-note').textContent = 'GitHub, Google, and email sign-up use your Retract account.';
   $('auth-status').hidden = true;
   $('local-auth').hidden = false;
-  $('auth-github').onclick = () => startOAuth('oauth_github').catch(showClerkError);
-  $('auth-google').onclick = () => startOAuth('oauth_google').catch(showClerkError);
+  const oauthFailed = error => { showAuth(); showClerkError(error); };
+  $('auth-github').onclick = () => startOAuth('oauth_github').catch(oauthFailed);
+  $('auth-google').onclick = () => startOAuth('oauth_google').catch(oauthFailed);
   let signingUp = true;
   $('auth-toggle').onclick = () => {
     signingUp = !signingUp;
@@ -330,7 +357,7 @@ function bindClerkForm() {
   };
 }
 async function mountClerk() {
-  showAuthScreen();
+  showWait(isClerkReturn() ? 'Signing you in…' : 'Opening your workspace…');
   await script(`${config.issuer}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, config.publishable_key);
   clerk = window.Clerk;
   const done = dashboardUrl();

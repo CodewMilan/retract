@@ -232,7 +232,8 @@ def make_handler(service: MemoryService, hosted=None):
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
                           "/assets/auth.mjs": ("auth.mjs", "text/javascript"),
                           "/assets/auth-portrait.mjs": ("auth-portrait.mjs", "text/javascript"),
-                          "/assets/gsap.min.js": ("gsap.min.js", "text/javascript")}
+                          "/assets/gsap.min.js": ("gsap.min.js", "text/javascript"),
+                          "/assets/loader.mjs": ("loader.mjs", "text/javascript")}
                 # Workspace filters live in the URL so a saved link survives reload.
                 # OAuth returns to /sso-callback, which must be this same page so the session can finish.
                 bare = self.path.split("?", 1)[0]
