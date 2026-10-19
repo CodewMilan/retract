@@ -6,6 +6,8 @@ COPY landing ./
 COPY docs /src/docs
 COPY examples /src/examples
 COPY README.md THIRD_PARTY_NOTICES.md /src/
+# landing/src/Account.jsx imports ../../src/retract/web/loader.mjs, which is /src/src/... here.
+COPY src/retract/web/loader.mjs /src/src/retract/web/loader.mjs
 RUN npm run build
 
 FROM python:3.12-slim-bookworm AS builder
