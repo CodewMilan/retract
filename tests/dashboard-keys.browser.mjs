@@ -43,7 +43,9 @@ try {
     assert.equal(config.mcpServers.retract.env.RETRACT_API_KEY, 'rk_synthetic_fixture_only');
     await page.locator('#config-copy').click();
     assert.equal(await page.evaluate(() => navigator.clipboard.readText()), await page.locator('#mcp-config').innerText());
+    await page.waitForFunction(() => !document.querySelector('#key-form').hasAttribute('aria-busy'));
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.querySelector('#key-secret').value === '');
     assert.equal(await page.locator('#key-secret').inputValue(), '');
     assert.equal(await page.locator('#mcp-config').textContent(), '');
     await open();

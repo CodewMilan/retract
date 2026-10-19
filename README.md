@@ -174,7 +174,8 @@ treated as data. The HTTP adapter, dashboard, and MCP adapter share the same `Me
 
 | Route | Inputs |
 | --- | --- |
-| `GET /` | Local memory dashboard. |
+| `GET /` | Marketing page. |
+| `GET /dashboard` | Memory workspace; project/view/filter links survive reload. |
 | `GET /api/projects` | Bounded project picker. |
 | `POST /dashboard` | `project_id`, optional `scope` (null for all); bounded memory snapshot and activity. |
 | `GET /health` | Checks a real database query; unavailable storage returns 503. |
@@ -269,17 +270,18 @@ checks, and that distinction.
 ## Memory dashboard
 
 Open `http://127.0.0.1:8100/dashboard` while `retract serve` is running. `/` is the
-marketing page. Select a project
-and scope to inspect current facts, superseded facts, proposals/pending updates,
-affected plans, update history, and recent API activity. Create projects,
-remember accepted facts with evidence, and record plain-language or explicit
-updates. Authority and replacement confirmation are separate controls.
+marketing page. Choose a project, then use **Memory**, **Plans**, **Needs review**,
+or **Handoffs**. History and API activity are grouped separately. **Add memory**
+saves a decision and its source; its details offer a direct update action.
+Exact updates work without AI configuration. Authority and replacement
+confirmation remain separate controls. Projects, filters, views, and searches
+can be bookmarked. **Connect an agent** provides setup for local and hosted use.
 
 The neutral interface is served by Python; no Node process is needed to use it.
 Run `python scripts/verify_phase4.py` for offline checks. Browser checks require
 `npm install --ignore-scripts`, `npx playwright install chromium`, then
-`python scripts/verify_phase4.py --browser`. Browser startup is blocked in this
-session; no visual or live database pass is claimed. See the
+`python scripts/verify_phase4.py --browser`. The [usability review](docs/13-USABILITY.md)
+records the latest browser and real-database journey checks. See the
 [dashboard guide](docs/09-DASHBOARD.md) for limits, retry behavior, and live checks.
 
 ## Verification

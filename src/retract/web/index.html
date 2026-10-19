@@ -100,7 +100,7 @@
  <form id="project-form"><div class="dialog-head"><h2 id="project-title">Create project</h2><button type="button" data-close aria-label="Close project dialog">×</button></div>
  <p class="muted dialog-intro">Keep related decisions and plans in one place.</p>
  <label for="project-name">Project name <span class="required">Required</span></label><input id="project-name" maxlength="300" required placeholder="e.g. My web app" autocomplete="off">
- <details class="advanced"><summary>Project identifier</summary><label for="project-id">Project ID</label><input id="project-id" maxlength="160" required pattern="[A-Za-z0-9][A-Za-z0-9._/\-]*" placeholder="my-web-app" aria-describedby="project-id-help"><p id="project-id-help" class="hint">Generated from the name. Your agents use this ID to find the project.</p></details>
+ <details class="advanced"><summary>Project identifier</summary><label for="project-id">Project ID</label><input id="project-id" maxlength="160" required pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]*" placeholder="my-web-app" aria-describedby="project-id-help"><p id="project-id-help" class="hint">Generated from the name. Your agents use this ID to find the project.</p></details>
  <p class="form-error" id="project-error" role="alert" tabindex="-1"></p><div class="dialog-actions"><button type="button" data-close class="secondary">Cancel</button><button class="primary" type="submit">Create project</button></div>
  </form>
 </dialog>
