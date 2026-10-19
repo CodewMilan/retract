@@ -44,7 +44,7 @@ class LandingRouteTests(unittest.TestCase):
         self.assertNotIn("Sign in.", body.decode())
         self.assertIn("fonts.googleapis.com", headers)
         self.assertEqual(script[2], b"landing-script")
-        self.assertIn("Sign in.", request(self.local, "/dashboard", "127.0.0.1:8100")[2].decode())
+        self.assertIn("Welcome to Retract", request(self.local, "/dashboard", "127.0.0.1:8100")[2].decode())
 
     def test_hosted_root_is_the_landing_page_and_dashboard_opens_sign_in(self):
         with TemporaryDirectory() as directory:
@@ -72,7 +72,7 @@ class LandingRouteTests(unittest.TestCase):
         self.assertIn("public, max-age=86400", script[1])
         self.assertEqual(font[0], 200)
         self.assertIn("font/woff2", font[1])
-        self.assertIn("Sign in.", workspace[2].decode())
+        self.assertIn("Welcome to Retract", workspace[2].decode())
         self.assertIn("initAuth", reserved[2].decode())
         self.assertNotIn(b"landing-must-not-win", reserved[2])
         self.assertEqual(escaped[0], 404)
@@ -87,4 +87,4 @@ class LandingRouteTests(unittest.TestCase):
         self.assertIn(b"/dashboard", body)
         self.assertNotIn(b"Sign in.", body)
         self.assertEqual(local[0], 404)
-        self.assertIn("Sign in.", workspace[2].decode())
+        self.assertIn("Welcome to Retract", workspace[2].decode())

@@ -316,7 +316,7 @@ function Nav() {
         </nav>
         <ul className="nav__list nav__list--secondary">
           <li className="nav__item nav__item--cta nav__item--login-desktop">
-            <a className="btn btn--secondary" href={DASHBOARD}>Dashboard</a>
+            <a className="btn btn--secondary" href={DASHBOARD}>Sign in</a>
           </li>
           <li className="nav__item nav__item--cta nav__item--login-desktop">
             <a className="btn btn--secondary" href={SETTINGS}>Settings</a>

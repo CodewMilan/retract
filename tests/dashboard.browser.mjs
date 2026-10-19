@@ -31,7 +31,7 @@ try {
     let snapshot = fixture(); const projects = [project]; let failSnapshots = false; let conflict = false; const submitted = [];
     await page.route('https://retract.test/**', async route => {
       const request = route.request(); const url = new URL(request.url());
-      const resources = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript']};
+      const resources = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript'], '/assets/auth-portrait.mjs': ['auth-portrait.mjs', 'text/javascript'], '/assets/gsap.min.js': ['gsap.min.js', 'text/javascript']};
       if (request.method() === 'GET' && resources[url.pathname]) { const [name, contentType] = resources[url.pathname]; return route.fulfill({contentType, headers: {'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"}, body: await readFile(new URL(name, root), 'utf8')}); }
       const json = (data, status = 200) => route.fulfill({status, contentType: 'application/json', body: JSON.stringify(data)});
       if (url.pathname === '/api/config') return json({mode: 'local'});
@@ -67,6 +67,10 @@ try {
       return json({error: 'Unexpected test request'}, 404);
     });
     await page.goto('https://retract.test/dashboard');
+    await page.locator('#auth-email').fill('ada@retract.test');
+    await page.locator('#auth-password').fill('local-pass');
+    await page.locator('#local-auth button[type="submit"]').click();
+    await page.locator('#auth-screen').waitFor({state: 'hidden'});
     await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
     assert.equal(await page.locator('#inspector').isVisible(), false);
     assert.equal(await page.locator('#navigation > button').count(), 4);
@@ -192,7 +196,13 @@ try {
     const target = new URL(process.argv[liveIndex + 1]);
     if (target.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(target.hostname)) throw new Error('Live URL must be local HTTP');
     const page = await browser.newPage();
-    await page.goto(target.href); await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
+    await page.goto(target.href);
+    if (await page.locator('#local-auth').isVisible()) {
+      await page.locator('#auth-email').fill('ada@retract.test');
+      await page.locator('#auth-password').fill('local-pass');
+      await page.locator('#local-auth button[type="submit"]').click();
+    }
+    await page.waitForFunction(() => document.querySelector('#connection').textContent === 'Storage connected');
     assert.ok(await page.locator('#snapshot-meta').innerText().then(text => text.includes('Revision')));
     await page.close(); console.log('PASS read-only real-service dashboard smoke');
   }

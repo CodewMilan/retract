@@ -3,6 +3,7 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
+import os
 import re
 from importlib.resources import files
 from time import monotonic
@@ -26,6 +27,24 @@ LOCAL_CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; "
     "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 )
+
+
+def local_clerk():
+    """Public Clerk fields for the local sign-in page. Absent when the keys are unset."""
+    key = os.getenv("CLERK_PUBLISHABLE_KEY", "").strip()
+    issuer = os.getenv("CLERK_ISSUER_URL", "").strip().rstrip("/")
+    parsed = urlsplit(issuer) if issuer else None
+    if not key.startswith(("pk_test_", "pk_live_")) or parsed is None or parsed.scheme != "https" or not parsed.hostname:
+        return None
+    return {"publishable_key": key, "issuer": issuer}
+
+
+def clerk_page_policy(issuer):
+    return (f"default-src 'self'; script-src 'self' {issuer} https://challenges.cloudflare.com; "
+            f"connect-src 'self' {issuer}; style-src 'self' 'unsafe-inline'; "
+            f"img-src 'self' data: {issuer} https://img.clerk.com; font-src 'self' {issuer}; "
+            f"frame-src {issuer} https://challenges.cloudflare.com; worker-src 'self' blob:; "
+            "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 
 
 def font_bytes(name):
@@ -114,7 +133,12 @@ def make_handler(service: MemoryService, hosted=None):
             self.close_connection = True
 
         def content_policy(self):
-            return hosted.config.csp() if hosted else LOCAL_CSP
+            if hosted:
+                return hosted.config.csp()
+            clerk = local_clerk()
+            if clerk and self.path.split("?", 1)[0] == "/dashboard":
+                return clerk_page_policy(clerk["issuer"])
+            return LOCAL_CSP
 
         def valid_origin(self):
             allowed = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
@@ -155,7 +179,14 @@ def make_handler(service: MemoryService, hosted=None):
                     self.send_static(encoded, "font/woff2", "public, max-age=86400", self.content_policy())
                     return
                 if self.path == "/api/config":
-                    self.respond(200, hosted.config.public() if hosted else {"mode": "local"})
+                    if hosted:
+                        self.respond(200, hosted.config.public())
+                    else:
+                        body = {"mode": "local"}
+                        clerk = local_clerk()
+                        if clerk:
+                            body.update(clerk)
+                        self.respond(200, body)
                     return
                 # / is the marketing page in every mode. The workspace is /dashboard.
                 if self.path == "/":
@@ -170,7 +201,9 @@ def make_handler(service: MemoryService, hosted=None):
                           "/assets/dashboard.css": ("dashboard.css", "text/css"),
                           "/assets/dashboard.mjs": ("dashboard.mjs", "text/javascript"),
                           "/assets/dashboard-model.mjs": ("dashboard-model.mjs", "text/javascript"),
-                          "/assets/auth.mjs": ("auth.mjs", "text/javascript")}
+                          "/assets/auth.mjs": ("auth.mjs", "text/javascript"),
+                          "/assets/auth-portrait.mjs": ("auth-portrait.mjs", "text/javascript"),
+                          "/assets/gsap.min.js": ("gsap.min.js", "text/javascript")}
                 # Workspace filters live in the URL so a saved link survives reload.
                 asset_path = "/dashboard" if self.path.startswith("/dashboard?") else self.path
                 if asset_path in assets:

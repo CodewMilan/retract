@@ -22,7 +22,7 @@ Example: a browser application moves from bearer tokens to cookie sessions. RETR
 | [04-INFRASTRUCTURE-AND-COSTS.md](04-INFRASTRUCTURE-AND-COSTS.md) | Local setup strategy, free-tier limits, costs, and operational risks. |
 | [05-BUILD-PLAN.md](05-BUILD-PLAN.md) | Ordered implementation milestones, scope cuts, and submission checklist. |
 
-Keep these files together in this folder so relative links work. The six original files define the specification; [06-IMPLEMENTATION-STATUS.md](06-IMPLEMENTATION-STATUS.md) records what has actually been implemented and checked. Executable setup commands are in the [root README](../README.md).
+Keep these files together in this folder so relative links work. The six original files define the specification; [06-IMPLEMENTATION-STATUS.md](06-IMPLEMENTATION-STATUS.md) records what has actually been implemented and checked. Later notes keep the same numbering, including [13-DEMO-RUNBOOK.md](13-DEMO-RUNBOOK.md) and [14-USABILITY.md](14-USABILITY.md). The submission draft is [SUBMISSION.md](SUBMISSION.md). Executable setup commands are in the [root README](../README.md).
 
 ## Decisions already made
 
