@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "./gsap.js";
+import { paintWait } from "../../src/retract/web/loader.mjs";
 
 const SIGN_IN = import.meta.env.DEV ? "http://127.0.0.1:8100/dashboard" : "/dashboard";
 
@@ -31,6 +33,15 @@ function displayName(user) {
 
 function clerkError(failure) {
   return failure?.errors?.[0]?.longMessage || failure?.errors?.[0]?.message || "Could not save your account.";
+}
+
+function WaitSlot() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return paintWait(ref.current, { gsap, compact: true, quiet: true, label: "Checking your account" });
+  }, []);
+  return <span ref={ref} className="account-slot" />;
 }
 
 export function AccountLink() {
@@ -99,7 +110,7 @@ export function AccountLink() {
   }, [open]);
 
   if (phase !== "in" || !user) {
-    if (phase === "loading") return <span className="account-slot" aria-hidden="true" />;
+    if (phase === "loading") return <WaitSlot />;
     return <a className="btn btn--secondary" href={SIGN_IN}>Sign in</a>;
   }
 
@@ -154,6 +165,11 @@ export function AccountLink() {
   async function signOut() {
     setLeaving(true);
     setError("");
+    const screen = document.createElement("div");
+    screen.className = "wait-screen";
+    screen.setAttribute("role", "status");
+    document.body.append(screen);
+    const stop = paintWait(screen, { gsap, label: "Signing you out…", brand: true });
     try {
       if (!clerk.client?.sessions?.length) {
         window.location.replace(`${location.origin}/`);
@@ -161,6 +177,8 @@ export function AccountLink() {
       }
       await clerk.signOut({ redirectUrl: `${location.origin}/` });
     } catch (failure) {
+      stop();
+      screen.remove();
       setLeaving(false);
       setError(clerkError(failure));
     }

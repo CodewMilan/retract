@@ -14,7 +14,7 @@ try {
     await page.route(`${origin}/**`, async route => {
       const request = route.request(); const path = new URL(request.url()).pathname;
       const json = (body, status = 200) => route.fulfill({status, contentType: 'application/json', body: JSON.stringify(body)});
-      const assets = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript']};
+      const assets = {'/dashboard': ['index.html', 'text/html'], '/assets/dashboard.css': ['dashboard.css', 'text/css'], '/assets/dashboard.mjs': ['dashboard.mjs', 'text/javascript'], '/assets/dashboard-model.mjs': ['dashboard-model.mjs', 'text/javascript'], '/assets/auth.mjs': ['auth.mjs', 'text/javascript'], '/assets/loader.mjs': ['loader.mjs', 'text/javascript'], '/assets/gsap.min.js': ['gsap.min.js', 'text/javascript']};
       if (assets[path]) { const [file, contentType] = assets[path]; return route.fulfill({contentType, body: await readFile(new URL(file, root), 'utf8')}); }
       if (path.startsWith('/assets/fonts/')) return route.fulfill({contentType: 'font/woff2', body: await readFile(new URL(path.replace('/assets/', ''), root))});
       if (path.includes('/npm/@clerk/ui')) return route.fulfill({contentType: 'text/javascript', body: 'window.__internal_ClerkUICtor = function() {}'});
