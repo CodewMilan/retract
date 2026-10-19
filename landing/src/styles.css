@@ -1159,3 +1159,70 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
   .ecosystemMap__ringRotor { transition: none; }
   .split-words > span::after { transition: none; }
 }
+
+/* Signed-in account control in the marketing nav. */
+.account-slot { display: inline-block; width: 2.75rem; height: 2.75rem; }
+.nav__item--account { position: relative; }
+.account-menu { position: relative; display: flex; align-items: center; }
+.account-avatar-btn {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-pale-gray);
+  color: var(--color-dark);
+  font-family: var(--ff-text);
+  font-size: 0.95rem;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+.account-avatar-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.account-avatar-btn--large { width: 4.5rem; height: 4.5rem; font-size: 1.25rem; pointer-events: none; }
+.account-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: min(19rem, calc(100vw - 2rem));
+  padding: 1rem 1rem 0.85rem;
+  background: var(--color-light);
+  border: 1px solid var(--color-visual-grid);
+}
+.account-panel label { display: block; margin: 0.85rem 0 0.35rem; font-family: var(--ff-text); font-size: 0.8125rem; font-weight: var(--fw-medium); }
+.account-panel input:not([type="file"]) {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-visual-grid);
+  border-radius: 0;
+  background: var(--color-light);
+  color: var(--color-text);
+  font-family: var(--ff-text);
+  font-size: 1rem;
+}
+.account-photo { display: grid; justify-items: center; gap: 0.35rem; margin: 0 0 0.25rem; cursor: pointer; text-align: center; }
+.account-photo input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.account-email { margin: 0.85rem 0 0; color: var(--color-secondary-body); font-size: 0.8125rem; }
+.account-error { margin: 0.65rem 0 0; color: var(--color-brand); font-size: 0.875rem; line-height: 1.4; }
+.account-saved { margin: 0.65rem 0 0; font-size: 0.875rem; }
+.account-panel .account-save { width: 100%; margin-top: 0.9rem; }
+.account-panel .account-save:disabled { opacity: 0.55; cursor: progress; }
+.account-links { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.35rem; }
+.account-links a, .account-links button {
+  min-height: 44px;
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--color-dark);
+  font-family: var(--ff-text);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 69.9375em) {
+  .account-panel { top: auto; bottom: calc(100% + 0.75rem); }
+}

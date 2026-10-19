@@ -55,9 +55,12 @@ function showShell() {
   $('auth-screen').hidden = true;
   document.querySelector('.shell').hidden = false;
 }
-function showAuth() {
+function showAuthScreen() {
   document.querySelector('.shell').hidden = true;
   $('auth-screen').hidden = false;
+}
+function showAuth() {
+  showAuthScreen();
   import('./auth-portrait.mjs').then(module => module.mountPortrait(document.querySelector('.auth-portrait'))).catch(() => {});
 }
 function bindLocalAuth(onEnter) {
@@ -104,9 +107,22 @@ function bindLocalAuth(onEnter) {
     onEnter?.();
   };
 }
-function clerkRedirect() {
-  return `${config.mode === 'hosted' ? config.origin : location.origin}/dashboard`;
+function appOrigin() {
+  return config.mode === 'hosted' && config.origin ? config.origin : location.origin;
 }
+function dashboardUrl() {
+  return `${appOrigin()}/dashboard`;
+}
+function callbackUrl() {
+  return `${appOrigin()}/sso-callback`;
+}
+function isClerkReturn() {
+  return location.pathname === '/sso-callback'
+    || location.search.includes('__clerk')
+    || location.search.includes('rotating_token_nonce')
+    || location.hash.includes('sso-callback');
+}
+let releaseWorkspace = () => {};
 function clerkMessage(error) {
   return error?.errors?.[0]?.longMessage || error?.errors?.[0]?.message || error?.message || 'Sign-in could not continue.';
 }
@@ -119,23 +135,122 @@ async function finishClerkSession(sessionId) {
   await clerk.setActive({session: sessionId});
   enterClerkWorkspace();
 }
-function enterClerkWorkspace() {
-  showShell();
-  if (config.mode === 'local') {
-    const out = $('local-sign-out');
-    if (out) {
-      out.hidden = false;
-      out.onclick = async () => { await clerk.signOut(); window.location.assign('/dashboard'); };
-    }
+function accountName(user) {
+  return [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.primaryEmailAddress?.emailAddress || 'Account';
+}
+function accountInitial(user) {
+  return (accountName(user)[0] || 'A').toUpperCase();
+}
+function paintAvatar(node, user) {
+  if (!node) return;
+  node.replaceChildren();
+  const initial = accountInitial(user);
+  if (!user?.imageUrl) {
+    node.textContent = initial;
     return;
   }
-  $('account-controls').hidden = false;
-  clerk.mountUserButton($('user-button'), {appearance, afterSignOutUrl: config.origin});
-  clerk.addListener(({session}) => { if (!session) window.location.reload(); });
+  const image = document.createElement('img');
+  image.alt = '';
+  image.src = user.imageUrl;
+  image.onerror = () => { node.replaceChildren(initial); };
+  node.append(image);
+}
+function fillAccountForm() {
+  const user = clerk.user;
+  if (!user) return;
+  $('account-first').value = user.firstName || '';
+  $('account-last').value = user.lastName || '';
+  $('account-email').value = user.primaryEmailAddress?.emailAddress || '';
+  paintAvatar($('account-photo'), user);
+  $('account-error').textContent = '';
+  $('account-saved').hidden = true;
+}
+function mountAccount() {
+  const user = clerk.user;
+  const menu = $('account-menu');
+  if (!user || !menu) return;
+  const label = accountName(user);
+  for (const button of [$('account-menu'), $('account-menu-mobile')]) {
+    if (!button) continue;
+    button.hidden = false;
+    button.setAttribute('aria-label', `Account, ${label}`);
+  }
+  $('account-label').textContent = label;
+  paintAvatar($('account-avatar'), user);
+  paintAvatar($('account-avatar-mobile'), user);
+  const out = $('local-sign-out');
+  if (out) out.hidden = true;
+  if (menu.dataset.bound) return;
+  menu.dataset.bound = '1';
+  const open = () => { fillAccountForm(); $('account-dialog').showModal(); $('account-first').focus(); };
+  menu.onclick = open;
+  const mobile = $('account-menu-mobile');
+  if (mobile) mobile.onclick = open;
+  $('account-image').onchange = async () => {
+    const file = $('account-image').files?.[0];
+    $('account-image').value = '';
+    if (!file) return;
+    $('account-error').textContent = '';
+    $('account-saved').hidden = true;
+    if (file.size > 10 * 1024 * 1024) {
+      $('account-error').textContent = 'Use a photo smaller than 10 MB.';
+      return;
+    }
+    try {
+      await clerk.user.setProfileImage({file});
+      paintAvatar($('account-photo'), clerk.user);
+      paintAvatar($('account-avatar'), clerk.user);
+      paintAvatar($('account-avatar-mobile'), clerk.user);
+    } catch (error) {
+      $('account-error').textContent = clerkMessage(error);
+    }
+  };
+  $('account-form').onsubmit = async event => {
+    event.preventDefault();
+    const button = event.submitter;
+    $('account-error').textContent = '';
+    $('account-saved').hidden = true;
+    button.disabled = true;
+    button.textContent = 'Saving…';
+    $('account-form').setAttribute('aria-busy', 'true');
+    try {
+      await clerk.user.update({firstName: $('account-first').value.trim(), lastName: $('account-last').value.trim()});
+      const name = accountName(clerk.user);
+      $('account-label').textContent = name;
+      for (const trigger of [$('account-menu'), $('account-menu-mobile')]) trigger?.setAttribute('aria-label', `Account, ${name}`);
+      paintAvatar($('account-avatar'), clerk.user);
+      paintAvatar($('account-avatar-mobile'), clerk.user);
+      $('account-saved').hidden = false;
+    } catch (error) {
+      $('account-error').textContent = clerkMessage(error);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Save';
+      $('account-form').removeAttribute('aria-busy');
+    }
+  };
+  $('account-sign-out').onclick = async () => {
+    $('account-sign-out').disabled = true;
+    try {
+      await clerk.signOut();
+      window.location.assign(dashboardUrl());
+    } catch (error) {
+      $('account-sign-out').disabled = false;
+      $('account-error').textContent = clerkMessage(error);
+    }
+  };
+}
+function enterClerkWorkspace() {
+  showShell();
+  mountAccount();
+  if (!clerk.listenerBound) {
+    clerk.listenerBound = true;
+    clerk.addListener?.(({session}) => { if (!session) window.location.assign(dashboardUrl()); });
+  }
+  releaseWorkspace();
 }
 async function startOAuth(strategy) {
-  const redirect = clerkRedirect();
-  const params = {strategy, redirectUrl: redirect, redirectUrlComplete: redirect};
+  const params = {strategy, redirectUrl: callbackUrl(), redirectUrlComplete: dashboardUrl()};
   $('auth-error').hidden = true;
   if ($('auth-title').textContent === 'Welcome back') await clerk.client.signIn.authenticateWithRedirect(params);
   else await clerk.client.signUp.authenticateWithRedirect(params);
@@ -202,26 +317,52 @@ function bindClerkForm() {
   };
 }
 async function mountClerk() {
-  showAuth();
-  await script(`${config.issuer}/npm/@clerk/ui@1/dist/ui.browser.js`);
+  showAuthScreen();
   await script(`${config.issuer}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, config.publishable_key);
   clerk = window.Clerk;
-  await clerk.load({appearance, ui: {ClerkUI: window.__internal_ClerkUICtor}});
-  const redirect = clerkRedirect();
-  if (location.search.includes('__clerk') || location.hash.includes('sso-callback')) {
-    await clerk.handleRedirectCallback({
-      signInForceRedirectUrl: redirect,
-      signUpForceRedirectUrl: redirect,
-      signInFallbackRedirectUrl: redirect,
-      signUpFallbackRedirectUrl: redirect,
-    });
+  const done = dashboardUrl();
+  await clerk.load({
+    appearance,
+    signInUrl: done,
+    signUpUrl: done,
+    afterSignInUrl: done,
+    afterSignUpUrl: done,
+    signInForceRedirectUrl: done,
+    signUpForceRedirectUrl: done,
+    signInFallbackRedirectUrl: done,
+    signUpFallbackRedirectUrl: done,
+  });
+  const pending = new Promise(resolve => { releaseWorkspace = resolve; });
+  if (isClerkReturn()) {
+    try {
+      await clerk.handleRedirectCallback({
+        signInUrl: done,
+        signUpUrl: done,
+        continueSignUpUrl: done,
+        signInForceRedirectUrl: done,
+        signUpForceRedirectUrl: done,
+        signInFallbackRedirectUrl: done,
+        signUpFallbackRedirectUrl: done,
+      }, to => {
+        const target = new URL(to, location.origin);
+        const onWorkspace = target.origin === location.origin && (target.pathname === '/dashboard' || target.pathname === '/sso-callback');
+        window.location.assign(onWorkspace ? target.href : done);
+      });
+    } catch (error) {
+      showClerkError(error);
+    }
   }
   if (clerk.session) {
+    if (location.pathname === '/sso-callback') {
+      window.location.replace(done);
+      return new Promise(() => {});
+    }
     enterClerkWorkspace();
     return;
   }
+  showAuth();
   bindClerkForm();
-  return new Promise(() => {});
+  return pending;
 }
 export async function initAuth() {
   const response = await fetch('/api/config', {cache: 'no-store'});

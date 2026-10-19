@@ -27,6 +27,9 @@ LOCAL_CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; "
     "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 )
+_CLERK_IMG = (
+    "https://img.clerk.com https://images.clerk.dev https://*.googleusercontent.com https://avatars.githubusercontent.com"
+)
 
 
 def local_clerk():
@@ -42,9 +45,32 @@ def local_clerk():
 def clerk_page_policy(issuer):
     return (f"default-src 'self'; script-src 'self' {issuer} https://challenges.cloudflare.com; "
             f"connect-src 'self' {issuer}; style-src 'self' 'unsafe-inline'; "
-            f"img-src 'self' data: {issuer} https://img.clerk.com; font-src 'self' {issuer}; "
+            f"img-src 'self' data: blob: {issuer} {_CLERK_IMG}; font-src 'self' {issuer}; "
             f"frame-src {issuer} https://challenges.cloudflare.com; worker-src 'self' blob:; "
             "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+
+
+def landing_clerk_policy(issuer):
+    """Marketing page policy once Clerk is configured. Keeps the landing fonts and adds account images."""
+    return ("default-src 'self'; "
+            f"script-src 'self' {issuer} https://challenges.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            f"font-src 'self' https://fonts.gstatic.com {issuer}; "
+            f"img-src 'self' data: blob: {issuer} {_CLERK_IMG}; "
+            f"connect-src 'self' {issuer}; "
+            f"frame-src {issuer} https://challenges.cloudflare.com; worker-src 'self' blob:; "
+            "mask-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+
+
+def configured_issuer(hosted):
+    if hosted is not None:
+        issuer = getattr(hosted.config, "issuer", "")
+        parsed = urlsplit(issuer) if isinstance(issuer, str) else None
+        if parsed is None or parsed.scheme != "https" or not parsed.hostname:
+            return None
+        return issuer.rstrip("/")
+    found = local_clerk()
+    return found["issuer"] if found else None
 
 
 def font_bytes(name):
@@ -133,11 +159,14 @@ def make_handler(service: MemoryService, hosted=None):
             self.close_connection = True
 
         def content_policy(self):
+            issuer = configured_issuer(hosted)
+            bare = self.path.split("?", 1)[0]
+            if bare == "/":
+                return landing_clerk_policy(issuer) if issuer else LANDING_CSP
+            if issuer and bare in {"/dashboard", "/sso-callback"}:
+                return clerk_page_policy(issuer)
             if hosted:
                 return hosted.config.csp()
-            clerk = local_clerk()
-            if clerk and self.path.split("?", 1)[0] == "/dashboard":
-                return clerk_page_policy(clerk["issuer"])
             return LOCAL_CSP
 
         def valid_origin(self):
@@ -192,7 +221,7 @@ def make_handler(service: MemoryService, hosted=None):
                 if self.path == "/":
                     landing = landing_asset("/")
                     if landing is not None:
-                        self.send_static(*landing, LANDING_CSP)
+                        self.send_static(*landing, self.content_policy())
                         return
                     warn_missing_landing()
                     self.respond(404, {"error": "Landing build is missing. The workspace is at /dashboard."})
@@ -205,7 +234,9 @@ def make_handler(service: MemoryService, hosted=None):
                           "/assets/auth-portrait.mjs": ("auth-portrait.mjs", "text/javascript"),
                           "/assets/gsap.min.js": ("gsap.min.js", "text/javascript")}
                 # Workspace filters live in the URL so a saved link survives reload.
-                asset_path = "/dashboard" if self.path.startswith("/dashboard?") else self.path
+                # OAuth returns to /sso-callback, which must be this same page so the session can finish.
+                bare = self.path.split("?", 1)[0]
+                asset_path = "/dashboard" if bare in {"/dashboard", "/sso-callback"} else self.path
                 if asset_path in assets:
                     name, mime = assets[asset_path]
                     encoded = files("retract").joinpath("web", name).read_bytes()
@@ -213,7 +244,7 @@ def make_handler(service: MemoryService, hosted=None):
                     return
                 landing = landing_asset(self.path)
                 if landing is not None:
-                    self.send_static(*landing, LANDING_CSP)
+                    self.send_static(*landing, self.content_policy())
                     return
                 if self.path == "/api/projects":
                     self.respond(200, self.workspace().list_projects())

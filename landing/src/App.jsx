@@ -3,6 +3,7 @@ import EcosystemMap from "./EcosystemMap.jsx";
 import HeroEtchTrail from "./HeroEtchTrail.jsx";
 import { AutoIncrementValue, SplitWords } from "./motion.jsx";
 import { MOTION_OK, gsap, useGSAP } from "./gsap.js";
+import { AccountLink } from "./Account.jsx";
 import { DocsPage, parseDocsHash } from "./docs.jsx";
 import falkordbLogo from "./assets/falkordb.png";
 import codexLogo from "./assets/codex.png";
@@ -315,8 +316,8 @@ function Nav() {
           </ul>
         </nav>
         <ul className="nav__list nav__list--secondary">
-          <li className="nav__item nav__item--cta nav__item--login-desktop">
-            <a className="btn btn--secondary" href={DASHBOARD}>Sign in</a>
+          <li className="nav__item nav__item--cta nav__item--login-desktop nav__item--account">
+            <AccountLink />
           </li>
           <li className="nav__item nav__item--cta nav__item--login-desktop">
             <a className="btn btn--secondary" href={SETTINGS}>Settings</a>

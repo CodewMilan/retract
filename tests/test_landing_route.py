@@ -45,6 +45,9 @@ class LandingRouteTests(unittest.TestCase):
         self.assertIn("fonts.googleapis.com", headers)
         self.assertEqual(script[2], b"landing-script")
         self.assertIn("Welcome to Retract", request(self.local, "/dashboard", "127.0.0.1:8100")[2].decode())
+        callback = request(self.local, "/sso-callback?rotating_token_nonce=abc", "127.0.0.1:8100")
+        self.assertEqual(callback[0], 200)
+        self.assertIn("Your account", callback[2].decode())
 
     def test_hosted_root_is_the_landing_page_and_dashboard_opens_sign_in(self):
         with TemporaryDirectory() as directory:

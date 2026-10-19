@@ -64,7 +64,9 @@ class HostedConfig:
         # Clerk's UI requires inline styles; application scripts stay external.
         return (f"default-src 'self'; script-src 'self' {self.issuer} https://challenges.cloudflare.com; "
                 f"connect-src 'self' {self.issuer}; style-src 'self' 'unsafe-inline'; "
-                f"img-src 'self' data: {self.issuer} https://img.clerk.com; font-src 'self' {self.issuer}; "
+                f"img-src 'self' data: blob: {self.issuer} https://img.clerk.com https://images.clerk.dev "
+                "https://*.googleusercontent.com https://avatars.githubusercontent.com; "
+                f"font-src 'self' {self.issuer}; "
                 f"frame-src {self.issuer} https://challenges.cloudflare.com; worker-src 'self' blob:; "
                 "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 

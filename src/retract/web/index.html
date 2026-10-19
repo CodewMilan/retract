@@ -53,7 +53,7 @@
   </div>
 </section>
 <div class="shell" hidden>
-  <div class="mobile-bar"><a class="wordmark" href="/"><span class="brand-name">Retract</span></a><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="sidebar">Menu</button></div>
+  <div class="mobile-bar"><a class="wordmark" href="/"><span class="brand-name">Retract</span></a><button id="account-menu-mobile" class="account-chip account-chip--icon" type="button" hidden><span class="account-avatar" id="account-avatar-mobile"></span></button><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="sidebar">Menu</button></div>
   <button id="menu-overlay" class="menu-overlay" aria-label="Close navigation" hidden tabindex="-1"></button>
   <aside id="sidebar" class="sidebar" aria-label="Project navigation">
     <a class="wordmark" href="/"><span class="brand-name">Retract</span></a>
@@ -62,8 +62,8 @@
     <button id="new-project" class="quiet">+ New project</button>
     <nav id="navigation" aria-label="Memory views"></nav>
     <div class="sidebar-bottom"><button id="access-keys" class="secondary">Connect an agent <span aria-hidden="true">↗</span></button>
+    <button id="account-menu" class="account-chip" type="button" hidden><span class="account-avatar" id="account-avatar"></span><span class="account-label" id="account-label">Account</span></button>
     <button id="local-sign-out" class="quiet" type="button" hidden>Sign out</button>
-    <div id="account-controls" hidden><div id="user-button"></div><span>Your account</span></div>
     <div class="sidebar-foot"><span class="connection-dot" aria-hidden="true"></span><span id="connection" role="status">Connecting…</span><p id="storage-note">Your project context, kept together.</p></div></div>
   </aside>
   <main id="content" tabindex="-1">
@@ -155,5 +155,16 @@
  <p id="mcp-fallback" class="hint"></p>
  <p class="step-label">Next, ask your agent</p><p id="agent-prompt" class="before"></p></div>
  <p class="hint">Revoking a key stops new requests immediately.</p></div>
+</dialog>
+<dialog id="account-dialog" aria-labelledby="account-title">
+ <form id="account-form"><div class="dialog-head"><h2 id="account-title">Your account</h2><button type="button" data-close aria-label="Close account">×</button></div>
+ <label class="account-photo"><span class="account-avatar account-avatar--large" id="account-photo"></span><input id="account-image" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><span>Change photo</span></label>
+ <div class="field-pair"><div><label for="account-first">First name</label><input id="account-first" name="first" maxlength="80" autocomplete="given-name"></div><div><label for="account-last">Last name</label><input id="account-last" name="last" maxlength="80" autocomplete="family-name"></div></div>
+ <label for="account-email">Email</label><input id="account-email" type="email" readonly autocomplete="email">
+ <p class="hint">Your sign-in email. Name and photo save with this account.</p>
+ <p id="account-error" class="form-error" role="alert"></p>
+ <p id="account-saved" class="account-saved" role="status" hidden>Saved.</p>
+ <div class="dialog-actions"><button type="button" id="account-sign-out" class="secondary">Sign out</button><button class="primary" type="submit">Save</button></div>
+ </form>
 </dialog>
 </body></html>
