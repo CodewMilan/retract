@@ -1,5 +1,5 @@
 import {initAuth, authHeaders, authFailed, authConfig} from './auth.mjs';
-import {paintWait} from './loader.mjs';
+import {paintWait, holdControl} from './loader.mjs';
 import {views, number, rowsFor, updateRequest, RequestDraft, statusLabel} from './dashboard-model.mjs';
 const $ = id => document.getElementById(id);
 const initial = new URLSearchParams(location.search);
@@ -175,7 +175,7 @@ function emptyState(title, description, button) {
   const box = el('div', undefined, 'empty'); box.append(icon('memory'), el('h2', title), el('p', description, 'muted')); if (button) box.append(button); return box;
 }
 function waitState(label) {
-  const box = el('div', undefined, 'empty');
+  const box = el('div', undefined, 'list-wait');
   paintWait(box, {label});
   return box;
 }
@@ -323,14 +323,14 @@ async function submit(form, errorId, action) {
   const wasDisabled = fields.map(node => node.disabled);
   state.submitting = true; $('project').disabled = true; $('scope').disabled = true;
   buttons.forEach(node => node.disabled = true); fields.forEach(node => node.disabled = true);
-  const primary = form.querySelector('[type=submit]'); const label = primary.textContent; primary.textContent = 'Saving…'; form.setAttribute('aria-busy', 'true'); $(errorId).textContent = '';
+  const primary = form.querySelector('[type=submit]'); const release = holdControl(primary, 'Saving…'); form.setAttribute('aria-busy', 'true'); $(errorId).textContent = '';
   try { await action(); }
   catch (error) {
     const conflict = errorId === 'project-error' ? ' Choose a different project name or identifier.' : ' Refresh context and review the latest decision before trying again.';
     $(errorId).textContent = error.message + (error.status === 409 ? conflict : ''); $(errorId).focus();
   }
   finally {
-    state.submitting = false; form.removeAttribute('aria-busy'); buttons.forEach(node => node.disabled = false); fields.forEach((node, i) => node.disabled = wasDisabled[i]); primary.textContent = label; ready(state.ready);
+    state.submitting = false; form.removeAttribute('aria-busy'); buttons.forEach(node => node.disabled = false); fields.forEach((node, i) => node.disabled = wasDisabled[i]); release(); ready(state.ready);
   }
 }
 $('update-form').onsubmit = event => {

@@ -1163,9 +1163,10 @@ section[id], [id="top"] { scroll-margin-top: calc(var(--nav-height) + var(--spac
 /* Signed-in account control in the marketing nav. */
 .account-slot { display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; }
 .wait-screen { position: fixed; inset: 0; z-index: 800; display: grid; place-items: center; background: #fff; }
-.wait { display: grid; justify-items: center; gap: 1.1rem; }
-.wait-grid { display: grid; grid-template-columns: repeat(4, 10px); gap: 4px; }
-.wait-grid span { display: block; width: 10px; height: 10px; transform-origin: center; }
+.wait { display: grid; justify-items: center; gap: 0.9rem; }
+.wait-grid { display: grid; grid-template-columns: repeat(4, 16px); gap: 6px; }
+.wait-grid span { display: block; width: 16px; height: 16px; transform-origin: center; }
+.wait-hold { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; }
 .wait-label { margin: 0; color: var(--color-secondary-body); font-family: var(--ff-text); font-size: 0.875rem; line-height: 1.4; }
 .wait--compact { gap: 0; }
 .wait--compact .wait-grid { grid-template-columns: repeat(4, 7px); gap: 3px; }

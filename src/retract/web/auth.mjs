@@ -1,4 +1,4 @@
-import {paintWait} from './loader.mjs';
+import {paintWait, holdControl} from './loader.mjs';
 let config = {mode: 'local'};
 let clerk;
 const appearance = {
@@ -219,12 +219,16 @@ function mountAccount() {
       $('account-error').textContent = 'Use a photo smaller than 10 MB.';
       return;
     }
+    const stop = paintWait($('account-photo'), {compact: true, quiet: true, label: 'Updating photo'});
     try {
       await clerk.user.setProfileImage({file});
+      stop();
       paintAvatar($('account-photo'), clerk.user);
       paintAvatar($('account-avatar'), clerk.user);
       paintAvatar($('account-avatar-mobile'), clerk.user);
     } catch (error) {
+      stop();
+      paintAvatar($('account-photo'), clerk.user);
       $('account-error').textContent = clerkMessage(error);
     }
   };
@@ -234,7 +238,7 @@ function mountAccount() {
     $('account-error').textContent = '';
     $('account-saved').hidden = true;
     button.disabled = true;
-    button.textContent = 'Saving…';
+    const release = holdControl(button, 'Saving…');
     $('account-form').setAttribute('aria-busy', 'true');
     try {
       await clerk.user.update({firstName: $('account-first').value.trim(), lastName: $('account-last').value.trim()});
@@ -248,7 +252,7 @@ function mountAccount() {
       $('account-error').textContent = clerkMessage(error);
     } finally {
       button.disabled = false;
-      button.textContent = 'Save';
+      release();
       $('account-form').removeAttribute('aria-busy');
     }
   };

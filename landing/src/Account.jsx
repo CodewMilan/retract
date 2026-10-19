@@ -44,6 +44,15 @@ function WaitSlot() {
   return <span ref={ref} className="account-slot" />;
 }
 
+function SavingMark() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return undefined;
+    return paintWait(ref.current, { gsap, compact: true, quiet: true, label: "Saving" });
+  }, []);
+  return <span ref={ref} className="wait-hold" aria-hidden="true" />;
+}
+
 export function AccountLink() {
   const [phase, setPhase] = useState("loading");
   const [user, setUser] = useState(null);
@@ -54,6 +63,7 @@ export function AccountLink() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [photoBroken, setPhotoBroken] = useState(false);
   const buttonRef = useRef(null);
@@ -152,6 +162,7 @@ export function AccountLink() {
       setError("Use a photo smaller than 10 MB.");
       return;
     }
+    setPhotoBusy(true);
     try {
       await clerk.user.setProfileImage({ file });
       setPhotoBroken(false);
@@ -159,6 +170,8 @@ export function AccountLink() {
       setSaved(true);
     } catch (failure) {
       setError(clerkError(failure));
+    } finally {
+      setPhotoBusy(false);
     }
   }
 
@@ -202,7 +215,7 @@ export function AccountLink() {
           <form onSubmit={save}>
             <label className="account-photo">
               <span className="account-avatar-btn account-avatar-btn--large" aria-hidden="true">
-                {showPhoto ? <img src={user.imageUrl} alt="" /> : <span>{initial}</span>}
+                {photoBusy ? <SavingMark /> : showPhoto ? <img src={user.imageUrl} alt="" /> : <span>{initial}</span>}
               </span>
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={changePhoto} />
               <span>Change photo</span>
@@ -214,7 +227,7 @@ export function AccountLink() {
             <p className="account-email">{user.email}</p>
             {error ? <p className="account-error" role="alert">{error}</p> : null}
             {saved ? <p className="account-saved" role="status">Saved.</p> : null}
-            <button className="btn account-save" type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+            <button className="btn account-save" type="submit" disabled={saving}>{saving ? <><SavingMark /> Saving…</> : "Save"}</button>
             <div className="account-links">
               <a href={SIGN_IN}>Workspace</a>
               <button type="button" onClick={signOut} disabled={leaving}>{leaving ? "Signing out…" : "Sign out"}</button>
